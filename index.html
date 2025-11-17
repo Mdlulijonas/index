@@ -300,7 +300,10 @@ const CommentsSection = ({ comments, setComments, currentUser }) => {
                                 ),
                                 React.createElement('div', { className: "flex-1 bg-gray-50 rounded-lg p-3" },
                                     React.createElement('div', { className: "flex justify-between items-baseline" },
-                                        React.createElement('p', { className: "font-bold text-slate-700" }, comment.username),
+                                        React.createElement('p', { className: "font-bold text-slate-700" }, 
+                                            comment.username,
+                                            React.createElement('span', { className: "font-normal text-sm text-gray-500 ml-1.5" }, `(${comment.team})`)
+                                        ),
                                         React.createElement('p', { className: "text-xs text-gray-400" }, new Date(comment.timestamp).toLocaleString())
                                     ),
                                     React.createElement('p', { className: "text-sm text-gray-800 mt-1" }, comment.text)
@@ -767,18 +770,26 @@ const Submissions = ({ submissions }) => {
     );
             
     return (
-        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm overflow-x-auto" },
-            React.createElement('table', { className: "w-full text-left min-w-[600px]" },
-                React.createElement('thead', null,
-                    React.createElement('tr', { className: "bg-gray-100" },
-                        React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tl-lg" }, "Submission Name"),
-                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Team Member"),
-                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Date Submitted"),
-                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "File Type"),
-                        React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tr-lg" }, "Action")
-                    )
-                ),
-                React.createElement('tbody', null, rows)
+         React.createElement(React.Fragment, null,
+            React.createElement('div', { className: 'mb-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg' },
+                React.createElement('p', { className: 'text-sm text-blue-800' },
+                    React.createElement('i', { className: 'fas fa-info-circle mr-2' }),
+                    'This is a shared archive. All submissions from every team are visible here.'
+                )
+            ),
+            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm overflow-x-auto" },
+                React.createElement('table', { className: "w-full text-left min-w-[600px]" },
+                    React.createElement('thead', null,
+                        React.createElement('tr', { className: "bg-gray-100" },
+                            React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tl-lg" }, "Submission Name"),
+                            React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Submitted by Team"),
+                            React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Date Submitted"),
+                            React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "File Type"),
+                            React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tr-lg" }, "Action")
+                        )
+                    ),
+                    React.createElement('tbody', null, rows)
+                )
             )
         )
     );
