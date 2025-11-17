@@ -1,4 +1,4 @@
-// Shared storage for all users
+// netlify/functions/users.js
 let users = [
     { username: 'admin', password: 'password', team: 'Administrator', isOnline: false, lastLogin: null, lastLogout: null },
     { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false, lastLogin: null, lastLogout: null },
@@ -9,63 +9,81 @@ let users = [
 ];
 
 exports.handler = async function (event, context) {
+    // Set CORS headers
+    const headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+    };
+
+    // Handle OPTIONS request for CORS
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+            statusCode: 200,
+            headers,
+            body: ''
+        };
+    }
+
     try {
-        switch (event.httpMethod) {
-            case 'GET':
-                return {
-                    statusCode: 200,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*',
-                        'Access-Control-Allow-Headers': 'Content-Type'
-                    },
-                    body: JSON.stringify(users)
-                };
+        if (event.httpMethod === 'GET') {
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify(users)
+            };
+        }
 
-            case 'POST':
-                const { username, updates, action } = JSON.parse(event.body);
-                
-                if (action === 'update') {
-                    const userIndex = users.findIndex(u => u.username === username);
-                    if (userIndex !== -1) {
-                        users[userIndex] = { ...users[userIndex], ...updates };
-                        return {
-                            statusCode: 200,
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Access-Control-Allow-Origin': '*',
-                                'Access-Control-Allow-Headers': 'Content-Type'
-                            },
-                            body: JSON.stringify(users[userIndex])
-                        };
-                    }
+        if (event.httpMethod === 'POST') {
+            const body = JSON.parse(event.body);
+            const { username, updates, action } = body;
+            
+            if (action === 'update') {
+                const userIndex = users.findIndex(u => u.username === username);
+                if (userIndex !== -1) {
+                    users[userIndex] = { ...users[userIndex], ...updates };
+                    return {
+                        statusCode: 200,
+                        headers,
+                        body: JSON.stringify(users[userIndex])
+                    };
                 }
-
                 return {
                     statusCode: 404,
+                    headers,
                     body: JSON.stringify({ error: 'User not found' })
                 };
+            }
 
-            case 'OPTIONS':
+            // Handle login verification
+            if (action === 'login') {
+                const user = users.find(u => u.username === username && u.password === updates.password);
+                if (user) {
+                    return {
+                        statusCode: 200,
+                        headers,
+                        body: JSON.stringify(user)
+                    };
+                }
                 return {
-                    statusCode: 200,
-                    headers: {
-                        'Access-Control-Allow-Origin': '*',
-                        'Access-Control-Allow-Headers': 'Content-Type',
-                        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
-                    },
-                    body: ''
+                    statusCode: 401,
+                    headers,
+                    body: JSON.stringify({ error: 'Invalid credentials' })
                 };
-
-            default:
-                return {
-                    statusCode: 405,
-                    body: 'Method Not Allowed'
-                };
+            }
         }
+
+        return {
+            statusCode: 405,
+            headers,
+            body: JSON.stringify({ error: 'Method Not Allowed' })
+        };
+
     } catch (error) {
         return {
             statusCode: 500,
+            headers,
             body: JSON.stringify({ error: error.message })
         };
     }
