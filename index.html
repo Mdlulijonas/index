@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -95,6 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DATA STORE & CONSTANTS ---
     const ADMIN_CODE = '212259497';
+    const MASTER_USERS = [
+        { username: 'admin', password: 'password', team: 'Administrator', isOnline: false },
+        { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false },
+        { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false },
+        { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false },
+        { username: 'support_agent', password: 'password', team: 'Support', isOnline: false },
+        { username: 'writer', password: 'password', team: 'Content', isOnline: false },
+    ];
     const CSV_DATA = `Subject,Start Date,Start Time,End Date,End Time,Description,Location
 Administrator Q1 Budget Review,2026-01-15,10:00,2026-01-15,12:00,Review and approve Q1 budget submissions from all teams,Remote
 Administrator Security Audit,2026-01-16,14:00,2026-01-16,16:00,Perform annual security audit of the platform,Remote
@@ -217,8 +224,23 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
     // --- AUTHENTICATION & INITIALIZATION ---
     function init() {
         document.getElementById('popup-quote').textContent = `"${MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]}"`;
+        
+        let storedUsers = getFromStorage('digihive_users', null);
+        if (storedUsers === null) {
+            storedUsers = MASTER_USERS;
+        }
+        
+        const masterUsernames = MASTER_USERS.map(u => u.username);
+        const localOnlyUsers = storedUsers.filter(u => !masterUsernames.includes(u.username));
+        const updatedMasterUsers = MASTER_USERS.map(masterUser => {
+            const storedVersion = storedUsers.find(u => u.username === masterUser.username);
+            return storedVersion || masterUser;
+        });
+
+        appState.users = [...updatedMasterUsers, ...localOnlyUsers];
+        saveToStorage('digihive_users', appState.users);
+
         appState.currentUser = getFromStorage('digihive_currentUser', null);
-        appState.users = getFromStorage('digihive_users');
 
         if (appState.currentUser) {
             validateSessionAndInit();
@@ -232,11 +254,18 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
 
     function validateSessionAndInit() {
         const userInDb = appState.users.find(u => u.username === appState.currentUser.username);
-        if (!userInDb || userInDb.sessionToken !== appState.currentUser.sessionToken) {
+        // REMOVED: || userInDb.sessionToken !== appState.currentUser.sessionToken
+        // This check is unreliable without a central database and causes the described bug.
+        if (!userInDb) { 
             handleLogout(false); // Silent logout
-            alert('Your session has expired or another was started. Please log in again.');
+            alert('Your user account could not be found, possibly removed by an admin. Please log in again.');
             showLoginScreen();
         } else {
+            // Session is valid, proceed to initialize the app
+            const loggedInUser = { ...userInDb, sessionToken: appState.currentUser.sessionToken, isOnline: true };
+            appState.currentUser = loggedInUser;
+            saveToStorage('digihive_currentUser', loggedInUser);
+            updateUserRecord(loggedInUser);
             initializeApp();
         }
     }
@@ -272,6 +301,34 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
             if (downloadButton) {
                 const submission = appState.submissions[parseInt(downloadButton.dataset.index, 10)];
                 handleDownload(submission);
+            }
+        });
+
+        // Listen for storage changes to sync tabs
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'digihive_users' && !appWrapper.classList.contains('hidden')) {
+                appState.users = getFromStorage('digihive_users', []);
+                if (appState.currentPage === 'team') {
+                    renderPage('team'); // Re-render to show updated statuses
+                }
+            }
+             if (e.key === 'digihive_currentUser' && e.newValue === null && appState.currentUser) {
+                alert('You have been logged out from another tab.');
+                window.location.reload();
+            }
+        });
+
+        // Set user offline when they close the tab
+        window.addEventListener('beforeunload', () => {
+            if (appState.currentUser) {
+                // This is a "best effort" to mark user as offline.
+                const users = getFromStorage('digihive_users', []);
+                const userIndex = users.findIndex(u => u.username === appState.currentUser.username);
+                if (userIndex > -1) {
+                    users[userIndex].isOnline = false;
+                    users[userIndex].lastLogout = new Date().toISOString();
+                    saveToStorage('digihive_users', users);
+                }
             }
         });
     }
@@ -331,16 +388,10 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
             const sessionToken = Date.now().toString() + Math.random().toString();
             const loggedInUser = { ...user, sessionToken, isOnline: true, lastLogin: new Date().toISOString() };
             
-            // Set current user in state and local storage to fix login freeze.
             appState.currentUser = loggedInUser;
             saveToStorage('digihive_currentUser', loggedInUser);
             
-            // Also update the user's status in the main users array.
-            const userIndex = appState.users.findIndex(u => u.username === loggedInUser.username);
-            if (userIndex > -1) {
-                appState.users[userIndex] = loggedInUser;
-            }
-            saveToStorage('digihive_users', appState.users);
+            updateUserRecord(loggedInUser);
 
             initializeApp();
             closeModal();
