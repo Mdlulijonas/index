@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DigiHive - Live Team Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
         body { font-family: 'Inter', sans-serif; }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
@@ -60,10 +57,6 @@
             constructor() {
                 this.listeners = new Map();
                 this.initializeData();
-                this.users = this.loadFromStorage('users');
-                this.comments = this.loadFromStorage('comments');
-                this.submissions = this.loadFromStorage('submissions');
-                this.tasks = this.loadFromStorage('tasks');
                 this.setupStorageSync();
             }
 
@@ -73,13 +66,16 @@
                         { username: 'admin', password: 'password', team: 'Administrator', isOnline: false, lastLogin: null, lastLogout: null },
                         { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false, lastLogin: null, lastLogout: null },
                         { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false, lastLogin: null, lastLogout: null },
+                        { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false, lastLogin: null, lastLogout: null },
+                        { username: 'support', password: 'password', team: 'Support', isOnline: false, lastLogin: null, lastLogout: null },
+                        { username: 'writer', password: 'password', team: 'Content', isOnline: false, lastLogin: null, lastLogout: null }
                     ];
                     localStorage.setItem('digihive_users', JSON.stringify(initialUsers));
                 }
                 if (!localStorage.getItem('digihive_comments')) localStorage.setItem('digihive_comments', '[]');
                 if (!localStorage.getItem('digihive_submissions')) localStorage.setItem('digihive_submissions', '[]');
                 if (!localStorage.getItem('digihive_tasks')) {
-                     const initialTasks = [
+                    const initialTasks = [
                         { id: 1, subject: "Full-stack Week 1 Server Infrastructure", startDate: "2026-01-13T09:00:00.000Z", endDate: "2026-01-13T11:00:00.000Z", description: "Set up cloud server environment. Configure database architecture. Implement basic security protocols. Create deployment pipeline.", team: "Full-Stack", status: "pending" },
                         { id: 2, subject: "Full-stack Week 1 Database Setup", startDate: "2026-01-14T09:00:00.000Z", endDate: "2026-01-14T11:00:00.000Z", description: "Design database schemas. Set up user tables and relationships. Implement data migration scripts. Create backup systems.", team: "Full-Stack", status: "pending" },
                         { id: 3, subject: "UI/UX Week 1 Design System", startDate: "2026-01-13T11:00:00.000Z", endDate: "2026-01-13T13:00:00.000Z", description: "Create brand color palette. Design typography system. Build component library. Establish design principles.", team: "UI/UX", status: "pending" },
@@ -105,22 +101,30 @@
                 }
             }
 
-            loadFromStorage(key) { return JSON.parse(localStorage.getItem(`digihive_${key}`) || '[]'); }
-            saveToStorage(key, data) {
-                // Correctly save to localStorage. The browser will automatically
-                // dispatch the 'storage' event to other tabs/windows.
-                localStorage.setItem(`digihive_${key}`, JSON.stringify(data));
+            loadFromStorage(key) { 
+                return JSON.parse(localStorage.getItem(`digihive_${key}`) || '[]'); 
             }
+            
+            saveToStorage(key, data) {
+                localStorage.setItem(`digihive_${key}`, JSON.stringify(data));
+                // Force storage event for same-tab synchronization
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: `digihive_${key}`,
+                    newValue: JSON.stringify(data),
+                    oldValue: localStorage.getItem(`digihive_${key}`),
+                    storageArea: localStorage
+                }));
+            }
+            
             setupStorageSync() {
                 window.addEventListener('storage', (e) => {
-                    if (e.key?.startsWith('digihive_')) {
+                    if (e.key && e.key.startsWith('digihive_')) {
                         const key = e.key.replace('digihive_', '');
-                        if (e.newValue !== e.oldValue) {
-                            try {
-                                const newData = JSON.parse(e.newValue || '[]');
-                                this[key] = newData;
-                                this.notifyListeners(key, newData);
-                            } catch (error) { console.error('Error syncing storage:', error); }
+                        try {
+                            const newData = JSON.parse(e.newValue || '[]');
+                            this.notifyListeners(key, newData);
+                        } catch (error) { 
+                            console.error('Error syncing storage:', error); 
                         }
                     }
                 });
@@ -131,50 +135,77 @@
                 this.listeners.get(key).add(callback);
                 return () => this.listeners.get(key)?.delete(callback);
             }
-            notifyListeners(key, data) { this.listeners.get(key)?.forEach(callback => callback(data)); }
+            
+            notifyListeners(key, data) { 
+                this.listeners.get(key)?.forEach(callback => {
+                    try {
+                        callback(data);
+                    } catch (error) {
+                        console.error('Error in listener:', error);
+                    }
+                });
+            }
 
-            async getUsers() { return [...this.users]; }
-            async getComments() { return [...this.comments]; }
-            async getSubmissions() { return [...this.submissions]; }
-            async getTasks() { return [...this.tasks]; }
+            async getUsers() { return this.loadFromStorage('users'); }
+            async getComments() { return this.loadFromStorage('comments'); }
+            async getSubmissions() { return this.loadFromStorage('submissions'); }
+            async getTasks() { return this.loadFromStorage('tasks'); }
 
             async updateUser(username, updates) {
-                const userIndex = this.users.findIndex(u => u.username === username);
+                const users = await this.getUsers();
+                const userIndex = users.findIndex(u => u.username === username);
                 if (userIndex !== -1) {
-                    this.users[userIndex] = { ...this.users[userIndex], ...updates };
-                    this.saveToStorage('users', this.users);
-                    this.notifyListeners('users', this.users);
-                    return this.users[userIndex];
+                    users[userIndex] = { ...users[userIndex], ...updates };
+                    this.saveToStorage('users', users);
+                    this.notifyListeners('users', users);
+                    return users[userIndex];
                 }
                 return null;
             }
+            
             async addUser(user) {
+                const users = await this.getUsers();
                 const newUser = { ...user, isOnline: false, lastLogin: null, lastLogout: null };
-                this.users.push(newUser);
-                this.saveToStorage('users', this.users);
-                this.notifyListeners('users', this.users);
+                users.push(newUser);
+                this.saveToStorage('users', users);
+                this.notifyListeners('users', users);
                 return newUser;
             }
+            
             async removeUser(username) {
-                this.users = this.users.filter(u => u.username !== username);
-                this.saveToStorage('users', this.users);
-                this.notifyListeners('users', this.users);
+                const users = await this.getUsers();
+                const filteredUsers = users.filter(u => u.username !== username);
+                this.saveToStorage('users', filteredUsers);
+                this.notifyListeners('users', filteredUsers);
             }
+            
             async addComment(comment) {
-                const newComment = { ...comment, id: Date.now(), timestamp: new Date().toISOString() };
-                this.comments.unshift(newComment);
-                this.saveToStorage('comments', this.comments);
-                this.notifyListeners('comments', this.comments);
+                const comments = await this.getComments();
+                const newComment = { 
+                    ...comment, 
+                    id: Date.now(), 
+                    timestamp: new Date().toISOString() 
+                };
+                comments.unshift(newComment);
+                this.saveToStorage('comments', comments);
+                this.notifyListeners('comments', comments);
                 return newComment;
             }
+            
             async addSubmission(submission) {
-                const newSubmission = { ...submission, id: Date.now(), timestamp: new Date().toISOString() };
-                this.submissions.unshift(newSubmission);
-                this.saveToStorage('submissions', this.submissions);
-                this.notifyListeners('submissions', this.submissions);
+                const submissions = await this.getSubmissions();
+                const newSubmission = { 
+                    ...submission, 
+                    id: Date.now(), 
+                    timestamp: new Date().toISOString() 
+                };
+                submissions.unshift(newSubmission);
+                this.saveToStorage('submissions', submissions);
+                this.notifyListeners('submissions', submissions);
                 return newSubmission;
             }
         }
+
         const liveDB = new LiveDatabase();
 
         // --- UTILITIES ---
@@ -184,10 +215,9 @@
                 Object.keys(props).forEach(key => {
                     if (key.startsWith('on') && typeof props[key] === 'function') {
                         element.addEventListener(key.substring(2).toLowerCase(), props[key]);
-                    } else if (key === 'disabled' && props[key] === false) {
-                        // Don't add disabled attribute if it's false
-                    }
-                    else {
+                    } else if (key === 'class') {
+                        element.className = props[key];
+                    } else {
                         element.setAttribute(key, props[key]);
                     }
                 });
@@ -204,38 +234,66 @@
 
         // --- COMPONENTS ---
         const Modal = ({ isOpen, onClose, children, size = 'md' }) => {
-            const existingModal = document.getElementById('modal-container');
-            if (existingModal) existingModal.remove();
-            
             if (!isOpen) return null;
             
-            const sizeClasses = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-4xl' };
-            const modalContainer = createElement('div', { id: 'modal-container', class: 'fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in' });
-            const modalContent = createElement('div', { class: `bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative animate-scale-up` });
-            const closeButton = createElement('button', { class: 'absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl transition-colors', onclick: onClose }, '×');
+            const sizeClasses = { 
+                sm: 'max-w-sm', 
+                md: 'max-w-md', 
+                lg: 'max-w-2xl', 
+                xl: 'max-w-4xl' 
+            };
+            
+            const modalContainer = createElement('div', { 
+                class: 'fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in' 
+            });
+            
+            const modalContent = createElement('div', { 
+                class: `bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative animate-scale-up` 
+            });
+            
+            const closeButton = createElement('button', { 
+                class: 'absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl transition-colors', 
+                onclick: onClose 
+            }, '×');
             
             modalContent.appendChild(closeButton);
+            
             if (Array.isArray(children)) {
-                children.forEach(child => child && modalContent.appendChild(child));
-            } else {
-                if (children) modalContent.appendChild(children);
+                children.forEach(child => {
+                    if (child) modalContent.appendChild(child);
+                });
+            } else if (children) {
+                modalContent.appendChild(children);
             }
             
             modalContainer.appendChild(modalContent);
-            modalContainer.onclick = (e) => { if (e.target === modalContainer) onClose(); };
+            modalContainer.onclick = (e) => { 
+                if (e.target === modalContainer) onClose(); 
+            };
             
             document.body.appendChild(modalContainer);
             return modalContainer;
         }
 
-        const SyncStatusIndicator = ({ isSyncing, lastSyncTime }) => createElement('div', { class: `fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-300 ${isSyncing ? 'bg-blue-500 text-white animate-pulse-sync' : 'bg-green-500 text-white'} animate-slide-in-right` },
-            createElement('i', { class: `fas ${isSyncing ? 'fa-sync-alt fa-spin' : 'fa-check-circle'} mr-1` }),
-            createElement('span', { class: 'text-sm font-medium' }, isSyncing ? 'Syncing...' : `Live - ${lastSyncTime}`)
-        );
+        const SyncStatusIndicator = ({ isSyncing, lastSyncTime }) => {
+            return createElement('div', { 
+                class: `fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-300 ${
+                    isSyncing ? 'bg-blue-500 text-white animate-pulse-sync' : 'bg-green-500 text-white'
+                } animate-slide-in-right` 
+            },
+                createElement('i', { 
+                    class: `fas ${isSyncing ? 'fa-sync-alt fa-spin' : 'fa-check-circle'} mr-1` 
+                }),
+                createElement('span', { class: 'text-sm font-medium' }, 
+                    isSyncing ? 'Syncing...' : `Live - ${lastSyncTime}`
+                )
+            );
+        }
 
         const TeamPresenceHeader = ({ users = [] }) => {
             const onlineUsers = users.filter(u => u.isOnline);
             const onlineTeamsCount = new Set(onlineUsers.map(u => u.team)).size;
+            
             return createElement('div', { class: 'bg-white rounded-2xl p-4 shadow-sm mb-6' },
                 createElement('div', { class: 'flex items-center justify-between flex-wrap gap-4' },
                     createElement('div', { class: 'flex items-center gap-3' },
@@ -243,363 +301,808 @@
                             createElement('div', { class: 'w-3 h-3 rounded-full bg-green-500 animate-pulse' }),
                             createElement('span', { class: 'font-bold text-slate-800' }, 'Live Team Status')
                         ),
-                        createElement('span', { class: 'text-sm text-gray-600' }, `${onlineUsers.length} users online • ${onlineTeamsCount} of ${Object.keys(TEAM_MAPPING).length} teams active`)
+                        createElement('span', { class: 'text-sm text-gray-600' }, 
+                            `${onlineUsers.length} users online • ${onlineTeamsCount} of ${Object.keys(TEAM_MAPPING).length} teams active`
+                        )
                     ),
                     createElement('div', { class: 'flex items-center gap-2 flex-wrap' },
                         ...Object.values(TEAM_MAPPING).map(team => {
                             const isOnline = users.some(u => u.team === team.name && u.isOnline);
-                            return createElement('div', { key: team.name, title: team.name, class: 'flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50' },
-                                createElement('div', { class: `w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` }),
+                            return createElement('div', { 
+                                class: 'flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50',
+                                title: team.name
+                            },
+                                createElement('div', { 
+                                    class: `w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
+                                }),
                                 createElement('span', { class: 'text-sm font-medium text-slate-700' }, team.avatar)
                             );
                         })
                     )
                 )
             );
-        };
+        }
 
         const CommentsSection = ({ currentUser }) => {
-            const container = createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col max-h-[600px]' });
+            const container = createElement('div', { 
+                class: 'bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col max-h-[600px]' 
+            });
+            
             let comments = [];
             let newComment = '';
 
             const updateUI = () => {
                 container.innerHTML = '';
-                container.append(
+                
+                container.appendChild(
                     createElement('div', { class: 'flex items-center justify-between mb-4' },
                         createElement('h3', { class: 'text-xl font-bold text-slate-800' }, 'Team Comments'),
                         createElement('div', { class: 'flex items-center gap-2 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-md' },
-                            createElement('i', { class: 'fas fa-sync-alt mr-1' }), createElement('span', null, 'Live Updates')
+                            createElement('i', { class: 'fas fa-sync-alt mr-1' }),
+                            createElement('span', null, 'Live Updates')
                         )
-                    ),
-                    createElement('form', { class: 'mb-4 flex gap-3 flex-col sm:flex-row', onsubmit: handleSubmit },
-                        createElement('input', { type: 'text', class: 'flex-grow w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition', placeholder: 'Leave a comment...', value: newComment, oninput: (e) => newComment = e.target.value }),
-                        createElement('button', { type: 'submit', class: 'bg-blue-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2' },
-                            createElement('i', { class: 'fas fa-paper-plane' }), ' Post'
-                        )
-                    ),
-                    renderCommentsList()
+                    )
                 );
+                
+                const form = createElement('form', { 
+                    class: 'mb-4 flex gap-3 flex-col sm:flex-row', 
+                    onsubmit: handleSubmit 
+                },
+                    createElement('input', { 
+                        type: 'text', 
+                        class: 'flex-grow w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition', 
+                        placeholder: 'Leave a comment about your tasks or challenges...', 
+                        value: newComment, 
+                        oninput: (e) => { newComment = e.target.value; } 
+                    }),
+                    createElement('button', { 
+                        type: 'submit', 
+                        class: 'bg-blue-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2' 
+                    },
+                        createElement('i', { class: 'fas fa-paper-plane' }),
+                        'Post'
+                    )
+                );
+                
+                container.appendChild(form);
+                container.appendChild(renderCommentsList());
             };
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 if (newComment.trim() === '') return;
-                await liveDB.addComment({ username: currentUser.username, team: currentUser.team, text: newComment.trim() });
+                
+                await liveDB.addComment({ 
+                    username: currentUser.username, 
+                    team: currentUser.team, 
+                    text: newComment.trim() 
+                });
+                
                 newComment = '';
+                updateUI();
             };
             
             const renderCommentsList = () => {
-                const commentsList = createElement('div', { class: 'flex-1 overflow-y-auto pr-2 space-y-4' });
+                const commentsList = createElement('div', { 
+                    class: 'flex-1 overflow-y-auto pr-2 space-y-4' 
+                });
+                
                 if (comments.length === 0) {
-                    commentsList.append(createElement('div', { class: 'text-center text-gray-400 pt-8 flex flex-col items-center' },
-                        createElement('i', { class: 'fas fa-comments text-4xl mb-2' }),
-                        createElement('p', null, 'No comments yet. Be the first to post!')
-                    ));
+                    commentsList.appendChild(
+                        createElement('div', { class: 'text-center text-gray-400 pt-8 flex flex-col items-center' },
+                            createElement('i', { class: 'fas fa-comments text-4xl mb-2' }),
+                            createElement('p', null, 'No comments yet. Be the first to post!')
+                        )
+                    );
                 } else {
                     comments.forEach(comment => {
                         const teamInfo = TEAM_MAPPING[comment.team];
-                        commentsList.append(createElement('div', { class: 'flex items-start gap-3 animate-fade-in' },
-                            createElement('div', { class: `w-10 h-10 ${teamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` }, comment.username.substring(0, 2).toUpperCase()),
-                            createElement('div', { class: 'flex-1 bg-gray-50 rounded-lg p-3' },
-                                createElement('div', { class: 'flex justify-between items-baseline' },
-                                    createElement('p', { class: 'font-bold text-slate-700' }, `${comment.username} `, createElement('span', { class: 'font-normal text-sm text-gray-500 ml-1.5' }, `(${comment.team})`)),
-                                    createElement('p', { class: 'text-xs text-gray-400' }, new Date(comment.timestamp).toLocaleString())
-                                ),
-                                createElement('p', { class: 'text-sm text-gray-800 mt-1 break-words' }, comment.text)
+                        commentsList.appendChild(
+                            createElement('div', { class: 'flex items-start gap-3 animate-fade-in' },
+                                createElement('div', { 
+                                    class: `w-10 h-10 ${teamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` 
+                                }, comment.username.substring(0, 2).toUpperCase()),
+                                createElement('div', { class: 'flex-1 bg-gray-50 rounded-lg p-3' },
+                                    createElement('div', { class: 'flex justify-between items-baseline' },
+                                        createElement('p', { class: 'font-bold text-slate-700' }, 
+                                            comment.username,
+                                            createElement('span', { class: 'font-normal text-sm text-gray-500 ml-1.5' }, `(${comment.team})`)
+                                        ),
+                                        createElement('p', { class: 'text-xs text-gray-400' }, 
+                                            new Date(comment.timestamp).toLocaleString()
+                                        )
+                                    ),
+                                    createElement('p', { class: 'text-sm text-gray-800 mt-1 break-words' }, comment.text)
+                                )
                             )
-                        ));
+                        );
                     });
                 }
                 return commentsList;
             };
 
-            liveDB.subscribe('comments', (data) => {
+            // Subscribe to comments updates
+            const unsubscribe = liveDB.subscribe('comments', (data) => {
                 comments = data;
                 updateUI();
             });
+            
+            // Initial load
             liveDB.getComments().then(data => {
                 comments = data;
                 updateUI();
             });
+            
+            // Cleanup
+            container.cleanup = unsubscribe;
+            
             return container;
-        };
+        }
 
-        const DashboardPage = ({ currentUser, triggerSync, users, comments, submissions, tasks }) => {
+        const DashboardPage = ({ currentUser, triggerSync }) => {
             const container = createElement('div', { class: 'space-y-8' });
+            
+            let users = [];
+            let comments = [];
+            let submissions = [];
+            let tasks = [];
             let isModalOpen = false;
             let submissionSuccess = false;
 
             const updateUI = () => {
                 container.innerHTML = '';
+                
                 const upcomingTasks = tasks.filter(task => new Date(task.startDate) > new Date()).length;
                 const onlineNow = users.filter(u => u.isOnline).length;
+                
                 const stats = [
                     { icon: 'fa-list-check', value: upcomingTasks, label: 'Upcoming Tasks', color: 'bg-blue-500' },
                     { icon: 'fa-check-double', value: submissions.length, label: 'Total Submissions', color: 'bg-violet-500' },
                     { icon: 'fa-comments', value: comments.length, label: 'Team Comments', color: 'bg-teal-500' },
                     { icon: 'fa-users', value: onlineNow, label: 'Online Now', color: 'bg-amber-500' },
                 ];
-                container.append(
-                    TeamPresenceHeader({ users }),
+                
+                container.appendChild(TeamPresenceHeader({ users }));
+                
+                container.appendChild(
                     createElement('div', { class: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6' },
-                        ...stats.map(stat => createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
-                            createElement('div', { class: `w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl ${stat.color}` }, createElement('i', { class: `fas ${stat.icon}` })),
-                            createElement('div', { class: 'mt-4' },
-                                createElement('p', { class: 'text-4xl font-bold text-slate-800' }, stat.value),
-                                createElement('p', { class: 'text-md text-gray-500 font-medium' }, stat.label)
-                            )
-                        ))
-                    ),
-                    createElement('div', { class: 'grid grid-cols-1 lg:grid-cols-3 gap-8' },
-                        createElement('div', { class: 'lg:col-span-2' }, CommentsSection({ currentUser })),
-                        createElement('div', { class: 'lg:col-span-1 space-y-8' },
+                        ...stats.map(stat => 
                             createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
-                                createElement('h3', { class: 'text-xl font-bold text-slate-800 mb-4' }, 'Submit Your Report'),
-                                createElement('button', { class: 'w-full bg-blue-100 text-blue-600 font-bold p-6 rounded-lg text-center group hover:bg-blue-500 hover:text-white transition-all duration-300', onclick: openModal },
-                                    createElement('i', { class: 'fas fa-cloud-upload-alt text-4xl mb-2 text-blue-500 group-hover:text-white transition-colors' }),
-                                    createElement('p', null, 'Submit Weekly Report')
+                                createElement('div', { 
+                                    class: `w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl ${stat.color}` 
+                                }, createElement('i', { class: `fas ${stat.icon}` })),
+                                createElement('div', { class: 'mt-4' },
+                                    createElement('p', { class: 'text-4xl font-bold text-slate-800' }, stat.value),
+                                    createElement('p', { class: 'text-md text-gray-500 font-medium' }, stat.label)
                                 )
                             )
                         )
                     )
                 );
+                
+                container.appendChild(
+                    createElement('div', { class: 'grid grid-cols-1 lg:grid-cols-3 gap-8' },
+                        createElement('div', { class: 'lg:col-span-2' }, 
+                            CommentsSection({ currentUser })
+                        ),
+                        createElement('div', { class: 'lg:col-span-1 space-y-8' },
+                            createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
+                                createElement('h3', { class: 'text-xl font-bold text-slate-800 mb-4' }, 'Live Team Activity'),
+                                createElement('div', { class: 'space-y-3' },
+                                    createElement('div', { class: 'flex items-center justify-between p-3 bg-green-50 rounded-lg' },
+                                        createElement('div', { class: 'flex items-center gap-3' },
+                                            createElement('i', { class: 'fas fa-sync-alt text-green-600' }),
+                                            createElement('span', { class: 'font-semibold text-sm text-green-800' }, 'Real-Time Sync')
+                                        ),
+                                        createElement('span', { class: 'font-bold text-sm text-green-600' }, 'Active')
+                                    ),
+                                    createElement('div', { class: 'text-sm text-gray-600' },
+                                        createElement('p', { class: 'font-semibold mb-2' }, 'Recent Activity:'),
+                                        ...comments.slice(0, 3).map(comment => 
+                                            createElement('p', { class: 'truncate text-xs mb-1' },
+                                                `${comment.username}: ${comment.text}`
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            createElement('div', { 
+                                class: 'bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300',
+                                onclick: openModal
+                            },
+                                createElement('div', { class: 'flex flex-col items-center text-center gap-4' },
+                                    createElement('div', { 
+                                        class: 'w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center' 
+                                    }, createElement('i', { class: 'fas fa-cloud-upload-alt' })),
+                                    createElement('div', null, 
+                                        createElement('h3', { class: 'font-bold text-slate-800 text-lg' }, 'Submit Weekly Report'), 
+                                        createElement('p', { class: 'text-sm text-gray-500 mt-1' }, 'Share progress with the team')
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+                
                 renderModal();
             };
             
             const handleSubmitReport = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                await liveDB.addSubmission({ name: formData.get('title'), member: currentUser.username, team: currentUser.team, progress: formData.get('progress'), plan: formData.get('plan'), fileType: 'Report' });
+                
+                await liveDB.addSubmission({ 
+                    name: formData.get('title'), 
+                    member: currentUser.username, 
+                    team: currentUser.team, 
+                    progress: formData.get('progress'), 
+                    plan: formData.get('plan'), 
+                    fileType: 'Report' 
+                });
+                
                 triggerSync();
                 submissionSuccess = true;
                 updateUI();
             };
 
-            const openModal = () => { submissionSuccess = false; isModalOpen = true; updateUI(); };
-            const closeModal = () => { isModalOpen = false; updateUI(); };
+            const openModal = () => { 
+                submissionSuccess = false; 
+                isModalOpen = true; 
+                updateUI(); 
+            };
+            
+            const closeModal = () => { 
+                isModalOpen = false; 
+                updateUI(); 
+            };
             
             const renderModal = () => {
+                if (!isModalOpen) return;
+                
                 Modal({
-                    isOpen: isModalOpen, onClose: closeModal, size: 'lg',
+                    isOpen: isModalOpen, 
+                    onClose: closeModal, 
+                    size: 'lg',
                     children: submissionSuccess ?
                         createElement('div', { class: 'text-center py-10' },
                             createElement('i', { class: 'fas fa-check-circle text-6xl text-green-500 mb-4' }),
                             createElement('h2', { class: 'text-2xl font-bold text-slate-800' }, 'Submission Successful!'),
-                            createElement('p', { class: 'text-gray-600 mt-2' }, 'Your report has been shared with the team.'),
-                            createElement('button', { class: 'mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg', onclick: closeModal }, 'Close')
+                            createElement('p', { class: 'text-gray-600 mt-2' }, 'Your report has been shared with all team members in real-time.'),
+                            createElement('button', { 
+                                class: 'mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg',
+                                onclick: closeModal
+                            }, 'Close')
                         ) :
                         createElement('div', null,
                             createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6' }, 'Weekly Report Submission'),
                             createElement('form', { class: 'space-y-4', onsubmit: handleSubmitReport },
-                                createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Report Title'), createElement('input', { type: 'text', name: 'title', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })),
-                                createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Progress Report'), createElement('textarea', { name: 'progress', required: true, rows: 4, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })),
-                                createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, "Next Week's Plan"), createElement('textarea', { name: 'plan', required: true, rows: 3, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })),
-                                createElement('button', { type: 'submit', class: 'w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2' }, createElement('i', { class: 'fas fa-paper-plane' }), ' Submit Report')
+                                createElement('div', null, 
+                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Report Title'), 
+                                    createElement('input', { 
+                                        type: 'text', 
+                                        name: 'title', 
+                                        placeholder: 'e.g., Q1 Week 4 Progress Report', 
+                                        required: true, 
+                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                    })
+                                ),
+                                createElement('div', null, 
+                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Progress Report'), 
+                                    createElement('textarea', { 
+                                        name: 'progress', 
+                                        placeholder: 'Describe your progress...', 
+                                        required: true, 
+                                        rows: 4, 
+                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                    })
+                                ),
+                                createElement('div', null, 
+                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, "Next Week's Plan"), 
+                                    createElement('textarea', { 
+                                        name: 'plan', 
+                                        placeholder: 'Outline your plans...', 
+                                        required: true, 
+                                        rows: 3, 
+                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                    })
+                                ),
+                                createElement('button', { 
+                                    type: 'submit', 
+                                    class: 'w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2' 
+                                }, 
+                                    createElement('i', { class: 'fas fa-paper-plane' }),
+                                    'Submit Report to Team'
+                                )
                             )
                         )
                 });
             };
 
-            updateUI();
-            return container;
-        };
-
-        const TasksPage = ({ tasks }) => {
-            const container = createElement('div', { class: 'space-y-6' });
+            // Subscribe to data updates
+            const unsubscribers = [
+                liveDB.subscribe('users', (data) => {
+                    users = data;
+                    updateUI();
+                }),
+                liveDB.subscribe('comments', (data) => {
+                    comments = data;
+                    updateUI();
+                }),
+                liveDB.subscribe('submissions', (data) => {
+                    submissions = data;
+                    updateUI();
+                }),
+                liveDB.subscribe('tasks', (data) => {
+                    tasks = data;
+                    updateUI();
+                })
+            ];
             
-            const getStatusChip = (status) => {
-                const statuses = {
-                    pending: { text: 'Pending', class: 'bg-yellow-100 text-yellow-800' },
-                    'in-progress': { text: 'In Progress', class: 'bg-blue-100 text-blue-800' },
-                    completed: { text: 'Completed', class: 'bg-green-100 text-green-800' },
-                    planned: { text: 'Planned', class: 'bg-gray-100 text-gray-800' },
-                };
-                const s = statuses[status] || statuses.planned;
-                return createElement('div', { class: `px-3 py-1 text-xs font-semibold rounded-full ${s.class}` }, s.text);
+            // Initial data load
+            Promise.all([
+                liveDB.getUsers(),
+                liveDB.getComments(),
+                liveDB.getSubmissions(),
+                liveDB.getTasks()
+            ]).then(([userData, commentData, submissionData, taskData]) => {
+                users = userData;
+                comments = commentData;
+                submissions = submissionData;
+                tasks = taskData;
+                updateUI();
+            });
+            
+            // Cleanup
+            container.cleanup = () => {
+                unsubscribers.forEach(unsub => unsub());
             };
+            
+            return container;
+        }
 
-            const taskGrid = createElement('div', { class: 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' });
+        const TasksPage = () => {
+            const container = createElement('div', { class: 'space-y-6' });
+            let tasks = [];
+            let users = [];
 
-            if (tasks.length > 0) {
-                 tasks.sort((a, b) => new Date(a.startDate) - new Date(b.startDate)).forEach(task => {
-                    const teamInfo = TEAM_MAPPING[task.team];
-                    taskGrid.append(
-                        createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-300' },
-                            createElement('div', null,
-                                createElement('div', { class: 'flex justify-between items-start mb-3' },
-                                    createElement('h3', { class: 'text-lg font-bold text-slate-800 pr-2' }, task.subject),
-                                    getStatusChip(task.status)
+            const updateUI = () => {
+                container.innerHTML = '';
+                
+                container.appendChild(TeamPresenceHeader({ users }));
+                
+                const getStatusChip = (status) => {
+                    const statuses = {
+                        pending: { text: 'Pending', class: 'bg-yellow-100 text-yellow-800' },
+                        'in-progress': { text: 'In Progress', class: 'bg-blue-100 text-blue-800' },
+                        completed: { text: 'Completed', class: 'bg-green-100 text-green-800' },
+                        planned: { text: 'Planned', class: 'bg-gray-100 text-gray-800' },
+                    };
+                    const s = statuses[status] || statuses.planned;
+                    return createElement('div', { 
+                        class: `px-3 py-1 text-xs font-semibold rounded-full ${s.class}` 
+                    }, s.text);
+                };
+
+                if (tasks.length > 0) {
+                    const taskGrid = createElement('div', { 
+                        class: 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' 
+                    });
+                    
+                    // Sort tasks by start date
+                    tasks.sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+                         .forEach(task => {
+                        const teamInfo = TEAM_MAPPING[task.team];
+                        taskGrid.appendChild(
+                            createElement('div', { 
+                                class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-300' 
+                            },
+                                createElement('div', null,
+                                    createElement('div', { class: 'flex justify-between items-start mb-3' },
+                                        createElement('h3', { class: 'text-lg font-bold text-slate-800 pr-2' }, task.subject),
+                                        getStatusChip(task.status)
+                                    ),
+                                    createElement('div', { class: 'flex items-center gap-2 mb-4' },
+                                       createElement('div', { 
+                                           class: `w-6 h-6 ${teamInfo.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` 
+                                       }, teamInfo.avatar),
+                                       createElement('span', { class: 'text-sm font-semibold text-gray-600' }, task.team)
+                                    ),
+                                    createElement('p', { class: 'text-sm text-gray-600 mb-4 h-20 overflow-y-auto' }, task.description)
                                 ),
-                                createElement('div', { class: 'flex items-center gap-2 mb-4' },
-                                   createElement('div', { class: `w-6 h-6 ${teamInfo.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` }, teamInfo.avatar),
-                                   createElement('span', { class: 'text-sm font-semibold text-gray-600' }, task.team)
-                                ),
-                                createElement('p', { class: 'text-sm text-gray-600 mb-4 h-20 overflow-y-auto' }, task.description)
-                            ),
-                            createElement('div', { class: 'text-xs text-gray-500 border-t pt-3 mt-auto' },
-                                createElement('p', null, `Start: ${new Date(task.startDate).toLocaleString()}`),
-                                createElement('p', null, `End: ${new Date(task.endDate).toLocaleString()}`)
+                                createElement('div', { class: 'text-xs text-gray-500 border-t pt-3 mt-auto' },
+                                    createElement('p', null, `Start: ${new Date(task.startDate).toLocaleString()}`),
+                                    createElement('p', null, `End: ${new Date(task.endDate).toLocaleString()}`)
+                                )
                             )
+                        );
+                    });
+                    
+                    container.appendChild(taskGrid);
+                } else {
+                    container.appendChild(
+                        createElement('div', { 
+                            class: 'bg-white rounded-2xl p-12 shadow-sm text-center text-gray-500' 
+                        },
+                            createElement('i', { class: 'fas fa-tasks text-4xl mb-3' }),
+                            createElement('h3', { class: 'text-xl font-bold' }, 'No Tasks Found'),
+                            createElement('p', null, 'Tasks for the teams will appear here.')
                         )
                     );
-                });
-                container.append(taskGrid);
-            } else {
-                container.append(
-                    createElement('div', { class: 'bg-white rounded-2xl p-12 shadow-sm text-center text-gray-500' },
-                        createElement('i', { class: 'fas fa-tasks text-4xl mb-3' }),
-                        createElement('h3', { class: 'text-xl font-bold' }, 'No Tasks Found'),
-                        createElement('p', null, 'Tasks for the teams will appear here.')
-                    )
-                );
-            }
-
-            return container;
-        };
-
-        const SubmissionsPage = ({ users, submissions }) => {
-            const container = createElement('div', { class: 'space-y-6' });
-            const handleDownload = (submission) => {
-                const content = `Submission: ${submission.name}\nMember: ${submission.member}\nTeam: ${submission.team}\nDate: ${new Date(submission.timestamp).toLocaleString()}\n\nProgress:\n${submission.progress}\n\nNext Week's Plan:\n${submission.plan}`;
-                const blob = new Blob([content], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${submission.name.replace(/\s+/g, '_')}_${submission.id}.txt`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                }
             };
 
-            container.append(
-                TeamPresenceHeader({ users }),
-                createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm overflow-x-auto' },
-                    submissions.length === 0 ?
-                        createElement('div', { class: 'text-center py-16 text-gray-400' }, createElement('i', { class: 'fas fa-folder-open text-5xl mb-4' }), createElement('h3', { class: 'text-xl font-bold text-slate-700' }, 'No Submissions Yet')) :
-                        createElement('table', { class: 'w-full text-left min-w-[600px]' },
-                            createElement('thead', null, createElement('tr', { class: 'bg-gray-100' },
-                                createElement('th', { class: 'p-4 font-bold text-slate-600 rounded-tl-lg' }, 'Submission Name'), createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Submitted by'),
-                                createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Team'), createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Date Submitted'),
-                                createElement('th', { class: 'p-4 font-bold text-slate-600 rounded-tr-lg' }, 'Action')
-                            )),
-                            createElement('tbody', null,
-                                ...submissions.map(sub => createElement('tr', { class: 'border-b last:border-b-0' },
-                                    createElement('td', { class: 'p-4 font-medium' }, sub.name), createElement('td', { class: 'p-4' }, sub.member),
-                                    createElement('td', { class: 'p-4' }, sub.team), createElement('td', { class: 'p-4' }, new Date(sub.timestamp).toLocaleString()),
-                                    createElement('td', { class: 'p-4' }, createElement('button', { class: 'bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm flex items-center gap-2', onclick: () => handleDownload(sub) },
-                                        createElement('i', { class: 'fas fa-download' }), ' Download'
-                                    ))
-                                ))
-                            )
-                        )
-                )
-            );
+            // Subscribe to data updates
+            const unsubscribers = [
+                liveDB.subscribe('tasks', (data) => {
+                    tasks = data;
+                    updateUI();
+                }),
+                liveDB.subscribe('users', (data) => {
+                    users = data;
+                    updateUI();
+                })
+            ];
+            
+            // Initial data load
+            Promise.all([
+                liveDB.getTasks(),
+                liveDB.getUsers()
+            ]).then(([taskData, userData]) => {
+                tasks = taskData;
+                users = userData;
+                updateUI();
+            });
+            
+            // Cleanup
+            container.cleanup = () => {
+                unsubscribers.forEach(unsub => unsub());
+            };
+            
             return container;
-        };
+        }
 
-        const TeamPage = ({ currentUser, users }) => {
+        const SubmissionsPage = () => {
             const container = createElement('div', { class: 'space-y-6' });
+            let submissions = [];
+            let users = [];
+
+            const updateUI = () => {
+                container.innerHTML = '';
+                
+                container.appendChild(TeamPresenceHeader({ users }));
+                
+                const handleDownload = (submission) => {
+                    const content = `Submission: ${submission.name}\nMember: ${submission.member}\nTeam: ${submission.team}\nDate: ${new Date(submission.timestamp).toLocaleString()}\n\nProgress:\n${submission.progress}\n\nNext Week's Plan:\n${submission.plan}`;
+                    const blob = new Blob([content], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${submission.name.replace(/\s+/g, '_')}_${submission.id}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                };
+
+                container.appendChild(
+                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm overflow-x-auto' },
+                        submissions.length === 0 ?
+                            createElement('div', { class: 'text-center py-16 text-gray-400' }, 
+                                createElement('i', { class: 'fas fa-folder-open text-5xl mb-4' }), 
+                                createElement('h3', { class: 'text-xl font-bold text-slate-700' }, 'No Submissions Yet'),
+                                createElement('p', null, 'Team submissions will appear here in real-time.')
+                            ) :
+                            createElement('table', { class: 'w-full text-left min-w-[600px]' },
+                                createElement('thead', null, 
+                                    createElement('tr', { class: 'bg-gray-100' },
+                                        createElement('th', { class: 'p-4 font-bold text-slate-600 rounded-tl-lg' }, 'Submission Name'),
+                                        createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Submitted by'),
+                                        createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Team'),
+                                        createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Date Submitted'),
+                                        createElement('th', { class: 'p-4 font-bold text-slate-600 rounded-tr-lg' }, 'Action')
+                                    )
+                                ),
+                                createElement('tbody', null,
+                                    ...submissions.map(sub => 
+                                        createElement('tr', { class: 'border-b last:border-b-0' },
+                                            createElement('td', { class: 'p-4 font-medium' }, sub.name),
+                                            createElement('td', { class: 'p-4' }, sub.member),
+                                            createElement('td', { class: 'p-4' }, sub.team),
+                                            createElement('td', { class: 'p-4' }, new Date(sub.timestamp).toLocaleString()),
+                                            createElement('td', { class: 'p-4' }, 
+                                                createElement('button', { 
+                                                    class: 'bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm flex items-center gap-2', 
+                                                    onclick: () => handleDownload(sub) 
+                                                },
+                                                    createElement('i', { class: 'fas fa-download' }), 
+                                                    'Download'
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                    )
+                );
+            };
+
+            // Subscribe to data updates
+            const unsubscribers = [
+                liveDB.subscribe('submissions', (data) => {
+                    submissions = data;
+                    updateUI();
+                }),
+                liveDB.subscribe('users', (data) => {
+                    users = data;
+                    updateUI();
+                })
+            ];
+            
+            // Initial data load
+            Promise.all([
+                liveDB.getSubmissions(),
+                liveDB.getUsers()
+            ]).then(([submissionData, userData]) => {
+                submissions = submissionData;
+                users = userData;
+                updateUI();
+            });
+            
+            // Cleanup
+            container.cleanup = () => {
+                unsubscribers.forEach(unsub => unsub());
+            };
+            
+            return container;
+        }
+
+        const TeamPage = ({ currentUser }) => {
+            const container = createElement('div', { class: 'space-y-6' });
+            let users = [];
             let isRegisterModalOpen = false;
 
             const updateUI = () => {
                 container.innerHTML = '';
-                container.append(
-                    TeamPresenceHeader({ users }),
+                
+                container.appendChild(TeamPresenceHeader({ users }));
+                
+                container.appendChild(
                     createElement('div', { class: 'bg-white p-4 rounded-2xl shadow-sm flex justify-end' },
-                        createElement('button', { class: 'bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2', onclick: () => { isRegisterModalOpen = true; updateUI(); } },
-                            createElement('i', { class: 'fas fa-user-plus' }), ' Register New Member'
+                        createElement('button', { 
+                            class: 'bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2', 
+                            onclick: () => { 
+                                isRegisterModalOpen = true; 
+                                updateUI(); 
+                            } 
+                        },
+                            createElement('i', { class: 'fas fa-user-plus' }), 
+                            'Register New Member'
                         )
-                    ),
-                    ...users.map(user => {
-                        const teamInfo = TEAM_MAPPING[user.team];
-                        return createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4' },
+                    )
+                );
+
+                users.forEach(user => {
+                    const teamInfo = TEAM_MAPPING[user.team];
+                    container.appendChild(
+                        createElement('div', { 
+                            class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4' 
+                        },
                             createElement('div', { class: 'flex items-center gap-5' },
                                 createElement('div', { class: 'relative' },
-                                    createElement('div', { class: `w-16 h-16 ${teamInfo.color} rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl` }, teamInfo.avatar),
-                                    createElement('div', { class: `absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}` })
+                                    createElement('div', { 
+                                        class: `w-16 h-16 ${teamInfo.color} rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl` 
+                                    }, teamInfo.avatar),
+                                    createElement('div', { 
+                                        class: `absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}` 
+                                    })
                                 ),
                                 createElement('div', null,
                                     createElement('h3', { class: 'text-xl font-bold text-slate-800' }, user.username),
-                                    createElement('p', { class: 'text-gray-500' }, `${teamInfo.role} • ${teamInfo.name}`)
+                                    createElement('p', { class: 'text-gray-500' }, `${teamInfo.role} • ${teamInfo.name}`),
+                                    createElement('p', { 
+                                        class: `text-xs mt-1 ${user.isOnline ? 'text-green-600' : 'text-gray-400'}` 
+                                    }, user.isOnline ? 'Online now' : user.lastLogout ? `Last seen: ${new Date(user.lastLogout).toLocaleString()}` : 'Never logged in')
                                 )
                             ),
-                            createElement('button', { class: 'font-bold py-2 px-4 rounded-lg w-full sm:w-auto flex items-center gap-2 justify-center disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed bg-red-100 text-red-600 hover:bg-red-200', disabled: user.username === currentUser.username, onclick: () => handleDeregister(user.username) },
-                                createElement('i', { class: 'fas fa-user-minus' }), ' Deregister'
+                            createElement('button', { 
+                                class: `font-bold py-2 px-4 rounded-lg w-full sm:w-auto flex items-center gap-2 justify-center ${
+                                    user.username === currentUser.username 
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                        : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                }`, 
+                                disabled: user.username === currentUser.username, 
+                                onclick: () => handleDeregister(user.username) 
+                            },
+                                createElement('i', { class: 'fas fa-user-minus' }), 
+                                'Deregister'
                             )
-                        );
-                    })
-                );
+                        )
+                    );
+                });
+                
                 renderModal();
             };
 
             const handleRegister = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                if (formData.get('adminCode') !== '212259497') return alert('Invalid Admin Code. Registration failed.');
+                
+                if (formData.get('adminCode') !== '212259497') {
+                    alert('Invalid Admin Code. Registration failed.');
+                    return;
+                }
+
                 const username = formData.get('username');
-                if (users.find(u => u.username === username)) return alert('Username already exists.');
-                await liveDB.addUser({ username: username, password: formData.get('password'), team: formData.get('team') });
+                const password = formData.get('password');
+                const team = formData.get('team');
+                
+                if (users.find(u => u.username === username)) {
+                    alert('Username already exists.');
+                    return;
+                }
+
+                await liveDB.addUser({ 
+                    username: username, 
+                    password: password, 
+                    team: team 
+                });
+                
                 alert('Registration successful!');
                 isRegisterModalOpen = false;
                 updateUI();
             };
+
             const handleDeregister = async (username) => {
-                if (username === currentUser.username) return alert("You cannot deregister yourself.");
+                if (username === currentUser.username) {
+                    alert("You cannot deregister yourself.");
+                    return;
+                }
+                
                 const code = prompt("Enter Admin Code to deregister this member:");
-                if (code !== '212259497') { if (code !== null) alert("Invalid Admin Code. Action cancelled."); return; }
-                if (confirm(`Are you sure you want to deregister ${username}?`)) {
+                if (code !== '212259497') {
+                    if (code !== null) alert("Invalid Admin Code. Action cancelled.");
+                    return;
+                }
+
+                if (confirm(`Are you sure you want to deregister ${username}? This action cannot be undone.`)) {
                     await liveDB.removeUser(username);
                     alert(`${username} has been deregistered.`);
                 }
             };
-            const renderModal = () => Modal({
-                isOpen: isRegisterModalOpen,
-                onClose: () => { isRegisterModalOpen = false; updateUI(); },
-                children: createElement('div', null,
-                    createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6 text-center' }, 'Register New Member'),
-                    createElement('form', { class: 'space-y-4', onsubmit: handleRegister },
-                        createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Username'), createElement('input', { type: 'text', name: 'username', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })),
-                        createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Password'), createElement('input', { type: 'password', name: 'password', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })),
-                        createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Team'), createElement('select', { name: 'team', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2 bg-white' }, ...Object.values(TEAM_MAPPING).map(t => createElement('option', { value: t.name }, t.name)))),
-                        createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Admin Code'), createElement('input', { type: 'password', name: 'adminCode', placeholder: 'Required for registration', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })),
-                        createElement('button', { type: 'submit', class: 'w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors' }, 'Register')
-                    )
-                )
-            });
-            updateUI();
-            return container;
-        };
 
-        const SettingsPage = ({ currentUser, onAuthChange, users }) => {
+            const renderModal = () => {
+                if (!isRegisterModalOpen) return;
+                
+                Modal({
+                    isOpen: isRegisterModalOpen,
+                    onClose: () => { 
+                        isRegisterModalOpen = false; 
+                        updateUI(); 
+                    },
+                    children: createElement('div', null,
+                        createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6 text-center' }, 'Register New Member'),
+                        createElement('form', { class: 'space-y-4', onsubmit: handleRegister },
+                            createElement('div', null, 
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Username'), 
+                                createElement('input', { 
+                                    type: 'text', 
+                                    name: 'username', 
+                                    required: true, 
+                                    class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                })
+                            ),
+                            createElement('div', null, 
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Password'), 
+                                createElement('input', { 
+                                    type: 'password', 
+                                    name: 'password', 
+                                    required: true, 
+                                    class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                })
+                            ),
+                            createElement('div', null, 
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Team'), 
+                                createElement('select', { 
+                                    name: 'team', 
+                                    required: true, 
+                                    class: 'w-full border-2 border-gray-200 rounded-lg p-2 bg-white' 
+                                }, 
+                                    ...Object.values(TEAM_MAPPING).map(t => 
+                                        createElement('option', { value: t.name }, t.name)
+                                    )
+                                )
+                            ),
+                            createElement('div', null, 
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Admin Code'), 
+                                createElement('input', { 
+                                    type: 'password', 
+                                    name: 'adminCode', 
+                                    placeholder: 'Required for registration', 
+                                    required: true, 
+                                    class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                })
+                            ),
+                            createElement('button', { 
+                                type: 'submit', 
+                                class: 'w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors' 
+                            }, 'Register')
+                        )
+                    )
+                });
+            };
+
+            // Subscribe to users updates
+            const unsubscribe = liveDB.subscribe('users', (data) => {
+                users = data;
+                updateUI();
+            });
+            
+            // Initial data load
+            liveDB.getUsers().then(data => {
+                users = data;
+                updateUI();
+            });
+            
+            // Cleanup
+            container.cleanup = unsubscribe;
+            
+            return container;
+        }
+
+        const SettingsPage = ({ currentUser, onAuthChange }) => {
             const container = createElement('div', { class: 'space-y-6' });
+            let users = [];
             let isSecurityModalOpen = false;
 
             const updateUI = () => {
                 container.innerHTML = '';
-                container.append(
-                    TeamPresenceHeader({ users }),
-                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4' },
+                
+                container.appendChild(TeamPresenceHeader({ users }));
+                
+                container.appendChild(
+                    createElement('div', { 
+                        class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4' 
+                    },
                         createElement('div', { class: 'flex items-center gap-5' },
-                            createElement('div', { class: 'w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl' }, createElement('i', { class: 'fas fa-shield-alt' })),
+                            createElement('div', { 
+                                class: 'w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl' 
+                            }, createElement('i', { class: 'fas fa-shield-alt' })),
                             createElement('div', null,
                                 createElement('h3', { class: 'text-lg font-bold text-slate-800' }, 'Security Settings'),
-                                createElement('p', { class: 'text-gray-500 text-sm' }, 'Update your password.')
+                                createElement('p', { class: 'text-gray-500 text-sm' }, 'Update your password and security.')
                             )
                         ),
-                        createElement('button', { class: 'bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 w-full md:w-auto', onclick: () => { isSecurityModalOpen = true; updateUI(); } }, 'Update Security')
+                        createElement('button', { 
+                            class: 'bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 w-full md:w-auto', 
+                            onclick: () => { 
+                                isSecurityModalOpen = true; 
+                                updateUI(); 
+                            } 
+                        }, 'Update Security')
                     )
                 );
+                
                 renderModal();
             };
 
             const handlePasswordUpdate = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                if (formData.get('currentPassword') !== currentUser.password) return alert('Current password does not match.');
-                if (formData.get('newPassword') !== formData.get('confirmPassword')) return alert('New passwords do not match.');
-                const updatedUser = await liveDB.updateUser(currentUser.username, { password: formData.get('newPassword') });
+                
+                if (formData.get('currentPassword') !== currentUser.password) {
+                    alert('Current password does not match.');
+                    return;
+                }
+                
+                if (formData.get('newPassword') !== formData.get('confirmPassword')) {
+                    alert('New passwords do not match.');
+                    return;
+                }
+                
+                const updatedUser = await liveDB.updateUser(currentUser.username, { 
+                    password: formData.get('newPassword') 
+                });
+                
                 if (updatedUser) {
                     onAuthChange(updatedUser);
                     alert('Password updated successfully!');
@@ -607,35 +1110,95 @@
                     updateUI();
                 }
             };
-            const renderModal = () => Modal({
-                isOpen: isSecurityModalOpen, onClose: () => { isSecurityModalOpen = false; updateUI(); },
-                children: createElement('div', null,
-                    createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6 text-center' }, 'Update Password'),
-                    createElement('form', { class: 'space-y-4', onsubmit: handlePasswordUpdate },
-                        createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Current Password'), createElement('input', { type: 'password', name: 'currentPassword', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })),
-                        createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'New Password'), createElement('input', { type: 'password', name: 'newPassword', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })),
-                        createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Confirm New Password'), createElement('input', { type: 'password', name: 'confirmPassword', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })),
-                        createElement('button', { type: 'submit', class: 'w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg' }, 'Update Password')
-                    )
-                )
-            });
-            updateUI();
-            return container;
-        };
 
-        const LoginScreen = ({ onLogin, users }) => {
-            let error = '';
-            const container = createElement('div', { class: 'fixed inset-0 bg-slate-100 flex items-center justify-center z-50 p-4 animate-fade-in' });
+            const renderModal = () => {
+                if (!isSecurityModalOpen) return;
+                
+                Modal({
+                    isOpen: isSecurityModalOpen, 
+                    onClose: () => { 
+                        isSecurityModalOpen = false; 
+                        updateUI(); 
+                    },
+                    children: createElement('div', null,
+                        createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6 text-center' }, 'Update Password'),
+                        createElement('form', { class: 'space-y-4', onsubmit: handlePasswordUpdate },
+                            createElement('div', null, 
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Current Password'), 
+                                createElement('input', { 
+                                    type: 'password', 
+                                    name: 'currentPassword', 
+                                    required: true, 
+                                    class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                })
+                            ),
+                            createElement('div', null, 
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'New Password'), 
+                                createElement('input', { 
+                                    type: 'password', 
+                                    name: 'newPassword', 
+                                    required: true, 
+                                    class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                })
+                            ),
+                            createElement('div', null, 
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Confirm New Password'), 
+                                createElement('input', { 
+                                    type: 'password', 
+                                    name: 'confirmPassword', 
+                                    required: true, 
+                                    class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                })
+                            ),
+                            createElement('button', { 
+                                type: 'submit', 
+                                class: 'w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg' 
+                            }, 'Update Password')
+                        )
+                    )
+                });
+            };
+
+            // Subscribe to users updates
+            const unsubscribe = liveDB.subscribe('users', (data) => {
+                users = data;
+                updateUI();
+            });
             
+            // Initial data load
+            liveDB.getUsers().then(data => {
+                users = data;
+                updateUI();
+            });
+            
+            // Cleanup
+            container.cleanup = unsubscribe;
+            
+            return container;
+        }
+
+        const LoginScreen = ({ onLogin }) => {
+            const container = createElement('div', { 
+                class: 'min-h-screen bg-slate-100 flex items-center justify-center p-4 animate-fade-in' 
+            });
+            
+            let users = [];
+            let error = '';
+
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 error = '';
                 const formData = new FormData(e.target);
                 const username = formData.get('username');
                 const password = formData.get('password');
+                
                 const user = users.find(u => u.username === username && u.password === password);
+                
                 if (user) {
-                    const updatedUser = await liveDB.updateUser(username, { isOnline: true, lastLogin: new Date().toISOString() });
+                    const updatedUser = await liveDB.updateUser(username, { 
+                        isOnline: true, 
+                        lastLogin: new Date().toISOString() 
+                    });
                     if (updatedUser) onLogin(updatedUser);
                 } else {
                     error = 'Invalid username or password.';
@@ -645,70 +1208,99 @@
 
             const updateUI = () => {
                 container.innerHTML = '';
-                 container.append(
-                    createElement('div', { class: 'bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center animate-scale-up' },
+                
+                container.appendChild(
+                    createElement('div', { 
+                        class: 'bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center animate-scale-up' 
+                    },
                         createElement('div', { class: 'flex justify-center items-center gap-3 mb-4' },
-                            createElement('div', { class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' }, 'DH'),
+                            createElement('div', { 
+                                class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' 
+                            }, 'DH'),
                             createElement('span', { class: 'text-2xl font-extrabold text-slate-800' }, 'DigiHive')
                         ),
                         createElement('div', { class: 'my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500' },
-                            createElement('p', { class: 'text-blue-700 font-medium' }, 'Real-time collaborative dashboard')
+                            createElement('p', { class: 'text-blue-700 font-medium' }, 
+                                'Real-time collaborative dashboard with live team synchronization'
+                            )
                         ),
                         createElement('form', { class: 'space-y-4', onsubmit: handleSubmit },
-                            error && createElement('p', { class: 'text-red-500 text-sm' }, error),
-                            createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Username'), createElement('input', { type: 'text', name: 'username', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500', placeholder: 'Enter username' })),
-                            createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Password'), createElement('input', { type: 'password', name: 'password', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500', placeholder: 'Enter password' })),
-                            createElement('button', { type: 'submit', class: 'w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors' }, 'Login to Dashboard')
+                            error && createElement('p', { class: 'text-red-500 text-sm bg-red-50 p-2 rounded' }, error),
+                            createElement('div', null, 
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Username'), 
+                                createElement('input', { 
+                                    type: 'text', 
+                                    name: 'username', 
+                                    required: true, 
+                                    class: 'w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500', 
+                                    placeholder: 'Enter your username' 
+                                })
+                            ),
+                            createElement('div', null, 
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Password'), 
+                                createElement('input', { 
+                                    type: 'password', 
+                                    name: 'password', 
+                                    required: true, 
+                                    class: 'w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500', 
+                                    placeholder: 'Enter your password' 
+                                })
+                            ),
+                            createElement('button', { 
+                                type: 'submit', 
+                                class: 'w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-lg' 
+                            }, 'Login to Dashboard')
+                        ),
+                        createElement('div', { class: 'mt-4 text-sm text-gray-600' },
+                            'Demo accounts: admin/password, dev/password, designer/password'
                         )
                     )
                 );
             };
             
-            updateUI();
+            // Load users and initial UI
+            liveDB.getUsers().then(data => {
+                users = data;
+                updateUI();
+            });
+            
             return container;
-        };
+        }
 
         // --- MAIN APP ---
         function App() {
             const root = document.getElementById('root');
+            
+            // App state
             let currentUser = JSON.parse(localStorage.getItem('digihive_currentUser') || 'null');
             let currentPage = 'dashboard';
             let isSyncing = false;
             let lastSyncTime = 'just now';
             let isSidebarOpen = window.innerWidth >= 1024;
-            let users = [], comments = [], submissions = [], tasks = [];
-            
-            const updateData = (key, data) => {
-                switch(key) {
-                    case 'users': users = data; break;
-                    case 'comments': comments = data; break;
-                    case 'submissions': submissions = data; break;
-                    case 'tasks': tasks = data; break;
-                }
-                updateUI();
-            };
-            
-            ['users', 'comments', 'submissions', 'tasks'].forEach(key => {
-                liveDB.subscribe(key, (data) => updateData(key, data));
-                liveDB[`get${key.charAt(0).toUpperCase() + key.slice(1)}`]().then(data => updateData(key, data));
-            });
             
             const handleLogin = (user) => {
                 currentUser = user;
                 localStorage.setItem('digihive_currentUser', JSON.stringify(user));
                 updateUI();
             };
+            
             const handleLogout = async () => {
-                if (currentUser) await liveDB.updateUser(currentUser.username, { isOnline: false, lastLogout: new Date().toISOString() });
+                if (currentUser) {
+                    await liveDB.updateUser(currentUser.username, { 
+                        isOnline: false, 
+                        lastLogout: new Date().toISOString() 
+                    });
+                }
                 currentUser = null;
                 localStorage.removeItem('digihive_currentUser');
                 updateUI();
             };
+            
             const handleAuthChange = (user) => {
                 currentUser = user;
                 localStorage.setItem('digihive_currentUser', JSON.stringify(user));
             };
-
+            
             const triggerSync = () => {
                 isSyncing = true;
                 updateUI();
@@ -718,61 +1310,144 @@
                     updateUI();
                 }, 1000);
             };
+            
+            // Auto-sync every 30 seconds
             setInterval(triggerSync, 30000);
-
+            
             const renderPage = () => {
                 if (!currentUser) return null;
+                
                 switch (currentPage) {
-                    case 'dashboard': return DashboardPage({ currentUser, triggerSync, users, comments, submissions, tasks });
-                    case 'tasks': return TasksPage({ tasks });
-                    case 'submissions': return SubmissionsPage({ users, submissions });
-                    case 'team': return TeamPage({ currentUser, users });
-                    case 'settings': return SettingsPage({ currentUser, onAuthChange, users });
-                    default: return DashboardPage({ currentUser, triggerSync, users, comments, submissions, tasks });
+                    case 'dashboard': 
+                        return DashboardPage({ currentUser, triggerSync });
+                    case 'tasks': 
+                        return TasksPage();
+                    case 'submissions': 
+                        return SubmissionsPage();
+                    case 'team': 
+                        return TeamPage({ currentUser });
+                    case 'settings': 
+                        return SettingsPage({ currentUser, onAuthChange: handleAuthChange });
+                    default: 
+                        return DashboardPage({ currentUser, triggerSync });
                 }
             };
             
             function updateUI() {
                 root.innerHTML = '';
+                
                 if (!currentUser) {
-                    root.append(LoginScreen({ onLogin: handleLogin, users }));
+                    root.appendChild(LoginScreen({ onLogin: handleLogin }));
                     return;
                 }
                 
-                const mainContentContainer = createElement('div', { class: 'mt-10' });
-                const pageElement = renderPage();
-                if (pageElement) mainContentContainer.append(pageElement);
+                // Add sync indicator
+                root.appendChild(SyncStatusIndicator({ isSyncing, lastSyncTime }));
                 
                 const layout = createElement('div', { class: 'flex min-h-screen bg-slate-50' });
-                const main = createElement('main', { class: 'flex-1 transition-all duration-300 ease-in-out lg:ml-72 p-6 sm:p-8 md:p-12' });
-                const header = createElement('header', { class: 'flex justify-between items-center flex-wrap gap-4' },
-                    createElement('h1', { class: 'text-2xl md:text-4xl font-bold text-slate-800' }, PAGE_TITLES[currentPage]),
-                    createElement('div', { class: 'flex items-center gap-4' },
-                        createElement('button', { class: 'lg:hidden text-2xl text-gray-600', onclick: () => { isSidebarOpen = !isSidebarOpen; updateUI(); } }, createElement('i', { class: 'fas fa-bars' })),
-                        createElement('div', { class: 'flex items-center gap-3 bg-white p-2 rounded-full shadow-sm' },
-                            createElement('div', { class: `w-10 h-10 rounded-full ${TEAM_MAPPING[currentUser.team].color} text-white flex items-center justify-center font-bold` }, currentUser.username.substring(0, 2).toUpperCase()),
-                            createElement('span', { class: 'font-semibold text-sm hidden sm:block pr-2' }, currentUser.username)
-                        ),
-                        createElement('button', { title: 'Logout', class: 'text-gray-500 hover:text-red-500 text-2xl transition', onclick: handleLogout }, createElement('i', { class: 'fas fa-sign-out-alt' }))
+                
+                // Sidebar
+                const sidebar = createElement('aside', { 
+                    class: `fixed top-0 left-0 h-full w-72 bg-slate-800 text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${
+                        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                    } lg:translate-x-0 overflow-y-auto` 
+                });
+                
+                sidebar.appendChild(
+                    createElement('div', { class: 'flex items-center gap-3 mb-12 px-2' },
+                        createElement('div', { 
+                            class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' 
+                        }, 'DH'),
+                        createElement('span', { class: 'text-2xl font-extrabold text-slate-200' }, 'DigiHive')
                     )
                 );
                 
-                const sidebar = createElement('aside', { class: `fixed top-0 left-0 h-full w-72 bg-slate-800 text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 overflow-y-auto` });
-                sidebar.append(
-                    createElement('div', { class: 'flex items-center gap-3 mb-12 px-2' }, createElement('div', { class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' }, 'DH'), createElement('span', { class: 'text-2xl font-extrabold text-slate-200' }, 'DigiHive')),
-                    createElement('nav', null, createElement('ul', { class: 'space-y-2' }, ...Object.keys(PAGE_TITLES).map(p => createElement('li', null, createElement('a', { href: '#', class: `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${currentPage === p ? 'bg-blue-600 shadow-lg text-white' : 'text-slate-300'}`, onclick: e => { e.preventDefault(); currentPage = p; if (window.innerWidth < 1024) isSidebarOpen = false; updateUI(); } }, createElement('i', { class: `w-5 text-center text-lg fas ${PAGE_ICONS[p]}` }), createElement('span', null, PAGE_TITLES[p])))))),
-                    createElement('div', { class: 'mt-12' }, createElement('h3', { class: 'text-sm font-semibold text-slate-400 mb-4 px-2' }, 'TEAMS'), createElement('ul', { class: 'space-y-2' }, ...Object.values(TEAM_MAPPING).map(team => { const isOnline = users.some(u => u.team === team.name && u.isOnline); return createElement('li', { class: 'flex items-center gap-3 px-2 py-2' }, createElement('div', { class: `w-9 h-9 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` }, team.avatar), createElement('div', { class: 'flex-1' }, createElement('p', { class: 'text-sm font-semibold text-slate-200 leading-tight' }, team.name), createElement('p', { class: 'text-xs text-slate-400 leading-tight' }, team.role)), createElement('div', { class: `w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors ${isOnline ? 'bg-green-400' : 'bg-gray-400'}` })); })))
+                const navLinks = Object.keys(PAGE_TITLES).map(page => 
+                    createElement('li', null,
+                        createElement('a', { 
+                            href: '#', 
+                            class: `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${
+                                currentPage === page ? 'bg-blue-600 shadow-lg text-white' : 'text-slate-300'
+                            }`, 
+                            onclick: (e) => {
+                                e.preventDefault();
+                                currentPage = page;
+                                if (window.innerWidth < 1024) isSidebarOpen = false;
+                                updateUI();
+                            } 
+                        },
+                            createElement('i', { class: `w-5 text-center text-lg fas ${PAGE_ICONS[page]}` }),
+                            createElement('span', null, PAGE_TITLES[page])
+                        )
+                    )
                 );
                 
-                main.append(header, mainContentContainer);
-                layout.append(sidebar, main);
+                sidebar.appendChild(
+                    createElement('nav', null, 
+                        createElement('ul', { class: 'space-y-2' }, ...navLinks)
+                    )
+                );
+                
+                layout.appendChild(sidebar);
+                
+                // Overlay for mobile sidebar
                 if (isSidebarOpen && window.innerWidth < 1024) {
-                    layout.append(createElement('div', { class: 'fixed inset-0 bg-black/50 z-30 lg:hidden', onclick: () => { isSidebarOpen = false; updateUI(); } }));
+                    layout.appendChild(
+                        createElement('div', { 
+                            class: 'fixed inset-0 bg-black/50 z-30 lg:hidden', 
+                            onclick: () => { 
+                                isSidebarOpen = false; 
+                                updateUI(); 
+                            } 
+                        })
+                    );
                 }
-
-                root.append(SyncStatusIndicator({ isSyncing, lastSyncTime }), layout);
+                
+                // Main content area
+                const main = createElement('main', { 
+                    class: `flex-1 transition-all duration-300 ease-in-out ${
+                        window.innerWidth >= 1024 ? 'lg:ml-72' : ''
+                    } p-6 sm:p-8 md:p-12` 
+                });
+                
+                const header = createElement('header', { class: 'flex justify-between items-center flex-wrap gap-4' },
+                    createElement('h1', { class: 'text-2xl md:text-4xl font-bold text-slate-800' }, 
+                        PAGE_TITLES[currentPage] || 'Dashboard'
+                    ),
+                    createElement('div', { class: 'flex items-center gap-4' },
+                        createElement('button', { 
+                            class: 'lg:hidden text-2xl text-gray-600', 
+                            onclick: () => { 
+                                isSidebarOpen = !isSidebarOpen; 
+                                updateUI(); 
+                            } 
+                        }, createElement('i', { class: 'fas fa-bars' })),
+                        createElement('div', { class: 'flex items-center gap-3 bg-white p-2 rounded-full shadow-sm' },
+                            createElement('div', { 
+                                class: `w-10 h-10 rounded-full ${TEAM_MAPPING[currentUser.team].color} text-white flex items-center justify-center font-bold` 
+                            }, currentUser.username.substring(0, 2).toUpperCase()),
+                            createElement('span', { class: 'font-semibold text-sm hidden sm:block pr-2' }, currentUser.username)
+                        ),
+                        createElement('button', { 
+                            title: 'Logout', 
+                            class: 'text-gray-500 hover:text-red-500 text-2xl transition', 
+                            onclick: handleLogout 
+                        }, createElement('i', { class: 'fas fa-sign-out-alt' }))
+                    )
+                );
+                
+                const mainContentContainer = createElement('div', { class: 'mt-10' });
+                const pageElement = renderPage();
+                if (pageElement) mainContentContainer.appendChild(pageElement);
+                
+                main.appendChild(header);
+                main.appendChild(mainContentContainer);
+                layout.appendChild(main);
+                
+                root.appendChild(layout);
             }
             
+            // Handle window resize
             window.addEventListener('resize', () => {
                 const shouldBeOpen = window.innerWidth >= 1024;
                 if (isSidebarOpen !== shouldBeOpen) {
@@ -780,14 +1455,20 @@
                     updateUI();
                 }
             });
-
+            
+            // Update user online status on load
             if (currentUser) {
-                liveDB.updateUser(currentUser.username, { isOnline: true, lastLogin: new Date().toISOString() });
+                liveDB.updateUser(currentUser.username, { 
+                    isOnline: true,
+                    lastLogin: new Date().toISOString()
+                });
             }
-
+            
+            // Initial render
             updateUI();
         }
 
+        // Initialize the app
         document.addEventListener('DOMContentLoaded', App);
     </script>
 </body>
