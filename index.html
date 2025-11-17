@@ -79,33 +79,49 @@
                 if (!localStorage.getItem('digihive_comments')) localStorage.setItem('digihive_comments', '[]');
                 if (!localStorage.getItem('digihive_submissions')) localStorage.setItem('digihive_submissions', '[]');
                 if (!localStorage.getItem('digihive_tasks')) {
-                     const initialTasks = Object.keys(TEAM_MAPPING).map((team, i) => ({
-                        id: i + 1,
-                        subject: `${team} Kick-off Meeting`,
-                        startDate: new Date(Date.now() + 86400000 * (i + 1)).toISOString(),
-                        endDate: new Date(Date.now() + 86400000 * (i + 2)).toISOString(),
-                        description: `Initial planning and strategy session for the ${team} team.`,
-                        team: team,
-                        status: i % 2 === 0 ? 'pending' : 'in-progress',
-                    }));
+                     const initialTasks = [
+                        { id: 1, subject: "Full-stack Week 1 Server Infrastructure", startDate: "2026-01-13T09:00:00.000Z", endDate: "2026-01-13T11:00:00.000Z", description: "Set up cloud server environment. Configure database architecture. Implement basic security protocols. Create deployment pipeline.", team: "Full-Stack", status: "pending" },
+                        { id: 2, subject: "Full-stack Week 1 Database Setup", startDate: "2026-01-14T09:00:00.000Z", endDate: "2026-01-14T11:00:00.000Z", description: "Design database schemas. Set up user tables and relationships. Implement data migration scripts. Create backup systems.", team: "Full-Stack", status: "pending" },
+                        { id: 3, subject: "UI/UX Week 1 Design System", startDate: "2026-01-13T11:00:00.000Z", endDate: "2026-01-13T13:00:00.000Z", description: "Create brand color palette. Design typography system. Build component library. Establish design principles.", team: "UI/UX", status: "pending" },
+                        { id: 4, subject: "UI/UX Week 1 Wireframes", startDate: "2026-01-14T11:00:00.000Z", endDate: "2026-01-14T13:00:00.000Z", description: "Create homepage wireframes. Design user onboarding flow. Map seller dashboard layout. Prototype product listing pages.", team: "UI/UX", status: "pending" },
+                        { id: 5, subject: "Marketing Week 1 Competitor Analysis", startDate: "2026-01-13T14:00:00.000Z", endDate: "2026-01-13T16:00:00.000Z", description: "Research 5 competitor platforms. Analyze their pricing strategies. Study user acquisition methods. Identify market gaps.", team: "Marketing", status: "pending" },
+                        { id: 6, subject: "Marketing Week 1 Target Audience", startDate: "2026-01-14T14:00:00.000Z", endDate: "2026-01-14T16:00:00.000Z", description: "Define primary user personas. Research creator demographics. Identify buyer pain points. Create audience segmentation.", team: "Marketing", status: "pending" },
+                        { id: 7, subject: "Support Week 1 Helpdesk Setup", startDate: "2026-01-13T16:00:00.000Z", endDate: "2026-01-13T17:30:00.000Z", description: "Choose helpdesk software. Set up ticketing system. Create support categories. Configure automation rules.", team: "Support", status: "planned" },
+                        { id: 8, subject: "Support Week 1 Documentation", startDate: "2026-01-14T16:00:00.000Z", endDate: "2026-01-14T17:30:00.000Z", description: "Create documentation structure. Write getting started guides. Develop FAQ templates. Set up knowledge base.", team: "Support", status: "planned" },
+                        { id: 9, subject: "Content Week 1 Content Calendar", startDate: "2026-01-13T13:00:00.000Z", endDate: "2026-01-13T15:00:00.000Z", description: "Plan 3-month content calendar. Research trending topics. Schedule blog post topics. Plan social media content.", team: "Content", status: "in-progress" },
+                        { id: 10, subject: "Content Week 1 Platform Setup", startDate: "2026-01-14T13:00:00.000Z", endDate: "2026-01-14T15:00:00.000Z", description: "Set up blog platform. Create social media accounts. Configure email newsletter. Set up analytics tracking.", team: "Content", status: "in-progress" },
+                        { id: 11, subject: "Full-stack Week 2 Auth API", startDate: "2026-01-20T09:00:00.000Z", endDate: "2026-01-20T11:00:00.000Z", description: "Implement user registration. Create login/logout endpoints. Set up password reset. Configure session management.", team: "Full-Stack", status: "pending" },
+                        { id: 12, subject: "Full-stack Week 2 Basic Endpoints", startDate: "2026-01-21T09:00:00.000Z", endDate: "2026-01-21T11:00:00.000Z", description: "Create product API endpoints. Implement user profile endpoints. Build file upload system. Set up basic search functionality.", team: "Full-Stack", status: "pending" },
+                        { id: 13, subject: "UI/UX Week 2 Landing Page", startDate: "2026-01-20T11:00:00.000Z", endDate: "2026-01-20T13:00:00.000Z", description: "Design homepage layout. Create hero section. Design feature showcase. Build call-to-action elements.", team: "UI/UX", status: "pending" },
+                        { id: 14, subject: "UI/UX Week 2 Onboarding Flows", startDate: "2026-01-21T11:00:00.000Z", endDate: "2026-01-21T13:00:00.000Z", description: "Design user signup flow. Create seller onboarding. Build product upload process. Design dashboard navigation.", team: "UI/UX", status: "pending" },
+                        { id: 15, subject: "Marketing Week 2 SEO Strategy", startDate: "2026-01-20T14:00:00.000Z", endDate: "2026-01-20T16:00:00.000Z", description: "Research primary keywords. Optimize website structure. Create meta description strategy. Plan content optimization.", team: "Marketing", status: "pending" },
+                        { id: 16, subject: "Marketing Week 2 Social Media", startDate: "2026-01-21T14:00:00.000Z", endDate: "2026-01-21T16:00:00.000Z", description: "Set up business profiles. Create posting schedule. Design brand visuals. Plan engagement strategy.", team: "Marketing", status: "pending" },
+                        { id: 17, subject: "Support Week 2 FAQ Database", startDate: "2026-01-20T16:00:00.000Z", endDate: "2026-01-20T17:30:00.000Z", description: "Create common question list. Write detailed answers. Organize by categories. Set up search functionality.", team: "Support", status: "planned" },
+                        { id: 18, subject: "Support Week 2 Response Templates", startDate: "2026-01-21T16:00:00.000Z", endDate: "2026-01-21T17:30:00.000Z", description: "Develop email templates. Create chat responses. Make video tutorial outlines. Set up template library.", team: "Support", status: "planned" },
+                        { id: 19, subject: "Content Week 2 Blog Posts", startDate: "2026-01-20T13:00:00.000Z", endDate: "2026-01-20T15:00:00.000Z", description: "Write first blog article. Create supporting graphics. Optimize for SEO. Schedule publication.", team: "Content", status: "in-progress" },
+                        { id: 20, subject: "Content Week 2 Educational Content", startDate: "2026-01-21T13:00:00.000Z", endDate: "2026-01-21T15:00:00.000Z", description: "Create how-to guides. Make video tutorials. Develop infographics. Plan content series.", team: "Content", status: "in-progress" }
+                    ];
                     localStorage.setItem('digihive_tasks', JSON.stringify(initialTasks));
                 }
             }
 
             loadFromStorage(key) { return JSON.parse(localStorage.getItem(`digihive_${key}`) || '[]'); }
             saveToStorage(key, data) {
+                // Correctly save to localStorage. The browser will automatically
+                // dispatch the 'storage' event to other tabs/windows.
                 localStorage.setItem(`digihive_${key}`, JSON.stringify(data));
-                window.dispatchEvent(new StorageEvent('storage', { key: `digihive_${key}`, newValue: JSON.stringify(data) }));
             }
             setupStorageSync() {
                 window.addEventListener('storage', (e) => {
                     if (e.key?.startsWith('digihive_')) {
                         const key = e.key.replace('digihive_', '');
-                        try {
-                            const newData = JSON.parse(e.newValue || '[]');
-                            this[key] = newData;
-                            this.notifyListeners(key, newData);
-                        } catch (error) { console.error('Error syncing storage:', error); }
+                        if (e.newValue !== e.oldValue) {
+                            try {
+                                const newData = JSON.parse(e.newValue || '[]');
+                                this[key] = newData;
+                                this.notifyListeners(key, newData);
+                            } catch (error) { console.error('Error syncing storage:', error); }
+                        }
                     }
                 });
             }
@@ -188,11 +204,11 @@
 
         // --- COMPONENTS ---
         const Modal = ({ isOpen, onClose, children, size = 'md' }) => {
-            if (!isOpen) {
-                const existingModal = document.getElementById('modal-container');
-                if (existingModal) existingModal.remove();
-                return null;
-            }
+            const existingModal = document.getElementById('modal-container');
+            if (existingModal) existingModal.remove();
+            
+            if (!isOpen) return null;
+            
             const sizeClasses = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-4xl' };
             const modalContainer = createElement('div', { id: 'modal-container', class: 'fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in' });
             const modalContent = createElement('div', { class: `bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative animate-scale-up` });
@@ -200,16 +216,13 @@
             
             modalContent.appendChild(closeButton);
             if (Array.isArray(children)) {
-                children.forEach(child => modalContent.appendChild(child));
+                children.forEach(child => child && modalContent.appendChild(child));
             } else {
-                modalContent.appendChild(children);
+                if (children) modalContent.appendChild(children);
             }
             
             modalContainer.appendChild(modalContent);
             modalContainer.onclick = (e) => { if (e.target === modalContainer) onClose(); };
-            
-            const existingModal = document.getElementById('modal-container');
-            if (existingModal) existingModal.remove();
             
             document.body.appendChild(modalContainer);
             return modalContainer;
@@ -389,6 +402,59 @@
             };
 
             updateUI();
+            return container;
+        };
+
+        const TasksPage = ({ tasks }) => {
+            const container = createElement('div', { class: 'space-y-6' });
+            
+            const getStatusChip = (status) => {
+                const statuses = {
+                    pending: { text: 'Pending', class: 'bg-yellow-100 text-yellow-800' },
+                    'in-progress': { text: 'In Progress', class: 'bg-blue-100 text-blue-800' },
+                    completed: { text: 'Completed', class: 'bg-green-100 text-green-800' },
+                    planned: { text: 'Planned', class: 'bg-gray-100 text-gray-800' },
+                };
+                const s = statuses[status] || statuses.planned;
+                return createElement('div', { class: `px-3 py-1 text-xs font-semibold rounded-full ${s.class}` }, s.text);
+            };
+
+            const taskGrid = createElement('div', { class: 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' });
+
+            if (tasks.length > 0) {
+                 tasks.sort((a, b) => new Date(a.startDate) - new Date(b.startDate)).forEach(task => {
+                    const teamInfo = TEAM_MAPPING[task.team];
+                    taskGrid.append(
+                        createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-300' },
+                            createElement('div', null,
+                                createElement('div', { class: 'flex justify-between items-start mb-3' },
+                                    createElement('h3', { class: 'text-lg font-bold text-slate-800 pr-2' }, task.subject),
+                                    getStatusChip(task.status)
+                                ),
+                                createElement('div', { class: 'flex items-center gap-2 mb-4' },
+                                   createElement('div', { class: `w-6 h-6 ${teamInfo.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` }, teamInfo.avatar),
+                                   createElement('span', { class: 'text-sm font-semibold text-gray-600' }, task.team)
+                                ),
+                                createElement('p', { class: 'text-sm text-gray-600 mb-4 h-20 overflow-y-auto' }, task.description)
+                            ),
+                            createElement('div', { class: 'text-xs text-gray-500 border-t pt-3 mt-auto' },
+                                createElement('p', null, `Start: ${new Date(task.startDate).toLocaleString()}`),
+                                createElement('p', null, `End: ${new Date(task.endDate).toLocaleString()}`)
+                            )
+                        )
+                    );
+                });
+                container.append(taskGrid);
+            } else {
+                container.append(
+                    createElement('div', { class: 'bg-white rounded-2xl p-12 shadow-sm text-center text-gray-500' },
+                        createElement('i', { class: 'fas fa-tasks text-4xl mb-3' }),
+                        createElement('h3', { class: 'text-xl font-bold' }, 'No Tasks Found'),
+                        createElement('p', null, 'Tasks for the teams will appear here.')
+                    )
+                );
+            }
+
             return container;
         };
 
@@ -590,8 +656,8 @@
                         ),
                         createElement('form', { class: 'space-y-4', onsubmit: handleSubmit },
                             error && createElement('p', { class: 'text-red-500 text-sm' }, error),
-                            createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Username'), createElement('input', { type: 'text', name: 'username', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500', placeholder: 'e.g., admin' })),
-                            createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Password'), createElement('input', { type: 'password', name: 'password', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500', placeholder: 'e.g., password' })),
+                            createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Username'), createElement('input', { type: 'text', name: 'username', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500', placeholder: 'Enter username' })),
+                            createElement('div', null, createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Password'), createElement('input', { type: 'password', name: 'password', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500', placeholder: 'Enter password' })),
                             createElement('button', { type: 'submit', class: 'w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors' }, 'Login to Dashboard')
                         )
                     )
@@ -658,6 +724,7 @@
                 if (!currentUser) return null;
                 switch (currentPage) {
                     case 'dashboard': return DashboardPage({ currentUser, triggerSync, users, comments, submissions, tasks });
+                    case 'tasks': return TasksPage({ tasks });
                     case 'submissions': return SubmissionsPage({ users, submissions });
                     case 'team': return TeamPage({ currentUser, users });
                     case 'settings': return SettingsPage({ currentUser, onAuthChange, users });
@@ -673,7 +740,8 @@
                 }
                 
                 const mainContentContainer = createElement('div', { class: 'mt-10' });
-                mainContentContainer.append(renderPage());
+                const pageElement = renderPage();
+                if (pageElement) mainContentContainer.append(pageElement);
                 
                 const layout = createElement('div', { class: 'flex min-h-screen bg-slate-50' });
                 const main = createElement('main', { class: 'flex-1 transition-all duration-300 ease-in-out lg:ml-72 p-6 sm:p-8 md:p-12' });
