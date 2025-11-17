@@ -3,1235 +3,1629 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DigiHive Team Dashboard - Live Sync</title>
+    <title>DigiHive - Live Team Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
-      body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        background-color: #F8FAFC;
-        color: #1A1A2E;
-      }
-      @keyframes fade-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      @keyframes scale-up {
-        from { transform: scale(0.95); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-      }
-      @keyframes pulse-sync {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-      }
-      @keyframes slide-in-right {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-      .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
-      .animate-scale-up { animation: scale-up 0.3s ease-out forwards; }
-      .animate-pulse-sync { animation: pulse-sync 2s infinite; }
-      .animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #F8FAFC;
+            color: #1A1A2E;
+            overflow-x: hidden;
+        }
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scale-up {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pulse-sync {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes slide-in-right {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        .animate-scale-up { animation: scale-up 0.3s ease-out forwards; }
+        .animate-pulse-sync { animation: pulse-sync 2s infinite; }
+        .animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .mobile-hidden {
+                display: none;
+            }
+            .mobile-full {
+                width: 100%;
+            }
+            .mobile-stack {
+                flex-direction: column;
+            }
+            .mobile-p-4 {
+                padding: 1rem;
+            }
+            .mobile-text-center {
+                text-align: center;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen bg-gray-50">
     <div id="root"></div>
 
-<script type="module">
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-
-const { useState, useEffect, useCallback, useMemo, StrictMode } = React;
-
-// --- CONSTANTS ---
-const ADMIN_CODE = '212259497';
-
-const teamMapping = {
-    'Administrator': { name: 'Administrator', color: 'bg-[#E53E3E]', avatar: 'AD', className: 'Administrator', role: 'System Administration' },
-    'Full-Stack': { name: 'Full-Stack', color: 'bg-[#2A5CAA]', avatar: 'FS', className: 'FullStack', role: 'Development Team' },
-    'UI/UX': { name: 'UI/UX', color: 'bg-[#673AB7]', avatar: 'UX', className: 'UIUX', role: 'Design Team' },
-    'Marketing': { name: 'Marketing', color: 'bg-[#4CAF50]', avatar: 'MK', className: 'Marketing', role: 'Marketing Team' },
-    'Support': { name: 'Support', color: 'bg-[#009688]', avatar: 'ST', className: 'Support', role: 'Support Team' },
-    'Content': { name: 'Content', color: 'bg-[#FF9800]', avatar: 'CT', className: 'Content', role: 'Content Team' },
-};
-
-const pageTitles = {
-    dashboard: 'Dashboard',
-    tasks: 'My Tasks - Full List',
-    submissions: 'Past Submissions Archive',
-    team: 'Team Directory',
-    settings: 'Settings'
-};
-
-// --- REAL-TIME DATABASE SIMULATION ---
-class LiveDatabase {
-    constructor() {
-        this.users = this.loadFromStorage('digihive_live_users') || [];
-        this.comments = this.loadFromStorage('digihive_live_comments') || [];
-        this.submissions = this.loadFromStorage('digihive_live_submissions') || [];
-        this.tasks = this.loadFromStorage('digihive_live_tasks') || this.generateInitialTasks();
-        this.listeners = new Map();
-        
-        // Initialize with some demo data if empty
-        if (this.users.length === 0) {
-            this.initializeDemoData();
-        }
-        
-        this.setupStorageSync();
-    }
-
-    initializeDemoData() {
-        // Add some initial users
-        const initialUsers = [
-            { username: 'admin', password: 'password', team: 'Administrator', isOnline: false, lastLogin: null, lastLogout: null },
-            { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false, lastLogin: null, lastLogout: null },
-            { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false, lastLogin: null, lastLogout: null },
-            { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false, lastLogin: null, lastLogout: null },
-            { username: 'support', password: 'password', team: 'Support', isOnline: false, lastLogin: null, lastLogout: null },
-            { username: 'writer', password: 'password', team: 'Content', isOnline: false, lastLogin: null, lastLogout: null }
-        ];
-        this.users = initialUsers;
-        this.saveToStorage('digihive_live_users', initialUsers);
-    }
-
-    generateInitialTasks() {
-        const tasks = [
-            {
-                id: 1,
-                subject: "Platform Security Audit",
-                startDate: new Date(Date.now() + 86400000).toISOString(),
-                endDate: new Date(Date.now() + 172800000).toISOString(),
-                description: "Complete security assessment and vulnerability testing",
-                team: "Administrator",
-                status: "pending"
-            },
-            {
-                id: 2,
-                subject: "API Integration Development",
-                startDate: new Date(Date.now() + 432000000).toISOString(),
-                endDate: new Date(Date.now() + 518400000).toISOString(),
-                description: "Develop and test third-party API integrations",
-                team: "Full-Stack",
-                status: "pending"
-            },
-            {
-                id: 3,
-                subject: "User Interface Redesign",
-                startDate: new Date(Date.now() + 259200000).toISOString(),
-                endDate: new Date(Date.now() + 345600000).toISOString(),
-                description: "Redesign dashboard interface for better user experience",
-                team: "UI/UX",
-                status: "in-progress"
+    <script>
+        // Initialize data if not exists
+        function initializeData() {
+            if (!localStorage.getItem('digihive_users')) {
+                const initialUsers = [
+                    { username: 'admin', password: 'password', team: 'Administrator', isOnline: false, lastLogin: null, lastLogout: null },
+                    { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false, lastLogin: null, lastLogout: null },
+                    { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false, lastLogin: null, lastLogout: null },
+                    { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false, lastLogin: null, lastLogout: null },
+                    { username: 'support', password: 'password', team: 'Support', isOnline: false, lastLogin: null, lastLogout: null },
+                    { username: 'writer', password: 'password', team: 'Content', isOnline: false, lastLogin: null, lastLogout: null }
+                ];
+                localStorage.setItem('digihive_users', JSON.stringify(initialUsers));
             }
-        ];
-        this.saveToStorage('digihive_live_tasks', tasks);
-        return tasks;
-    }
-
-    setupStorageSync() {
-        window.addEventListener('storage', (e) => {
-            if (e.key && e.key.startsWith('digihive_live_')) {
-                const key = e.key;
-                try {
-                    const newData = JSON.parse(e.newValue || '[]');
-                    const oldData = JSON.parse(e.oldValue || '[]');
-                    
-                    if (JSON.stringify(newData) !== JSON.stringify(oldData)) {
-                        this[key] = newData;
-                        this.notifyListeners(key.replace('digihive_live_', ''), newData);
-                    }
-                } catch (error) {
-                    console.error('Error syncing storage:', error);
-                }
-            }
-        });
-    }
-
-    loadFromStorage(key) {
-        try {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : null;
-        } catch (error) {
-            console.error('Error loading from storage:', error);
-            return null;
-        }
-    }
-
-    saveToStorage(key, data) {
-        try {
-            localStorage.setItem(key, JSON.stringify(data));
-            // Trigger storage event for other tabs
-            window.dispatchEvent(new StorageEvent('storage', {
-                key: key,
-                newValue: JSON.stringify(data),
-                oldValue: localStorage.getItem(key),
-                storageArea: localStorage
-            }));
-        } catch (error) {
-            console.error('Error saving to storage:', error);
-        }
-    }
-
-    subscribe(key, callback) {
-        if (!this.listeners.has(key)) {
-            this.listeners.set(key, new Set());
-        }
-        this.listeners.get(key).add(callback);
-        
-        return () => {
-            if (this.listeners.has(key)) {
-                this.listeners.get(key).delete(callback);
-            }
-        };
-    }
-
-    notifyListeners(key, data) {
-        if (this.listeners.has(key)) {
-            this.listeners.get(key).forEach(callback => callback(data));
-        }
-    }
-
-    // User methods
-    async getUsers() {
-        return [...this.users];
-    }
-
-    async updateUser(username, updates) {
-        const userIndex = this.users.findIndex(u => u.username === username);
-        if (userIndex !== -1) {
-            this.users[userIndex] = { ...this.users[userIndex], ...updates };
-            this.saveToStorage('digihive_live_users', this.users);
-            this.notifyListeners('users', this.users);
-        }
-    }
-
-    async addUser(user) {
-        this.users.push(user);
-        this.saveToStorage('digihive_live_users', this.users);
-        this.notifyListeners('users', this.users);
-    }
-
-    async removeUser(username) {
-        this.users = this.users.filter(u => u.username !== username);
-        this.saveToStorage('digihive_live_users', this.users);
-        this.notifyListeners('users', this.users);
-    }
-
-    // Comment methods
-    async getComments() {
-        return [...this.comments];
-    }
-
-    async addComment(comment) {
-        const newComment = {
-            ...comment,
-            id: Date.now(),
-            timestamp: new Date().toISOString()
-        };
-        this.comments.unshift(newComment);
-        this.saveToStorage('digihive_live_comments', this.comments);
-        this.notifyListeners('comments', this.comments);
-        return newComment;
-    }
-
-    // Submission methods
-    async getSubmissions() {
-        return [...this.submissions];
-    }
-
-    async addSubmission(submission) {
-        const newSubmission = {
-            ...submission,
-            id: Date.now(),
-            timestamp: new Date().toISOString()
-        };
-        this.submissions.unshift(newSubmission);
-        this.saveToStorage('digihive_live_submissions', this.submissions);
-        this.notifyListeners('submissions', this.submissions);
-        return newSubmission;
-    }
-
-    // Task methods
-    async getTasks() {
-        return [...this.tasks];
-    }
-}
-
-// Create global database instance
-const liveDB = new LiveDatabase();
-
-// --- HOOKS ---
-function useLiveData(key, initialValue = []) {
-    const [data, setData] = useState(initialValue);
-
-    useEffect(() => {
-        // Load initial data
-        const loadInitialData = async () => {
-            switch (key) {
-                case 'users':
-                    setData(await liveDB.getUsers());
-                    break;
-                case 'comments':
-                    setData(await liveDB.getComments());
-                    break;
-                case 'submissions':
-                    setData(await liveDB.getSubmissions());
-                    break;
-                case 'tasks':
-                    setData(await liveDB.getTasks());
-                    break;
-            }
-        };
-        
-        loadInitialData();
-
-        // Subscribe to changes
-        const unsubscribe = liveDB.subscribe(key, setData);
-        return unsubscribe;
-    }, [key]);
-
-    return data;
-}
-
-function useLocalStorage(key, initialValue) {
-    const [value, setValue] = useState(() => {
-        try {
-            const item = localStorage.getItem(key);
-            return item ? JSON.parse(item) : initialValue;
-        } catch (error) {
-            return initialValue;
-        }
-    });
-
-    useEffect(() => {
-        localStorage.setItem(key, JSON.stringify(value));
-    }, [key, value]);
-
-    return [value, setValue];
-}
-
-// --- COMPONENTS ---
-const Modal = ({ isOpen, onClose, children, size = 'md' }) => {
-    useEffect(() => {
-        const handleEsc = (event) => {
-            if (event.key === 'Escape') onClose();
-        };
-        if (isOpen) window.addEventListener('keydown', handleEsc);
-        return () => window.removeEventListener('keydown', handleEsc);
-    }, [isOpen, onClose]);
-
-    if (!isOpen) return null;
-
-    const sizeClasses = {
-        sm: 'max-w-sm',
-        md: 'max-w-md',
-        lg: 'max-w-2xl',
-        xl: 'max-w-4xl',
-    };
-
-    return React.createElement('div', { 
-        className: "fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in",
-        onClick: onClose 
-    },
-        React.createElement('div', { 
-            className: `bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative animate-scale-up`,
-            onClick: (e) => e.stopPropagation() 
-        },
-            React.createElement('button', { 
-                className: "absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl",
-                onClick: onClose 
-            }, React.createElement('i', { className: "fas fa-times" })),
-            children
-        )
-    );
-};
-
-const SyncStatusIndicator = ({ isSyncing, lastSyncTime }) => {
-    return React.createElement('div', { 
-        className: `fixed top-4 right-4 z-40 flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-300 ${
-            isSyncing ? 'bg-blue-500 text-white animate-pulse-sync' : 'bg-green-500 text-white'
-        } animate-slide-in-right` 
-    },
-        React.createElement('i', { 
-            className: `fas ${isSyncing ? 'fa-sync-alt fa-spin' : 'fa-check-circle'}` 
-        }),
-        React.createElement('span', { className: "text-sm font-medium" },
-            isSyncing ? 'Syncing...' : `Live - ${lastSyncTime}`
-        )
-    );
-};
-
-const TeamPresenceHeader = ({ users }) => {
-    const onlineTeams = Object.values(teamMapping).filter(team => 
-        users.some(user => user.team === team.name && user.isOnline)
-    ).length;
-    
-    const totalTeams = Object.keys(teamMapping).length;
-    const onlineUsers = users.filter(user => user.isOnline).length;
-
-    return React.createElement('div', { className: "bg-white rounded-2xl p-4 shadow-sm mb-6" },
-        React.createElement('div', { className: "flex items-center justify-between" },
-            React.createElement('div', { className: "flex items-center gap-3" },
-                React.createElement('div', { className: "flex items-center gap-2" },
-                    React.createElement('div', { className: "w-3 h-3 rounded-full bg-green-500 animate-pulse" }),
-                    React.createElement('span', { className: "font-bold text-slate-800" }, "Live Team Status")
-                ),
-                React.createElement('span', { className: "text-sm text-gray-600" }, 
-                    `${onlineUsers} users online • ${onlineTeams} of ${totalTeams} teams active`
-                )
-            ),
-            React.createElement('div', { className: "hidden md:flex items-center gap-2" },
-                {Object.values(teamMapping).map(team => {
-                    const isOnline = users.some(user => user.team === team.name && user.isOnline);
-                    const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
-                    return React.createElement('div', { 
-                        key: team.name, 
-                        className: "flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50"
-                    },
-                        React.createElement('div', { 
-                            className: `w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
-                        }),
-                        React.createElement('span', { className: "text-sm font-medium text-slate-700" }, team.avatar),
-                        isOnline && onlineCount > 1 && 
-                            React.createElement('span', { className: "text-xs bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center" }, onlineCount)
-                    );
-                })}
-            )
-        ),
-        React.createElement('div', { className: "mt-3 md:hidden grid grid-cols-3 gap-2" },
-            {Object.values(teamMapping).map(team => {
-                const isOnline = users.some(user => user.team === team.name && user.isOnline);
-                const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
-                return React.createElement('div', { 
-                    key: team.name, 
-                    className: "flex items-center gap-2 p-2 rounded-lg bg-gray-50 text-sm"
-                },
-                    React.createElement('div', { 
-                        className: `w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
-                    }),
-                    React.createElement('span', { className: "font-medium text-slate-700" }, team.avatar),
-                    isOnline && onlineCount > 1 && 
-                        React.createElement('span', { className: "text-xs bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center" }, onlineCount)
-                );
-            })}
-        )
-    );
-};
-
-const CommentsSection = ({ currentUser, onSyncTrigger }) => {
-    const comments = useLiveData('comments', []);
-    const [newComment, setNewComment] = useState('');
-
-    const handleSubmitComment = async (e) => {
-        e.preventDefault();
-        if (newComment.trim() === '') return;
-
-        await liveDB.addComment({
-            username: currentUser.username,
-            team: currentUser.team,
-            text: newComment.trim(),
-        });
-
-        setNewComment('');
-        if (onSyncTrigger) onSyncTrigger();
-    };
-
-    return React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col" },
-        React.createElement('div', { className: "flex items-center justify-between mb-4" },
-            React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, "Team Comments"),
-            React.createElement('div', { className: "flex items-center gap-2 text-sm text-green-600 bg-green-50 px-2 py-1 rounded" },
-                React.createElement('i', { className: "fas fa-sync-alt" }),
-                React.createElement('span', null, "Live Updates")
-            )
-        ),
-        React.createElement('form', { onSubmit: handleSubmitComment, className: "mb-4 flex gap-3" },
-            React.createElement('input', {
-                type: "text",
-                value: newComment,
-                onChange: (e) => setNewComment(e.target.value),
-                placeholder: "Leave a comment about your tasks or challenges...",
-                className: "flex-grow w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500"
-            }),
-            React.createElement('button', { 
-                type: "submit", 
-                className: "bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2" 
-            }, 
-                React.createElement('i', { className: "fas fa-paper-plane" }),
-                "Post"
-            )
-        ),
-        React.createElement('div', { className: "flex-1 overflow-y-auto pr-2 space-y-4" },
-            comments.length === 0 ? (
-                React.createElement('div', { className: "text-center text-gray-400 pt-8" },
-                    React.createElement('i', { className: "fas fa-comments text-4xl mb-2" }),
-                    React.createElement('p', null, "No comments yet. Be the first to post!")
-                )
-            ) : (
-                comments.map(comment => {
-                    const commentTeamInfo = teamMapping[comment.team];
-                    return React.createElement('div', { key: comment.id, className: "flex items-start gap-3" },
-                        React.createElement('div', { className: `w-10 h-10 ${commentTeamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` },
-                            comment.username.substring(0, 2).toUpperCase()
-                        ),
-                        React.createElement('div', { className: "flex-1 bg-gray-50 rounded-lg p-3" },
-                            React.createElement('div', { className: "flex justify-between items-baseline" },
-                                React.createElement('p', { className: "font-bold text-slate-700" }, 
-                                    comment.username,
-                                    React.createElement('span', { className: "font-normal text-sm text-gray-500 ml-1.5" }, `(${comment.team})`)
-                                ),
-                                React.createElement('p', { className: "text-xs text-gray-400" }, new Date(comment.timestamp).toLocaleString())
-                            ),
-                            React.createElement('p', { className: "text-sm text-gray-800 mt-1" }, comment.text)
-                        )
-                    );
-                })
-            )
-        )
-    );
-};
-
-const Header = ({ user, onLogout, toggleSidebar, pageTitle }) => {
-    return React.createElement('header', { className: "flex justify-between items-center" },
-        React.createElement('div', null,
-            React.createElement('h1', { className: "text-2xl md:text-4xl font-bold text-[#1A1A2E]" },
-                pageTitles[pageTitle] || 'Dashboard'
-            )
-        ),
-        React.createElement('div', { className: "flex items-center gap-4" },
-            React.createElement('button', { onClick: toggleSidebar, className: "lg:hidden text-2xl text-gray-600" },
-                React.createElement('i', { className: "fas fa-bars" })
-            ),
-            React.createElement('div', { className: "flex items-center gap-3 bg-white p-2 rounded-full shadow-sm" },
-                React.createElement('div', { className: "w-10 h-10 rounded-full bg-[#2A5CAA] text-white flex items-center justify-center font-bold" },
-                    user.username.substring(0, 2).toUpperCase()
-                ),
-                React.createElement('span', { className: "font-semibold text-sm hidden sm:block pr-2" }, user.username)
-            ),
-            React.createElement('button', { onClick: onLogout, className: "text-gray-500 hover:text-red-500", title: "Logout" },
-                React.createElement('i', { className: "fas fa-sign-out-alt text-xl" })
-            )
-        )
-    );
-};
-
-const Sidebar = ({ currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen, users }) => {
-    const handleNavClick = (page) => {
-        setCurrentPage(page);
-        if (window.innerWidth < 1024) setSidebarOpen(false);
-    };
-
-    const navLinks = Object.keys(pageTitles).map(page => {
-        const icons = {
-            dashboard: 'fa-chart-line', tasks: 'fa-tasks', submissions: 'fa-file-archive', team: 'fa-users', settings: 'fa-cog'
-        };
-        const isActive = currentPage === page;
-        if (!icons[page]) return null;
-        return React.createElement('li', { key: page },
-            React.createElement('a', { href: "#", onClick: (e) => { e.preventDefault(); handleNavClick(page); }, className: `nav-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-slate-200 opacity-80 hover:bg-white/10 hover:opacity-100 ${isActive ? 'bg-[#2A5CAA] opacity-100 shadow-lg' : ''}` },
-                React.createElement('i', { className: `w-5 text-center text-lg fas ${icons[page]}` }),
-                React.createElement('span', null, pageTitles[page])
-            )
-        );
-    }).filter(Boolean);
-
-    const teamMembers = Object.values(teamMapping).map(team => {
-        const isAnyMemberOnline = users.some(user => user.team === team.name && user.isOnline);
-        const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
-        return React.createElement('li', { key: team.name, className: "flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200" },
-            React.createElement('div', { className: `w-9 h-9 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` }, team.avatar),
-            React.createElement('div', { className: "flex-1" },
-                React.createElement('p', { className: "text-sm font-semibold text-slate-200 leading-tight" }, team.name),
-                React.createElement('p', { className: "text-xs text-slate-200 opacity-70 leading-tight" }, team.role)
-            ),
-            React.createElement('div', { className: "flex items-center gap-1" },
-                React.createElement('div', { className: `w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors ${isAnyMemberOnline ? 'bg-green-400' : 'bg-gray-400'}` }),
-                {isAnyMemberOnline && onlineCount > 0 && 
-                    React.createElement('span', { className: "text-xs text-green-400" }, onlineCount)
-                }
-            )
-        );
-    });
-
-    return React.createElement('aside', { className: `fixed top-0 left-0 h-full w-72 bg-[#1E293B] text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0` },
-        React.createElement('div', { className: "flex items-center gap-3 mb-12 px-2" },
-            React.createElement('div', { className: "w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg" }, "DH"),
-            React.createElement('span', { className: "text-2xl font-extrabold text-slate-200" }, "DigiHive")
-        ),
-        React.createElement('nav', null, React.createElement('ul', { className: "space-y-2" }, navLinks)),
-        React.createElement('div', { className: "mt-12" },
-            React.createElement('h3', { className: "text-sm font-semibold text-slate-200 opacity-70 mb-4 px-2" }, "TEAMS"),
-            React.createElement('ul', { className: "space-y-2" }, teamMembers)
-        )
-    );
-};
-
-// --- PAGES ---
-const LoginScreen = ({ onLogin }) => {
-    const users = useLiveData('users', []);
-    const [isLoginModalOpen, setLoginModalOpen] = useState(false);
-    const [isRegisterModalOpen, setRegisterModalOpen] = useState(false);
-
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const username = formData.get('username');
-        const password = formData.get('password');
-        
-        const user = users.find(u => u.username === username && u.password === password);
-        if (user) {
-            await liveDB.updateUser(username, { 
-                isOnline: true, 
-                lastLogin: new Date().toISOString() 
-            });
-            onLogin({ ...user, isOnline: true });
-        } else {
-            alert('Invalid username or password.');
-        }
-    };
-    
-    const handleRegister = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        if (formData.get('adminCode') !== ADMIN_CODE) {
-            alert('Invalid Admin Code. Registration failed.');
-            return;
-        }
-
-        const username = formData.get('username');
-        const password = formData.get('password');
-        const team = formData.get('team');
-        
-        if (users.find(u => u.username === username)) {
-            alert('Username already exists.');
-            return;
-        }
-
-        const newUser = { 
-            username, 
-            password, 
-            team, 
-            isOnline: true,
-            lastLogin: new Date().toISOString()
-        };
-        
-        await liveDB.addUser(newUser);
-        alert('Registration successful! You are now logged in.');
-        setRegisterModalOpen(false);
-        onLogin(newUser);
-    };
-
-    const teamOptions = Object.values(teamMapping).map(t => 
-        React.createElement('option', { key: t.name, value: t.name }, t.name)
-    );
-
-    return React.createElement('div', { className: "fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4" },
-        React.createElement('div', { className: "bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center" },
-            React.createElement('div', { className: "flex justify-center items-center gap-3 mb-4" },
-                React.createElement('div', { className: "w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg" }, "DH"),
-                React.createElement('span', { className: "text-2xl font-extrabold text-slate-800" }, "Welcome to DigiHive")
-            ),
-            React.createElement('div', { className: "my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500" },
-                React.createElement('p', { className: "text-blue-700 font-medium" }, 
-                    "Real-time collaborative dashboard with live team synchronization"
-                )
-            ),
-            React.createElement('div', { className: "flex flex-col sm:flex-row gap-4" },
-                React.createElement('button', { onClick: () => setLoginModalOpen(true), className: "flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300" }, "Login"),
-                React.createElement('button', { onClick: () => setRegisterModalOpen(true), className: "flex-1 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-300" }, "Register a Team Member")
-            )
-        ),
-        React.createElement(Modal, { isOpen: isLoginModalOpen, onClose: () => setLoginModalOpen(false) },
-            React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Login to DigiHive"),
-            React.createElement('form', { onSubmit: handleLogin },
-                React.createElement('div', { className: "mb-4" },
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
-                    React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500" })
-                ),
-                React.createElement('div', { className: "mb-6" },
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
-                    React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500" })
-                ),
-                React.createElement('button', { type: "submit", className: "w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors" }, "Login")
-            )
-        ),
-        React.createElement(Modal, { isOpen: isRegisterModalOpen, onClose: () => setRegisterModalOpen(false) },
-            React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Register New Member"),
-            React.createElement('form', { onSubmit: handleRegister },
-                React.createElement('div', { className: "mb-4" },
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
-                    React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                ),
-                React.createElement('div', { className: "mb-4" },
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
-                    React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                ),
-                React.createElement('div', { className: "mb-4" },
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Team"),
-                    React.createElement('select', { name: "team", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 bg-white" }, teamOptions)
-                ),
-                React.createElement('div', { className: "mb-6" },
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Admin Code"),
-                    React.createElement('input', { type: "password", name: "adminCode", placeholder: "Required for registration", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                ),
-                React.createElement('button', { type: "submit", className: "w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors" }, "Register")
-            )
-        )
-    );
-};
-
-const Dashboard = ({ currentUser, onSyncTrigger }) => {
-    const users = useLiveData('users', []);
-    const comments = useLiveData('comments', []);
-    const submissions = useLiveData('submissions', []);
-    const tasks = useLiveData('tasks', []);
-    
-    const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
-    const [submissionSuccess, setSubmissionSuccess] = useState(false);
-
-    const upcomingTasks = tasks.filter(task => new Date(task.startDate) > new Date());
-    const completedThisWeek = submissions.filter(s => {
-        const submissionDate = new Date(s.timestamp);
-        const today = new Date();
-        const oneWeekAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
-        return submissionDate >= oneWeekAgo;
-    }).length;
-
-    const handleSubmission = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        
-        const newSubmission = {
-            name: formData.get('title'),
-            member: currentUser.username,
-            team: currentUser.team,
-            progress: formData.get('progress'),
-            plan: formData.get('plan'),
-            fileType: 'Report'
-        };
-
-        await liveDB.addSubmission(newSubmission);
-        setSubmissionSuccess(true);
-        if (onSyncTrigger) onSyncTrigger();
-    };
-    
-    const closeSubmissionModal = () => {
-        setIsSubmissionModalOpen(false);
-        setSubmissionSuccess(false);
-    };
-
-    return React.createElement('div', { className: "space-y-8" },
-        React.createElement(TeamPresenceHeader, { users: users }),
-        
-        React.createElement('div', { className: "p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800" },
-            React.createElement('i', { className: "fas fa-sync-alt mr-2" }), 
-            " Live data synchronization active. All changes are shared instantly with team members."
-        ),
-        
-        React.createElement('div', { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" },
-            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, 
-                React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-blue-500" }, 
-                    React.createElement('i', { className: "fas fa-list-check" })
-                ), 
-                React.createElement('div', { className: "mt-4" }, 
-                    React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, upcomingTasks.length), 
-                    React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Upcoming Tasks")
-                )
-            ),
-            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, 
-                React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-violet-500" }, 
-                    React.createElement('i', { className: "fas fa-check-double" })
-                ), 
-                React.createElement('div', { className: "mt-4" }, 
-                    React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, completedThisWeek), 
-                    React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Completed This Week")
-                )
-            ),
-            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, 
-                React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-teal-500" }, 
-                    React.createElement('i', { className: "fas fa-comments" })
-                ), 
-                React.createElement('div', { className: "mt-4" }, 
-                    React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, comments.length), 
-                    React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Team Comments")
-                )
-            ),
-            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, 
-                React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-amber-500" }, 
-                    React.createElement('i', { className: "fas fa-users" })
-                ), 
-                React.createElement('div', { className: "mt-4" }, 
-                    React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, users.filter(u => u.isOnline).length), 
-                    React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Online Now")
-                )
-            )
-        ),
-        
-        React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-3 gap-8" },
-            React.createElement('div', { className: "lg:col-span-2 h-[550px]" },
-                React.createElement(CommentsSection, { 
-                    currentUser: currentUser,
-                    onSyncTrigger: onSyncTrigger 
-                })
-            ),
-            React.createElement('div', { className: "lg:col-span-1 space-y-8" },
-                React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" },
-                    React.createElement('h3', { className: "text-xl font-bold text-slate-800 mb-4" }, "Live Team Activity"),
-                    React.createElement('div', { className: "space-y-3" },
-                        React.createElement('div', { className: "flex items-center justify-between p-3 bg-green-50 rounded-lg" },
-                            React.createElement('div', { className: "flex items-center gap-3" },
-                                React.createElement('i', { className: "fas fa-sync-alt text-green-600" }),
-                                React.createElement('span', { className: "font-semibold text-sm text-green-800" }, "Real-Time Sync")
-                            ),
-                            React.createElement('span', { className: "font-bold text-sm text-green-600" }, "Active")
-                        ),
-                        React.createElement('div', { className: "text-sm text-gray-600" },
-                            React.createElement('p', { className: "font-semibold mb-2" }, "Recent Activity:"),
-                            {comments.slice(0, 3).map(comment => 
-                                React.createElement('p', { key: comment.id, className: "truncate" },
-                                    `${comment.username}: ${comment.text}`
-                                )
-                            )}
-                        )
-                    )
-                ),
-                
-                React.createElement('div', { 
-                    onClick: () => setIsSubmissionModalOpen(true), 
-                    className: "bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300" 
-                },
-                    React.createElement('div', { className: "flex flex-col items-center text-center gap-4" },
-                        React.createElement('div', { className: "w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center" }, 
-                            React.createElement('i', { className: "fas fa-cloud-upload-alt" })
-                        ),
-                        React.createElement('div', null, 
-                            React.createElement('h3', { className: "font-bold text-slate-800 text-lg" }, "Submit Weekly Report"), 
-                            React.createElement('p', { className: "text-sm text-gray-500 mt-1" }, "Share progress with the team")
-                        )
-                    )
-                )
-            )
-        ),
-        
-        React.createElement(Modal, { isOpen: isSubmissionModalOpen, onClose: closeSubmissionModal, size: "lg" },
-            !submissionSuccess ? (
-                React.createElement(React.Fragment, null,
-                    React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6" }, "Weekly Report Submission"),
-                    React.createElement('form', { onSubmit: handleSubmission, className: "space-y-4" },
-                        React.createElement('div', null, 
-                            React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Report Title"), 
-                            React.createElement('input', { type: "text", name: "title", placeholder: "e.g., Q1 Week 4 Progress Report", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                        ),
-                        React.createElement('div', null, 
-                            React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Progress Report"), 
-                            React.createElement('textarea', { name: "progress", placeholder: "Describe your progress...", required: true, rows: 4, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                        ),
-                        React.createElement('div', null, 
-                            React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Next Week's Plan"), 
-                            React.createElement('textarea', { name: "plan", placeholder: "Outline your plans...", required: true, rows: 3, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                        ),
-                        React.createElement('button', { type: "submit", className: "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2" }, 
-                            React.createElement('i', { className: "fas fa-paper-plane" }),
-                            "Submit Report to Team"
-                        )
-                    )
-                )
-            ) : (
-                React.createElement('div', { className: "text-center py-10" },
-                    React.createElement('i', { className: "fas fa-check-circle text-6xl text-green-500 mb-4" }),
-                    React.createElement('h2', { className: "text-2xl font-bold text-slate-800" }, "Submission Successful!"),
-                    React.createElement('p', { className: "text-gray-600 mt-2" }, "Your report has been shared with all team members in real-time."),
-                    React.createElement('button', { onClick: closeSubmissionModal, className: "mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg" }, "Close")
-                )
-            )
-        )
-    );
-};
-
-const Submissions = () => {
-    const submissions = useLiveData('submissions', []);
-    const users = useLiveData('users', []);
-
-    const handleDownload = (submission) => {
-        const content = `Submission: ${submission.name}\nMember: ${submission.member}\nTeam: ${submission.team}\nDate: ${new Date(submission.timestamp).toLocaleString()}\n\nProgress:\n${submission.progress}\n\nNext Week's Plan:\n${submission.plan}`;
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${submission.name.replace(/\s+/g, '_')}_${submission.timestamp}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    const rows = submissions.length === 0 ? (
-        React.createElement('tr', null, 
-            React.createElement('td', { colSpan: 5 }, 
-                React.createElement('div', { className: "text-center py-16 text-gray-400" }, 
-                    React.createElement('i', { className: "fas fa-folder-open text-5xl mb-4" }), 
-                    React.createElement('h3', { className: "text-xl font-bold text-slate-700" }, "No Submissions Yet"), 
-                    React.createElement('p', { className: "text-gray-500 mt-2" }, "Team submissions will appear here in real-time.")
-                )
-            )
-        )
-    ) : (
-        submissions.map((submission) => (
-            React.createElement('tr', { key: submission.id, className: "border-b last:border-b-0" },
-                React.createElement('td', { className: "p-4" }, submission.name),
-                React.createElement('td', { className: "p-4" }, submission.member),
-                React.createElement('td', { className: "p-4" }, submission.team),
-                React.createElement('td', { className: "p-4" }, new Date(submission.timestamp).toLocaleString()),
-                React.createElement('td', { className: "p-4" },
-                    React.createElement('button', { onClick: () => handleDownload(submission), className: "bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm" },
-                        React.createElement('i', { className: "fas fa-download mr-2" }), " Download"
-                    )
-                )
-            )
-        ))
-    );
             
-    return React.createElement(React.Fragment, null,
-        React.createElement(TeamPresenceHeader, { users: users }),
-        
-        React.createElement('div', { className: 'mb-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg' },
-            React.createElement('p', { className: 'text-sm text-blue-800' },
-                React.createElement('i', { className: 'fas fa-info-circle mr-2' }),
-                'Live shared archive. All team submissions are synchronized across all users in real-time.'
-            )
-        ),
-        
-        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm overflow-x-auto" },
-            React.createElement('table', { className: "w-full text-left min-w-[600px]" },
-                React.createElement('thead', null,
-                    React.createElement('tr', { className: "bg-gray-100" },
-                        React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tl-lg" }, "Submission Name"),
-                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Submitted by"),
-                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Team"),
-                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Date Submitted"),
-                        React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tr-lg" }, "Action")
-                    )
-                ),
-                React.createElement('tbody', null, rows)
-            )
-        )
-    );
-};
-
-const Team = ({ currentUser }) => {
-    const users = useLiveData('users', []);
-    const [isRegisterModalOpen, setRegisterModalOpen] = useState(false);
-    
-    const handleRegister = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        if (formData.get('adminCode') !== ADMIN_CODE) {
-            alert('Invalid Admin Code. Registration failed.');
-            return;
+            if (!localStorage.getItem('digihive_comments')) {
+                localStorage.setItem('digihive_comments', JSON.stringify([]));
+            }
+            
+            if (!localStorage.getItem('digihive_submissions')) {
+                localStorage.setItem('digihive_submissions', JSON.stringify([]));
+            }
+            
+            if (!localStorage.getItem('digihive_tasks')) {
+                const initialTasks = [
+                    {
+                        id: 1,
+                        subject: "Platform Security Audit",
+                        startDate: new Date(Date.now() + 86400000).toISOString(),
+                        endDate: new Date(Date.now() + 172800000).toISOString(),
+                        description: "Complete security assessment and vulnerability testing for the entire platform",
+                        team: "Administrator",
+                        status: "pending"
+                    },
+                    {
+                        id: 2,
+                        subject: "API Integration Development",
+                        startDate: new Date(Date.now() + 432000000).toISOString(),
+                        endDate: new Date(Date.now() + 518400000).toISOString(),
+                        description: "Develop and test third-party API integrations for payment and authentication",
+                        team: "Full-Stack",
+                        status: "pending"
+                    },
+                    {
+                        id: 3,
+                        subject: "User Interface Redesign",
+                        startDate: new Date(Date.now() + 259200000).toISOString(),
+                        endDate: new Date(Date.now() + 345600000).toISOString(),
+                        description: "Redesign dashboard interface for better user experience and accessibility",
+                        team: "UI/UX",
+                        status: "in-progress"
+                    },
+                    {
+                        id: 4,
+                        subject: "Marketing Campaign Launch",
+                        startDate: new Date(Date.now() + 86400000).toISOString(),
+                        endDate: new Date(Date.now() + 259200000).toISOString(),
+                        description: "Launch new marketing campaign targeting enterprise clients",
+                        team: "Marketing",
+                        status: "pending"
+                    },
+                    {
+                        id: 5,
+                        subject: "Customer Support Training",
+                        startDate: new Date(Date.now() + 172800000).toISOString(),
+                        endDate: new Date(Date.now() + 259200000).toISOString(),
+                        description: "Train support team on new product features and troubleshooting",
+                        team: "Support",
+                        status: "planned"
+                    },
+                    {
+                        id: 6,
+                        subject: "Content Strategy Development",
+                        startDate: new Date(Date.now() + 86400000).toISOString(),
+                        endDate: new Date(Date.now() + 172800000).toISOString(),
+                        description: "Develop quarterly content strategy and editorial calendar",
+                        team: "Content",
+                        status: "in-progress"
+                    }
+                ];
+                localStorage.setItem('digihive_tasks', JSON.stringify(initialTasks));
+            }
         }
 
-        const username = formData.get('username');
-        const password = formData.get('password');
-        const team = formData.get('team');
-        
-        if (users.find(u => u.username === username)) {
-            alert('Username already exists.');
-            return;
-        }
+        // Initialize data on page load
+        initializeData();
 
-        const newUser = { 
-            username, 
-            password, 
-            team, 
-            isOnline: false,
-            lastLogin: null,
-            lastLogout: null
+        // Team mapping configuration
+        const teamMapping = {
+            'Administrator': { name: 'Administrator', color: 'bg-red-500', avatar: 'AD', className: 'Administrator', role: 'System Administration' },
+            'Full-Stack': { name: 'Full-Stack', color: 'bg-blue-600', avatar: 'FS', className: 'FullStack', role: 'Development Team' },
+            'UI/UX': { name: 'UI/UX', color: 'bg-purple-600', avatar: 'UX', className: 'UIUX', role: 'Design Team' },
+            'Marketing': { name: 'Marketing', color: 'bg-green-500', avatar: 'MK', className: 'Marketing', role: 'Marketing Team' },
+            'Support': { name: 'Support', color: 'bg-teal-500', avatar: 'ST', className: 'Support', role: 'Support Team' },
+            'Content': { name: 'Content', color: 'bg-orange-500', avatar: 'CT', className: 'Content', role: 'Content Team' },
         };
-        
-        await liveDB.addUser(newUser);
-        alert('Registration successful!');
-        setRegisterModalOpen(false);
-    };
 
-    const handleDeregister = async (username) => {
-        if (username === currentUser.username) {
-            alert("You cannot deregister yourself.");
-            return;
+        const pageTitles = {
+            dashboard: 'Dashboard',
+            tasks: 'My Tasks - Full List',
+            submissions: 'Past Submissions Archive',
+            team: 'Team Directory',
+            settings: 'Settings'
+        };
+
+        // Real-time Database Simulation
+        class LiveDatabase {
+            constructor() {
+                this.users = JSON.parse(localStorage.getItem('digihive_users') || '[]');
+                this.comments = JSON.parse(localStorage.getItem('digihive_comments') || '[]');
+                this.submissions = JSON.parse(localStorage.getItem('digihive_submissions') || '[]');
+                this.tasks = JSON.parse(localStorage.getItem('digihive_tasks') || '[]');
+                this.listeners = new Map();
+                this.setupStorageSync();
+            }
+
+            setupStorageSync() {
+                window.addEventListener('storage', (e) => {
+                    if (e.key && e.key.startsWith('digihive_')) {
+                        const key = e.key.replace('digihive_', '');
+                        try {
+                            const newData = JSON.parse(e.newValue || '[]');
+                            this[key] = newData;
+                            this.notifyListeners(key, newData);
+                        } catch (error) {
+                            console.error('Error syncing storage:', error);
+                        }
+                    }
+                });
+            }
+
+            saveToStorage(key, data) {
+                try {
+                    localStorage.setItem(`digihive_${key}`, JSON.stringify(data));
+                    // Trigger storage event for other tabs
+                    window.dispatchEvent(new StorageEvent('storage', {
+                        key: `digihive_${key}`,
+                        newValue: JSON.stringify(data),
+                        oldValue: localStorage.getItem(`digihive_${key}`),
+                        storageArea: localStorage
+                    }));
+                } catch (error) {
+                    console.error('Error saving to storage:', error);
+                }
+            }
+
+            subscribe(key, callback) {
+                if (!this.listeners.has(key)) {
+                    this.listeners.set(key, new Set());
+                }
+                this.listeners.get(key).add(callback);
+                
+                return () => {
+                    if (this.listeners.has(key)) {
+                        this.listeners.get(key).delete(callback);
+                    }
+                };
+            }
+
+            notifyListeners(key, data) {
+                if (this.listeners.has(key)) {
+                    this.listeners.get(key).forEach(callback => {
+                        try {
+                            callback(data);
+                        } catch (error) {
+                            console.error('Error in listener:', error);
+                        }
+                    });
+                }
+            }
+
+            // User methods
+            async getUsers() {
+                return [...this.users];
+            }
+
+            async updateUser(username, updates) {
+                const userIndex = this.users.findIndex(u => u.username === username);
+                if (userIndex !== -1) {
+                    this.users[userIndex] = { ...this.users[userIndex], ...updates };
+                    this.saveToStorage('users', this.users);
+                    this.notifyListeners('users', this.users);
+                    return this.users[userIndex];
+                }
+                return null;
+            }
+
+            async addUser(user) {
+                this.users.push(user);
+                this.saveToStorage('users', this.users);
+                this.notifyListeners('users', this.users);
+                return user;
+            }
+
+            async removeUser(username) {
+                this.users = this.users.filter(u => u.username !== username);
+                this.saveToStorage('users', this.users);
+                this.notifyListeners('users', this.users);
+            }
+
+            // Comment methods
+            async getComments() {
+                return [...this.comments];
+            }
+
+            async addComment(comment) {
+                const newComment = {
+                    ...comment,
+                    id: Date.now(),
+                    timestamp: new Date().toISOString()
+                };
+                this.comments.unshift(newComment);
+                this.saveToStorage('comments', this.comments);
+                this.notifyListeners('comments', this.comments);
+                return newComment;
+            }
+
+            // Submission methods
+            async getSubmissions() {
+                return [...this.submissions];
+            }
+
+            async addSubmission(submission) {
+                const newSubmission = {
+                    ...submission,
+                    id: Date.now(),
+                    timestamp: new Date().toISOString()
+                };
+                this.submissions.unshift(newSubmission);
+                this.saveToStorage('submissions', this.submissions);
+                this.notifyListeners('submissions', this.submissions);
+                return newSubmission;
+            }
+
+            // Task methods
+            async getTasks() {
+                return [...this.tasks];
+            }
         }
-        
-        const code = prompt("Enter Admin Code to deregister this member:");
-        if (code !== ADMIN_CODE) {
-            if (code !== null) alert("Invalid Admin Code. Action cancelled.");
-            return;
+
+        // Create global database instance
+        const liveDB = new LiveDatabase();
+
+        // React-like components using plain JavaScript
+        function createElement(tag, props, ...children) {
+            const element = document.createElement(tag);
+            
+            if (props) {
+                Object.keys(props).forEach(key => {
+                    if (key.startsWith('on') && typeof props[key] === 'function') {
+                        element.addEventListener(key.substring(2).toLowerCase(), props[key]);
+                    } else {
+                        element.setAttribute(key, props[key]);
+                    }
+                });
+            }
+            
+            children.forEach(child => {
+                if (typeof child === 'string') {
+                    element.appendChild(document.createTextNode(child));
+                } else if (child) {
+                    element.appendChild(child);
+                }
+            });
+            
+            return element;
         }
 
-        if (confirm(`Are you sure you want to deregister ${username}? This action cannot be undone.`)) {
-            await liveDB.removeUser(username);
-            alert(`${username} has been deregistered.`);
-        }
-    };
-
-    const teamOptions = Object.values(teamMapping).map(t => 
-        React.createElement('option', { key: t.name, value: t.name }, t.name)
-    );
-
-    return React.createElement('div', { className: "space-y-6" },
-        React.createElement(TeamPresenceHeader, { users: users }),
-        
-        React.createElement('div', { className: "bg-white p-4 rounded-2xl shadow-sm flex justify-end" },
-            React.createElement('button', { 
-                onClick: () => setRegisterModalOpen(true),
-                className: "bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+        // Modal Component
+        function Modal({ isOpen, onClose, children, size = 'md' }) {
+            if (!isOpen) return null;
+            
+            const sizeClasses = {
+                sm: 'max-w-sm',
+                md: 'max-w-md',
+                lg: 'max-w-2xl',
+                xl: 'max-w-4xl',
+            };
+            
+            const modal = createElement('div', {
+                class: 'fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in'
             },
-                React.createElement('i', { className: "fas fa-user-plus mr-2" }), " Register New Member"
-            )
-        ),
-
-        users.map(user => {
-            const teamInfo = Object.values(teamMapping).find(t => t.name === user.team) || { name: 'General', color: 'bg-gray-500', avatar: 'G', role: 'Team Member' };
-            const lastSeen = user.isOnline ? 'Online now' : (user.lastLogout ? `Last seen: ${new Date(user.lastLogout).toLocaleString()}` : 'Never logged in');
-
-            return React.createElement('div', { key: user.username, className: "bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" },
-                React.createElement('div', { className: "flex items-center gap-5" },
-                    React.createElement('div', { className: "relative" },
-                        React.createElement('div', { className: `w-16 h-16 ${teamInfo.color} rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl` }, teamInfo.avatar),
-                        React.createElement('div', { className: `absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}` })
-                    ),
-                    React.createElement('div', null,
-                        React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, user.username),
-                        React.createElement('p', { className: "text-gray-500" }, `${teamInfo.role} • ${teamInfo.name}`),
-                        React.createElement('p', { className: `text-xs mt-1 ${user.isOnline ? 'text-green-600' : 'text-gray-400'}` }, lastSeen)
-                    )
-                ),
-                React.createElement('button', { 
-                    onClick: () => handleDeregister(user.username), 
-                    disabled: user.username === currentUser.username,
-                    className: "deregister-btn bg-red-100 text-red-600 hover:bg-red-200 font-bold py-2 px-4 rounded-lg w-full sm:w-auto disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                createElement('div', {
+                    class: `bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative animate-scale-up`
                 },
-                   React.createElement('i', { className: "fas fa-user-minus mr-2" }), " Deregister"
+                    createElement('button', {
+                        class: 'absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl',
+                        onclick: onClose
+                    }, '×'),
+                    ...children
                 )
             );
-        }),
-        
-        React.createElement(Modal, { isOpen: isRegisterModalOpen, onClose: () => setRegisterModalOpen(false) },
-            React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Register New Member"),
-            React.createElement('form', { onSubmit: handleRegister },
-                React.createElement('div', { className: "mb-4" },
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
-                    React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                ),
-                React.createElement('div', { className: "mb-4" },
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
-                    React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                ),
-                React.createElement('div', { className: "mb-4" },
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Team"),
-                    React.createElement('select', { name: "team", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 bg-white" }, teamOptions)
-                ),
-                React.createElement('div', { className: "mb-6" },
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Admin Code"),
-                    React.createElement('input', { type: "password", name: "adminCode", placeholder: "Required for registration", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                ),
-                React.createElement('button', { type: "submit", className: "w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors" }, "Register")
-            )
-        )
-    );
-};
-
-const Settings = ({ currentUser }) => {
-    const users = useLiveData('users', []);
-    const [activeModal, setActiveModal] = useState(null);
-
-    const handleUpdatePassword = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const currentPassword = formData.get('currentPassword');
-        const newPassword = formData.get('newPassword');
-        const confirmPassword = formData.get('confirmPassword');
-
-        if (currentPassword !== currentUser.password) {
-            alert('Current password does not match.');
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            alert('New passwords do not match.');
-            return;
-        }
-        if (newPassword.length < 6) {
-            alert('New password must be at least 6 characters long.');
-            return;
+            
+            // Close on background click
+            modal.onclick = (e) => {
+                if (e.target === modal) onClose();
+            };
+            
+            return modal;
         }
 
-        await liveDB.updateUser(currentUser.username, { password: newPassword });
-        alert('Password updated successfully!');
-        setActiveModal(null);
-    };
+        // Sync Status Indicator
+        function SyncStatusIndicator({ isSyncing, lastSyncTime }) {
+            return createElement('div', {
+                class: `fixed top-4 right-4 z-40 flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-300 ${
+                    isSyncing ? 'bg-blue-500 text-white animate-pulse-sync' : 'bg-green-500 text-white'
+                } animate-slide-in-right`
+            },
+                createElement('i', {
+                    class: `fas ${isSyncing ? 'fa-sync-alt fa-spin' : 'fa-check-circle'} mr-1`
+                }),
+                createElement('span', { class: 'text-sm font-medium' },
+                    isSyncing ? 'Syncing...' : `Live - ${lastSyncTime}`
+                )
+            );
+        }
 
-    const createCard = (title, desc, btnText, icon, modalKey) => (
-        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4" },
-            React.createElement('div', { className: "flex items-center gap-5" },
-                React.createElement('div', { className: "w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl" }, React.createElement('i', { className: `fas ${icon}` })),
-                React.createElement('div', null, React.createElement('h3', { className: "text-lg font-bold text-slate-800" }, title), React.createElement('p', { className: "text-gray-500 text-sm" }, desc))
-            ),
-            React.createElement('button', { onClick: () => setActiveModal(modalKey), className: "bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 w-full md:w-auto" }, btnText)
-        )
-    );
+        // Team Presence Header
+        function TeamPresenceHeader(users) {
+            const onlineTeams = Object.values(teamMapping).filter(team => 
+                users.some(user => user.team === team.name && user.isOnline)
+            ).length;
+            
+            const totalTeams = Object.keys(teamMapping).length;
+            const onlineUsers = users.filter(user => user.isOnline).length;
 
-    return React.createElement('div', { className: "space-y-6" },
-        React.createElement(TeamPresenceHeader, { users: users }),
-        
-        createCard('Profile Information', 'Update your personal information.', 'Edit Profile', 'fa-user-edit', 'profile'),
-        createCard('Security Settings', 'Update your password and security.', 'Update Security', 'fa-shield-alt', 'security'),
-        
-        React.createElement(Modal, { isOpen: activeModal === 'profile', onClose: () => setActiveModal(null) },
-            React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Edit Profile"),
-            React.createElement('p', { className: "text-center text-gray-500" }, "This feature is coming soon. For now, your username is ", React.createElement('strong', null, currentUser.username), " and you are on the ", React.createElement('strong', null, currentUser.team), " team.")
-        ),
-        
-        React.createElement(Modal, { isOpen: activeModal === 'security', onClose: () => setActiveModal(null) },
-            React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Update Password"),
-            React.createElement('form', { onSubmit: handleUpdatePassword, className: "space-y-4" },
-                React.createElement('div', null,
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Current Password"),
-                    React.createElement('input', { type: "password", name: "currentPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+            return createElement('div', { class: 'bg-white rounded-2xl p-4 shadow-sm mb-6' },
+                createElement('div', { class: 'flex items-center justify-between mobile-stack' },
+                    createElement('div', { class: 'flex items-center gap-3 mobile-stack mobile-text-center' },
+                        createElement('div', { class: 'flex items-center gap-2' },
+                            createElement('div', { class: 'w-3 h-3 rounded-full bg-green-500 animate-pulse' }),
+                            createElement('span', { class: 'font-bold text-slate-800' }, 'Live Team Status')
+                        ),
+                        createElement('span', { class: 'text-sm text-gray-600' }, 
+                            `${onlineUsers} users online • ${onlineTeams} of ${totalTeams} teams active`
+                        )
+                    ),
+                    createElement('div', { class: 'hidden md:flex items-center gap-2 mobile-hidden' },
+                        ...Object.values(teamMapping).map(team => {
+                            const isOnline = users.some(user => user.team === team.name && user.isOnline);
+                            const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
+                            return createElement('div', { 
+                                class: 'flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50'
+                            },
+                                createElement('div', { 
+                                    class: `w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
+                                }),
+                                createElement('span', { class: 'text-sm font-medium text-slate-700' }, team.avatar),
+                                isOnline && onlineCount > 1 ? 
+                                    createElement('span', { class: 'text-xs bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center' }, onlineCount) 
+                                    : null
+                            );
+                        })
+                    )
                 ),
-                React.createElement('div', null,
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "New Password"),
-                    React.createElement('input', { type: "password", name: "newPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                ),
-                React.createElement('div', null,
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Confirm New Password"),
-                    React.createElement('input', { type: "password", name: "confirmPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                ),
-                React.createElement('button', { type: "submit", className: "w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg" }, "Update Password")
-            )
-        )
-    );
-};
+                createElement('div', { class: 'mt-3 md:hidden grid grid-cols-3 gap-2' },
+                    ...Object.values(teamMapping).map(team => {
+                        const isOnline = users.some(user => user.team === team.name && user.isOnline);
+                        const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
+                        return createElement('div', { 
+                            class: 'flex items-center gap-2 p-2 rounded-lg bg-gray-50 text-sm'
+                        },
+                            createElement('div', { 
+                                class: `w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
+                            }),
+                            createElement('span', { class: 'font-medium text-slate-700' }, team.avatar),
+                            isOnline && onlineCount > 1 ? 
+                                createElement('span', { class: 'text-xs bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center' }, onlineCount) 
+                                : null
+                        );
+                    })
+                )
+            );
+        }
 
-// --- MAIN APP ---
-const App = () => {
-    const [currentUser, setCurrentUser] = useLocalStorage('digihive_currentUser', null);
-    const [currentPage, setCurrentPage] = useState('dashboard');
-    const [isSidebarOpen, setSidebarOpen] = useState(false);
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [lastSyncTime, setLastSyncTime] = useState('just now');
-
-    const users = useLiveData('users', []);
-
-    const handleLogin = (user) => {
-        setCurrentUser(user);
-    };
-
-    const handleLogout = useCallback(async () => {
-        if (currentUser) {
-            await liveDB.updateUser(currentUser.username, { 
-                isOnline: false, 
-                lastLogout: new Date().toISOString() 
+        // Comments Section
+        function CommentsSection(currentUser, onSyncTrigger) {
+            const container = createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col' });
+            
+            // State for comments and new comment
+            let comments = [];
+            let newComment = '';
+            
+            // Function to update the UI
+            function updateUI() {
+                container.innerHTML = '';
+                
+                container.appendChild(
+                    createElement('div', { class: 'flex items-center justify-between mb-4' },
+                        createElement('h3', { class: 'text-xl font-bold text-slate-800' }, 'Team Comments'),
+                        createElement('div', { class: 'flex items-center gap-2 text-sm text-green-600 bg-green-50 px-2 py-1 rounded' },
+                            createElement('i', { class: 'fas fa-sync-alt mr-1' }),
+                            createElement('span', null, 'Live Updates')
+                        )
+                    )
+                );
+                
+                const form = createElement('form', { 
+                    class: 'mb-4 flex gap-3 mobile-stack',
+                    onsubmit: (e) => {
+                        e.preventDefault();
+                        if (newComment.trim() === '') return;
+                        
+                        liveDB.addComment({
+                            username: currentUser.username,
+                            team: currentUser.team,
+                            text: newComment.trim(),
+                        });
+                        
+                        newComment = '';
+                        input.value = '';
+                        if (onSyncTrigger) onSyncTrigger();
+                    }
+                },
+                    createElement('input', {
+                        type: 'text',
+                        class: 'flex-grow w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500 mobile-full',
+                        placeholder: 'Leave a comment about your tasks or challenges...',
+                        value: newComment,
+                        oninput: (e) => {
+                            newComment = e.target.value;
+                        }
+                    }),
+                    createElement('button', { 
+                        type: 'submit', 
+                        class: 'bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mobile-full' 
+                    },
+                        createElement('i', { class: 'fas fa-paper-plane' }),
+                        'Post'
+                    )
+                );
+                
+                container.appendChild(form);
+                
+                const commentsContainer = createElement('div', { class: 'flex-1 overflow-y-auto pr-2 space-y-4' });
+                
+                if (comments.length === 0) {
+                    commentsContainer.appendChild(
+                        createElement('div', { class: 'text-center text-gray-400 pt-8' },
+                            createElement('i', { class: 'fas fa-comments text-4xl mb-2' }),
+                            createElement('p', null, 'No comments yet. Be the first to post!')
+                        )
+                    );
+                } else {
+                    comments.forEach(comment => {
+                        const commentTeamInfo = teamMapping[comment.team];
+                        commentsContainer.appendChild(
+                            createElement('div', { class: 'flex items-start gap-3' },
+                                createElement('div', { class: `w-10 h-10 ${commentTeamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` },
+                                    comment.username.substring(0, 2).toUpperCase()
+                                ),
+                                createElement('div', { class: 'flex-1 bg-gray-50 rounded-lg p-3' },
+                                    createElement('div', { class: 'flex justify-between items-baseline mobile-stack' },
+                                        createElement('p', { class: 'font-bold text-slate-700' }, 
+                                            comment.username,
+                                            createElement('span', { class: 'font-normal text-sm text-gray-500 ml-1.5' }, `(${comment.team})`)
+                                        ),
+                                        createElement('p', { class: 'text-xs text-gray-400' }, new Date(comment.timestamp).toLocaleString())
+                                    ),
+                                    createElement('p', { class: 'text-sm text-gray-800 mt-1' }, comment.text)
+                                )
+                            )
+                        );
+                    });
+                }
+                
+                container.appendChild(commentsContainer);
+            }
+            
+            // Subscribe to comments updates
+            const unsubscribe = liveDB.subscribe('comments', (newComments) => {
+                comments = newComments;
+                updateUI();
             });
+            
+            // Initial load
+            liveDB.getComments().then(newComments => {
+                comments = newComments;
+                updateUI();
+            });
+            
+            // Cleanup on unmount
+            container.cleanup = unsubscribe;
+            
+            return container;
         }
-        setCurrentUser(null);
-    }, [currentUser]);
 
-    const triggerSync = useCallback(() => {
-        setIsSyncing(true);
-        setTimeout(() => {
-            setIsSyncing(false);
-            const now = new Date();
-            setLastSyncTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-        }, 1000);
-    }, []);
+        // Header Component
+        function Header(user, onLogout, toggleSidebar, pageTitle) {
+            return createElement('header', { class: 'flex justify-between items-center mobile-stack mobile-p-4' },
+                createElement('div', null,
+                    createElement('h1', { class: 'text-2xl md:text-4xl font-bold text-slate-800 mobile-text-center' },
+                        pageTitles[pageTitle] || 'Dashboard'
+                    )
+                ),
+                createElement('div', { class: 'flex items-center gap-4 mobile-stack' },
+                    createElement('button', { 
+                        onclick: toggleSidebar, 
+                        class: 'lg:hidden text-2xl text-gray-600 mobile-hidden' 
+                    }, '☰'),
+                    createElement('div', { class: 'flex items-center gap-3 bg-white p-2 rounded-full shadow-sm' },
+                        createElement('div', { class: 'w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold' },
+                            user.username.substring(0, 2).toUpperCase()
+                        ),
+                        createElement('span', { class: 'font-semibold text-sm hidden sm:block pr-2 mobile-hidden' }, user.username)
+                    ),
+                    createElement('button', { 
+                        onclick: onLogout, 
+                        class: 'text-gray-500 hover:text-red-500', 
+                        title: 'Logout' 
+                    }, '🚪')
+                )
+            );
+        }
 
-    // Auto-sync every 30 seconds
-    useEffect(() => {
-        const interval = setInterval(triggerSync, 30000);
-        return () => clearInterval(interval);
-    }, [triggerSync]);
+        // Sidebar Component
+        function Sidebar(currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen, users) {
+            const sidebar = createElement('aside', { 
+                class: `fixed top-0 left-0 h-full w-72 bg-slate-800 text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${
+                    isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                } lg:translate-x-0 overflow-y-auto`
+            });
+            
+            function handleNavClick(page) {
+                setCurrentPage(page);
+                if (window.innerWidth < 1024) {
+                    setSidebarOpen(false);
+                }
+            }
+            
+            const navLinks = Object.keys(pageTitles).map(page => {
+                const icons = {
+                    dashboard: 'fa-chart-line', 
+                    tasks: 'fa-tasks', 
+                    submissions: 'fa-file-archive', 
+                    team: 'fa-users', 
+                    settings: 'fa-cog'
+                };
+                const isActive = currentPage === page;
+                if (!icons[page]) return null;
+                
+                return createElement('li', { key: page },
+                    createElement('a', { 
+                        href: '#', 
+                        class: `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-slate-200 opacity-80 hover:bg-white/10 hover:opacity-100 ${
+                            isActive ? 'bg-blue-600 opacity-100 shadow-lg' : ''
+                        }`,
+                        onclick: (e) => {
+                            e.preventDefault();
+                            handleNavClick(page);
+                        }
+                    },
+                        createElement('i', { class: `w-5 text-center text-lg fas ${icons[page]}` }),
+                        createElement('span', null, pageTitles[page])
+                    )
+                );
+            }).filter(Boolean);
+            
+            const teamMembers = Object.values(teamMapping).map(team => {
+                const isAnyMemberOnline = users.some(user => user.team === team.name && user.isOnline);
+                const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
+                return createElement('li', { 
+                    class: 'flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200'
+                },
+                    createElement('div', { class: `w-9 h-9 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` }, 
+                        team.avatar
+                    ),
+                    createElement('div', { class: 'flex-1' },
+                        createElement('p', { class: 'text-sm font-semibold text-slate-200 leading-tight' }, team.name),
+                        createElement('p', { class: 'text-xs text-slate-200 opacity-70 leading-tight' }, team.role)
+                    ),
+                    createElement('div', { class: 'flex items-center gap-1' },
+                        createElement('div', { class: `w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors ${
+                            isAnyMemberOnline ? 'bg-green-400' : 'bg-gray-400'
+                        }` }),
+                        isAnyMemberOnline && onlineCount > 0 ? 
+                            createElement('span', { class: 'text-xs text-green-400' }, onlineCount) 
+                            : null
+                    )
+                );
+            });
+            
+            sidebar.appendChild(
+                createElement('div', { class: 'flex items-center gap-3 mb-12 px-2' },
+                    createElement('div', { class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' }, 'DH'),
+                    createElement('span', { class: 'text-2xl font-extrabold text-slate-200' }, 'DigiHive')
+                )
+            );
+            
+            sidebar.appendChild(
+                createElement('nav', null, 
+                    createElement('ul', { class: 'space-y-2' }, ...navLinks)
+                )
+            );
+            
+            sidebar.appendChild(
+                createElement('div', { class: 'mt-12' },
+                    createElement('h3', { class: 'text-sm font-semibold text-slate-200 opacity-70 mb-4 px-2' }, 'TEAMS'),
+                    createElement('ul', { class: 'space-y-2' }, ...teamMembers)
+                )
+            );
+            
+            return sidebar;
+        }
 
-    // Update user online status
-    useEffect(() => {
-        if (currentUser) {
-            const updateOnlineStatus = async () => {
-                await liveDB.updateUser(currentUser.username, { 
+        // Login Screen
+        function LoginScreen(onLogin) {
+            const container = createElement('div', { 
+                class: 'fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4' 
+            });
+            
+            let users = [];
+            
+            // Load users
+            liveDB.getUsers().then(userData => {
+                users = userData;
+            });
+            
+            const loginModal = () => {
+                const modal = createElement('div', { 
+                    class: 'bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center animate-scale-up' 
+                },
+                    createElement('div', { class: 'flex justify-center items-center gap-3 mb-4' },
+                        createElement('div', { class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' }, 'DH'),
+                        createElement('span', { class: 'text-2xl font-extrabold text-slate-800' }, 'DigiHive')
+                    ),
+                    createElement('div', { class: 'my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500' },
+                        createElement('p', { class: 'text-blue-700 font-medium' }, 
+                            'Real-time collaborative dashboard with live team synchronization'
+                        )
+                    ),
+                    createElement('form', { 
+                        class: 'space-y-4',
+                        onsubmit: async (e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.target);
+                            const username = formData.get('username');
+                            const password = formData.get('password');
+                            
+                            const user = users.find(u => u.username === username && u.password === password);
+                            if (user) {
+                                await liveDB.updateUser(username, { 
+                                    isOnline: true, 
+                                    lastLogin: new Date().toISOString() 
+                                });
+                                onLogin({ ...user, isOnline: true });
+                            } else {
+                                alert('Invalid username or password.');
+                            }
+                        }
+                    },
+                        createElement('div', null,
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Username'),
+                            createElement('input', { 
+                                type: 'text', 
+                                name: 'username', 
+                                required: true, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500',
+                                placeholder: 'Enter your username'
+                            })
+                        ),
+                        createElement('div', null,
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Password'),
+                            createElement('input', { 
+                                type: 'password', 
+                                name: 'password', 
+                                required: true, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500',
+                                placeholder: 'Enter your password'
+                            })
+                        ),
+                        createElement('button', { 
+                            type: 'submit', 
+                            class: 'w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors' 
+                        }, 'Login to Dashboard')
+                    ),
+                    createElement('div', { class: 'mt-4 text-sm text-gray-600' },
+                        'Demo accounts: admin/password, dev/password, designer/password'
+                    )
+                );
+                
+                return modal;
+            };
+            
+            container.appendChild(loginModal());
+            
+            return container;
+        }
+
+        // Dashboard Page
+        function Dashboard(currentUser, onSyncTrigger) {
+            const container = createElement('div', { class: 'space-y-8' });
+            
+            let users = [];
+            let comments = [];
+            let submissions = [];
+            let tasks = [];
+            
+            // State for modal
+            let isSubmissionModalOpen = false;
+            let submissionSuccess = false;
+            
+            function updateUI() {
+                container.innerHTML = '';
+                
+                // Add team presence header
+                container.appendChild(TeamPresenceHeader(users));
+                
+                // Add sync status message
+                container.appendChild(
+                    createElement('div', { class: 'p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800' },
+                        createElement('i', { class: 'fas fa-sync-alt mr-2' }), 
+                        ' Live data synchronization active. All changes are shared instantly with team members.'
+                    )
+                );
+                
+                // Stats cards
+                const upcomingTasks = tasks.filter(task => new Date(task.startDate) > new Date());
+                const completedThisWeek = submissions.filter(s => {
+                    const submissionDate = new Date(s.timestamp);
+                    const today = new Date();
+                    const oneWeekAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
+                    return submissionDate >= oneWeekAgo;
+                }).length;
+                
+                const stats = createElement('div', { class: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6' },
+                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' }, 
+                        createElement('div', { class: 'w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-blue-500' }, 
+                            createElement('i', { class: 'fas fa-list-check' })
+                        ), 
+                        createElement('div', { class: 'mt-4' }, 
+                            createElement('p', { class: 'text-4xl font-bold text-slate-800' }, upcomingTasks.length), 
+                            createElement('p', { class: 'text-md text-gray-500 font-medium' }, 'Upcoming Tasks')
+                        )
+                    ),
+                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' }, 
+                        createElement('div', { class: 'w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-violet-500' }, 
+                            createElement('i', { class: 'fas fa-check-double' })
+                        ), 
+                        createElement('div', { class: 'mt-4' }, 
+                            createElement('p', { class: 'text-4xl font-bold text-slate-800' }, completedThisWeek), 
+                            createElement('p', { class: 'text-md text-gray-500 font-medium' }, 'Completed This Week')
+                        )
+                    ),
+                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' }, 
+                        createElement('div', { class: 'w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-teal-500' }, 
+                            createElement('i', { class: 'fas fa-comments' })
+                        ), 
+                        createElement('div', { class: 'mt-4' }, 
+                            createElement('p', { class: 'text-4xl font-bold text-slate-800' }, comments.length), 
+                            createElement('p', { class: 'text-md text-gray-500 font-medium' }, 'Team Comments')
+                        )
+                    ),
+                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' }, 
+                        createElement('div', { class: 'w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-amber-500' }, 
+                            createElement('i', { class: 'fas fa-users' })
+                        ), 
+                        createElement('div', { class: 'mt-4' }, 
+                            createElement('p', { class: 'text-4xl font-bold text-slate-800' }, users.filter(u => u.isOnline).length), 
+                            createElement('p', { class: 'text-md text-gray-500 font-medium' }, 'Online Now')
+                        )
+                    )
+                );
+                
+                container.appendChild(stats);
+                
+                // Main content area
+                const mainContent = createElement('div', { class: 'grid grid-cols-1 lg:grid-cols-3 gap-8' },
+                    createElement('div', { class: 'lg:col-span-2 h-[550px]' },
+                        CommentsSection(currentUser, onSyncTrigger)
+                    ),
+                    createElement('div', { class: 'lg:col-span-1 space-y-8' },
+                        createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
+                            createElement('h3', { class: 'text-xl font-bold text-slate-800 mb-4' }, 'Live Team Activity'),
+                            createElement('div', { class: 'space-y-3' },
+                                createElement('div', { class: 'flex items-center justify-between p-3 bg-green-50 rounded-lg' },
+                                    createElement('div', { class: 'flex items-center gap-3' },
+                                        createElement('i', { class: 'fas fa-sync-alt text-green-600' }),
+                                        createElement('span', { class: 'font-semibold text-sm text-green-800' }, 'Real-Time Sync')
+                                    ),
+                                    createElement('span', { class: 'font-bold text-sm text-green-600' }, 'Active')
+                                ),
+                                createElement('div', { class: 'text-sm text-gray-600' },
+                                    createElement('p', { class: 'font-semibold mb-2' }, 'Recent Activity:'),
+                                    ...comments.slice(0, 3).map(comment => 
+                                        createElement('p', { class: 'truncate text-xs mb-1' },
+                                            `${comment.username}: ${comment.text}`
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        createElement('div', { 
+                            class: 'bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300',
+                            onclick: () => {
+                                isSubmissionModalOpen = true;
+                                submissionSuccess = false;
+                                updateUI();
+                            }
+                        },
+                            createElement('div', { class: 'flex flex-col items-center text-center gap-4' },
+                                createElement('div', { class: 'w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center' }, 
+                                    createElement('i', { class: 'fas fa-cloud-upload-alt' })
+                                ),
+                                createElement('div', null, 
+                                    createElement('h3', { class: 'font-bold text-slate-800 text-lg' }, 'Submit Weekly Report'), 
+                                    createElement('p', { class: 'text-sm text-gray-500 mt-1' }, 'Share progress with the team')
+                                )
+                            )
+                        )
+                    )
+                );
+                
+                container.appendChild(mainContent);
+                
+                // Submission Modal
+                if (isSubmissionModalOpen) {
+                    const modal = Modal({
+                        isOpen: true,
+                        onClose: () => {
+                            isSubmissionModalOpen = false;
+                            updateUI();
+                        },
+                        size: 'lg'
+                    }, 
+                        !submissionSuccess ? [
+                            createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6' }, 'Weekly Report Submission'),
+                            createElement('form', { 
+                                class: 'space-y-4',
+                                onsubmit: async (e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.target);
+                                    
+                                    const newSubmission = {
+                                        name: formData.get('title'),
+                                        member: currentUser.username,
+                                        team: currentUser.team,
+                                        progress: formData.get('progress'),
+                                        plan: formData.get('plan'),
+                                        fileType: 'Report'
+                                    };
+
+                                    await liveDB.addSubmission(newSubmission);
+                                    submissionSuccess = true;
+                                    if (onSyncTrigger) onSyncTrigger();
+                                    updateUI();
+                                }
+                            },
+                                createElement('div', null, 
+                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Report Title'), 
+                                    createElement('input', { 
+                                        type: 'text', 
+                                        name: 'title', 
+                                        placeholder: 'e.g., Q1 Week 4 Progress Report', 
+                                        required: true, 
+                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                    })
+                                ),
+                                createElement('div', null, 
+                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Progress Report'), 
+                                    createElement('textarea', { 
+                                        name: 'progress', 
+                                        placeholder: 'Describe your progress...', 
+                                        required: true, 
+                                        rows: 4, 
+                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                    })
+                                ),
+                                createElement('div', null, 
+                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Next Week\'s Plan'), 
+                                    createElement('textarea', { 
+                                        name: 'plan', 
+                                        placeholder: 'Outline your plans...', 
+                                        required: true, 
+                                        rows: 3, 
+                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                    })
+                                ),
+                                createElement('button', { 
+                                    type: 'submit', 
+                                    class: 'w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2' 
+                                }, 
+                                    createElement('i', { class: 'fas fa-paper-plane' }),
+                                    'Submit Report to Team'
+                                )
+                            )
+                        ] : [
+                            createElement('div', { class: 'text-center py-10' },
+                                createElement('i', { class: 'fas fa-check-circle text-6xl text-green-500 mb-4' }),
+                                createElement('h2', { class: 'text-2xl font-bold text-slate-800' }, 'Submission Successful!'),
+                                createElement('p', { class: 'text-gray-600 mt-2' }, 'Your report has been shared with all team members in real-time.'),
+                                createElement('button', { 
+                                    onclick: () => {
+                                        isSubmissionModalOpen = false;
+                                        updateUI();
+                                    }, 
+                                    class: 'mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg' 
+                                }, 'Close')
+                            )
+                        ]
+                    );
+                    
+                    document.body.appendChild(modal);
+                }
+            }
+            
+            // Subscribe to data updates
+            const unsubscribers = [
+                liveDB.subscribe('users', (newUsers) => {
+                    users = newUsers;
+                    updateUI();
+                }),
+                liveDB.subscribe('comments', (newComments) => {
+                    comments = newComments;
+                    updateUI();
+                }),
+                liveDB.subscribe('submissions', (newSubmissions) => {
+                    submissions = newSubmissions;
+                    updateUI();
+                }),
+                liveDB.subscribe('tasks', (newTasks) => {
+                    tasks = newTasks;
+                    updateUI();
+                })
+            ];
+            
+            // Initial data load
+            Promise.all([
+                liveDB.getUsers(),
+                liveDB.getComments(),
+                liveDB.getSubmissions(),
+                liveDB.getTasks()
+            ]).then(([userData, commentData, submissionData, taskData]) => {
+                users = userData;
+                comments = commentData;
+                submissions = submissionData;
+                tasks = taskData;
+                updateUI();
+            });
+            
+            // Cleanup on unmount
+            container.cleanup = () => {
+                unsubscribers.forEach(unsub => unsub());
+            };
+            
+            return container;
+        }
+
+        // Submissions Page
+        function SubmissionsPage() {
+            const container = createElement('div', { class: 'space-y-6' });
+            
+            let submissions = [];
+            let users = [];
+            
+            function updateUI() {
+                container.innerHTML = '';
+                
+                // Add team presence header
+                container.appendChild(TeamPresenceHeader(users));
+                
+                // Add info message
+                container.appendChild(
+                    createElement('div', { class: 'mb-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg' },
+                        createElement('p', { class: 'text-sm text-blue-800' },
+                            createElement('i', { class: 'fas fa-info-circle mr-2' }),
+                            'Live shared archive. All team submissions are synchronized across all users in real-time.'
+                        )
+                    )
+                );
+                
+                // Submissions table
+                const tableContainer = createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm overflow-x-auto' });
+                
+                if (submissions.length === 0) {
+                    tableContainer.appendChild(
+                        createElement('div', { class: 'text-center py-16 text-gray-400' }, 
+                            createElement('i', { class: 'fas fa-folder-open text-5xl mb-4' }), 
+                            createElement('h3', { class: 'text-xl font-bold text-slate-700' }, 'No Submissions Yet'), 
+                            createElement('p', { class: 'text-gray-500 mt-2' }, 'Team submissions will appear here in real-time.')
+                        )
+                    );
+                } else {
+                    const table = createElement('table', { class: 'w-full text-left min-w-[600px]' },
+                        createElement('thead', null,
+                            createElement('tr', { class: 'bg-gray-100' },
+                                createElement('th', { class: 'p-4 font-bold text-slate-600 rounded-tl-lg' }, 'Submission Name'),
+                                createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Submitted by'),
+                                createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Team'),
+                                createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Date Submitted'),
+                                createElement('th', { class: 'p-4 font-bold text-slate-600 rounded-tr-lg' }, 'Action')
+                            )
+                        ),
+                        createElement('tbody', null,
+                            ...submissions.map(submission => {
+                                const handleDownload = () => {
+                                    const content = `Submission: ${submission.name}\nMember: ${submission.member}\nTeam: ${submission.team}\nDate: ${new Date(submission.timestamp).toLocaleString()}\n\nProgress:\n${submission.progress}\n\nNext Week's Plan:\n${submission.plan}`;
+                                    const blob = new Blob([content], { type: 'text/plain' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `${submission.name.replace(/\s+/g, '_')}_${submission.timestamp}.txt`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                };
+                                
+                                return createElement('tr', { class: 'border-b last:border-b-0' },
+                                    createElement('td', { class: 'p-4' }, submission.name),
+                                    createElement('td', { class: 'p-4' }, submission.member),
+                                    createElement('td', { class: 'p-4' }, submission.team),
+                                    createElement('td', { class: 'p-4' }, new Date(submission.timestamp).toLocaleString()),
+                                    createElement('td', { class: 'p-4' },
+                                        createElement('button', { 
+                                            onclick: handleDownload, 
+                                            class: 'bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm flex items-center gap-2' 
+                                        },
+                                            createElement('i', { class: 'fas fa-download' }),
+                                            'Download'
+                                        )
+                                    )
+                                );
+                            })
+                        )
+                    );
+                    
+                    tableContainer.appendChild(table);
+                }
+                
+                container.appendChild(tableContainer);
+            }
+            
+            // Subscribe to data updates
+            const unsubscribers = [
+                liveDB.subscribe('users', (newUsers) => {
+                    users = newUsers;
+                    updateUI();
+                }),
+                liveDB.subscribe('submissions', (newSubmissions) => {
+                    submissions = newSubmissions;
+                    updateUI();
+                })
+            ];
+            
+            // Initial data load
+            Promise.all([
+                liveDB.getUsers(),
+                liveDB.getSubmissions()
+            ]).then(([userData, submissionData]) => {
+                users = userData;
+                submissions = submissionData;
+                updateUI();
+            });
+            
+            // Cleanup on unmount
+            container.cleanup = () => {
+                unsubscribers.forEach(unsub => unsub());
+            };
+            
+            return container;
+        }
+
+        // Team Page
+        function TeamPage(currentUser) {
+            const container = createElement('div', { class: 'space-y-6' });
+            
+            let users = [];
+            let isRegisterModalOpen = false;
+            
+            function updateUI() {
+                container.innerHTML = '';
+                
+                // Add team presence header
+                container.appendChild(TeamPresenceHeader(users));
+                
+                // Add register button
+                container.appendChild(
+                    createElement('div', { class: 'bg-white p-4 rounded-2xl shadow-sm flex justify-end' },
+                        createElement('button', { 
+                            onclick: () => {
+                                isRegisterModalOpen = true;
+                                updateUI();
+                            },
+                            class: 'bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2'
+                        },
+                            createElement('i', { class: 'fas fa-user-plus' }),
+                            'Register New Member'
+                        )
+                    )
+                );
+
+                // User cards
+                users.forEach(user => {
+                    const teamInfo = Object.values(teamMapping).find(t => t.name === user.team) || { name: 'General', color: 'bg-gray-500', avatar: 'G', role: 'Team Member' };
+                    const lastSeen = user.isOnline ? 'Online now' : (user.lastLogout ? `Last seen: ${new Date(user.lastLogout).toLocaleString()}` : 'Never logged in');
+                    
+                    const handleDeregister = async () => {
+                        if (user.username === currentUser.username) {
+                            alert("You cannot deregister yourself.");
+                            return;
+                        }
+                        
+                        const code = prompt("Enter Admin Code to deregister this member:");
+                        if (code !== '212259497') {
+                            if (code !== null) alert("Invalid Admin Code. Action cancelled.");
+                            return;
+                        }
+
+                        if (confirm(`Are you sure you want to deregister ${user.username}? This action cannot be undone.`)) {
+                            await liveDB.removeUser(user.username);
+                            alert(`${user.username} has been deregistered.`);
+                        }
+                    };
+                    
+                    container.appendChild(
+                        createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4' },
+                            createElement('div', { class: 'flex items-center gap-5 mobile-stack mobile-text-center' },
+                                createElement('div', { class: 'relative' },
+                                    createElement('div', { class: `w-16 h-16 ${teamInfo.color} rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl` }, teamInfo.avatar),
+                                    createElement('div', { class: `absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}` })
+                                ),
+                                createElement('div', null,
+                                    createElement('h3', { class: 'text-xl font-bold text-slate-800' }, user.username),
+                                    createElement('p', { class: 'text-gray-500' }, `${teamInfo.role} • ${teamInfo.name}`),
+                                    createElement('p', { class: `text-xs mt-1 ${user.isOnline ? 'text-green-600' : 'text-gray-400'}` }, lastSeen)
+                                )
+                            ),
+                            createElement('button', { 
+                                onclick: handleDeregister, 
+                                disabled: user.username === currentUser.username,
+                                class: `font-bold py-2 px-4 rounded-lg w-full sm:w-auto flex items-center gap-2 ${
+                                    user.username === currentUser.username 
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                        : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                }`
+                            },
+                                createElement('i', { class: 'fas fa-user-minus' }),
+                                'Deregister'
+                            )
+                        )
+                    );
+                });
+                
+                // Registration Modal
+                if (isRegisterModalOpen) {
+                    const modal = Modal({
+                        isOpen: true,
+                        onClose: () => {
+                            isRegisterModalOpen = false;
+                            updateUI();
+                        }
+                    }, 
+                        createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6 text-center' }, 'Register New Member'),
+                        createElement('form', { 
+                            class: 'space-y-4',
+                            onsubmit: async (e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.target);
+                                if (formData.get('adminCode') !== '212259497') {
+                                    alert('Invalid Admin Code. Registration failed.');
+                                    return;
+                                }
+
+                                const username = formData.get('username');
+                                const password = formData.get('password');
+                                const team = formData.get('team');
+                                
+                                if (users.find(u => u.username === username)) {
+                                    alert('Username already exists.');
+                                    return;
+                                }
+
+                                const newUser = { 
+                                    username, 
+                                    password, 
+                                    team, 
+                                    isOnline: false,
+                                    lastLogin: null,
+                                    lastLogout: null
+                                };
+                                
+                                await liveDB.addUser(newUser);
+                                alert('Registration successful!');
+                                isRegisterModalOpen = false;
+                                updateUI();
+                            }
+                        },
+                            createElement('div', null,
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Username'),
+                                createElement('input', { type: 'text', name: 'username', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
+                            ),
+                            createElement('div', null,
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Password'),
+                                createElement('input', { type: 'password', name: 'password', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
+                            ),
+                            createElement('div', null,
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Team'),
+                                createElement('select', { name: 'team', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2 bg-white' },
+                                    ...Object.values(teamMapping).map(t => 
+                                        createElement('option', { value: t.name }, t.name)
+                                    )
+                                )
+                            ),
+                            createElement('div', null,
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Admin Code'),
+                                createElement('input', { type: 'password', name: 'adminCode', placeholder: 'Required for registration', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
+                            ),
+                            createElement('button', { type: 'submit', class: 'w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors' }, 'Register')
+                        )
+                    );
+                    
+                    document.body.appendChild(modal);
+                }
+            }
+            
+            // Subscribe to users updates
+            const unsubscribe = liveDB.subscribe('users', (newUsers) => {
+                users = newUsers;
+                updateUI();
+            });
+            
+            // Initial data load
+            liveDB.getUsers().then(userData => {
+                users = userData;
+                updateUI();
+            });
+            
+            // Cleanup on unmount
+            container.cleanup = unsubscribe;
+            
+            return container;
+        }
+
+        // Settings Page
+        function SettingsPage(currentUser) {
+            const container = createElement('div', { class: 'space-y-6' });
+            
+            let users = [];
+            let activeModal = null;
+            
+            function updateUI() {
+                container.innerHTML = '';
+                
+                // Add team presence header
+                container.appendChild(TeamPresenceHeader(users));
+                
+                // Settings cards
+                const createCard = (title, desc, btnText, icon, modalKey) => 
+                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4' },
+                        createElement('div', { class: 'flex items-center gap-5 mobile-stack mobile-text-center' },
+                            createElement('div', { class: 'w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl' }, 
+                                createElement('i', { class: `fas ${icon}` })
+                            ),
+                            createElement('div', null, 
+                                createElement('h3', { class: 'text-lg font-bold text-slate-800' }, title), 
+                                createElement('p', { class: 'text-gray-500 text-sm' }, desc)
+                            )
+                        ),
+                        createElement('button', { 
+                            onclick: () => {
+                                activeModal = modalKey;
+                                updateUI();
+                            }, 
+                            class: 'bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 w-full md:w-auto' 
+                        }, btnText)
+                    );
+                
+                container.appendChild(
+                    createCard('Profile Information', 'Update your personal information.', 'Edit Profile', 'fa-user-edit', 'profile')
+                );
+                
+                container.appendChild(
+                    createCard('Security Settings', 'Update your password and security.', 'Update Security', 'fa-shield-alt', 'security')
+                );
+                
+                // Modals
+                if (activeModal === 'profile') {
+                    const modal = Modal({
+                        isOpen: true,
+                        onClose: () => {
+                            activeModal = null;
+                            updateUI();
+                        }
+                    }, 
+                        createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6 text-center' }, 'Edit Profile'),
+                        createElement('p', { class: 'text-center text-gray-500' }, 
+                            'This feature is coming soon. For now, your username is ',
+                            createElement('strong', null, currentUser.username),
+                            ' and you are on the ',
+                            createElement('strong', null, currentUser.team),
+                            ' team.'
+                        )
+                    );
+                    
+                    document.body.appendChild(modal);
+                }
+                
+                if (activeModal === 'security') {
+                    const modal = Modal({
+                        isOpen: true,
+                        onClose: () => {
+                            activeModal = null;
+                            updateUI();
+                        }
+                    }, 
+                        createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6 text-center' }, 'Update Password'),
+                        createElement('form', { 
+                            class: 'space-y-4',
+                            onsubmit: async (e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.target);
+                                const currentPassword = formData.get('currentPassword');
+                                const newPassword = formData.get('newPassword');
+                                const confirmPassword = formData.get('confirmPassword');
+
+                                if (currentPassword !== currentUser.password) {
+                                    alert('Current password does not match.');
+                                    return;
+                                }
+                                if (newPassword !== confirmPassword) {
+                                    alert('New passwords do not match.');
+                                    return;
+                                }
+                                if (newPassword.length < 6) {
+                                    alert('New password must be at least 6 characters long.');
+                                    return;
+                                }
+
+                                await liveDB.updateUser(currentUser.username, { password: newPassword });
+                                alert('Password updated successfully!');
+                                activeModal = null;
+                                updateUI();
+                            }
+                        },
+                            createElement('div', null,
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Current Password'),
+                                createElement('input', { type: 'password', name: 'currentPassword', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
+                            ),
+                            createElement('div', null,
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'New Password'),
+                                createElement('input', { type: 'password', name: 'newPassword', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
+                            ),
+                            createElement('div', null,
+                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Confirm New Password'),
+                                createElement('input', { type: 'password', name: 'confirmPassword', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
+                            ),
+                            createElement('button', { type: 'submit', class: 'w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg' }, 'Update Password')
+                        )
+                    );
+                    
+                    document.body.appendChild(modal);
+                }
+            }
+            
+            // Subscribe to users updates
+            const unsubscribe = liveDB.subscribe('users', (newUsers) => {
+                users = newUsers;
+                updateUI();
+            });
+            
+            // Initial data load
+            liveDB.getUsers().then(userData => {
+                users = userData;
+                updateUI();
+            });
+            
+            // Cleanup on unmount
+            container.cleanup = unsubscribe;
+            
+            return container;
+        }
+
+        // Main App
+        function App() {
+            const root = document.getElementById('root');
+            root.innerHTML = '';
+            
+            // App state
+            let currentUser = JSON.parse(localStorage.getItem('digihive_currentUser') || 'null');
+            let currentPage = 'dashboard';
+            let isSidebarOpen = window.innerWidth >= 1024;
+            let isSyncing = false;
+            let lastSyncTime = 'just now';
+            let users = [];
+            
+            // Sync status indicator
+            let syncIndicator = null;
+            
+            function updateUI() {
+                root.innerHTML = '';
+                
+                // Add sync indicator
+                syncIndicator = SyncStatusIndicator({ isSyncing, lastSyncTime });
+                root.appendChild(syncIndicator);
+                
+                if (!currentUser) {
+                    root.appendChild(LoginScreen(handleLogin));
+                    return;
+                }
+                
+                // Create main layout
+                const mainContainer = createElement('div', { class: 'flex min-h-screen bg-gray-50' });
+                
+                // Sidebar
+                const sidebar = Sidebar(currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen, users);
+                mainContainer.appendChild(sidebar);
+                
+                // Overlay for mobile sidebar
+                if (isSidebarOpen && window.innerWidth < 1024) {
+                    const overlay = createElement('div', {
+                        class: 'fixed inset-0 bg-black/50 z-30 lg:hidden',
+                        onclick: () => setSidebarOpen(false)
+                    });
+                    mainContainer.appendChild(overlay);
+                }
+                
+                // Main content area
+                const mainContent = createElement('main', { 
+                    class: `flex-1 transition-all duration-300 ease-in-out ${
+                        window.innerWidth >= 1024 ? 'lg:ml-72' : ''
+                    } p-6 sm:p-8 md:p-12` 
+                });
+                
+                // Header
+                mainContent.appendChild(Header(currentUser, handleLogout, toggleSidebar, currentPage));
+                
+                // Page content
+                const contentContainer = createElement('div', { class: 'mt-10' });
+                
+                switch (currentPage) {
+                    case 'dashboard':
+                        contentContainer.appendChild(Dashboard(currentUser, triggerSync));
+                        break;
+                    case 'submissions':
+                        contentContainer.appendChild(SubmissionsPage());
+                        break;
+                    case 'team':
+                        contentContainer.appendChild(TeamPage(currentUser));
+                        break;
+                    case 'settings':
+                        contentContainer.appendChild(SettingsPage(currentUser));
+                        break;
+                    default:
+                        contentContainer.appendChild(
+                            createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' }, 
+                                createElement('h2', { class: 'text-2xl font-bold' }, currentPage), 
+                                createElement('p', null, 'Page not found.')
+                            )
+                        );
+                }
+                
+                mainContent.appendChild(contentContainer);
+                mainContainer.appendChild(mainContent);
+                root.appendChild(mainContainer);
+            }
+            
+            // Event handlers
+            function handleLogin(user) {
+                currentUser = user;
+                localStorage.setItem('digihive_currentUser', JSON.stringify(user));
+                updateUI();
+            }
+            
+            async function handleLogout() {
+                if (currentUser) {
+                    await liveDB.updateUser(currentUser.username, { 
+                        isOnline: false, 
+                        lastLogout: new Date().toISOString() 
+                    });
+                }
+                currentUser = null;
+                localStorage.removeItem('digihive_currentUser');
+                updateUI();
+            }
+            
+            function setCurrentPage(page) {
+                currentPage = page;
+                updateUI();
+            }
+            
+            function setSidebarOpen(open) {
+                isSidebarOpen = open;
+                updateUI();
+            }
+            
+            function toggleSidebar() {
+                setSidebarOpen(!isSidebarOpen);
+            }
+            
+            function triggerSync() {
+                isSyncing = true;
+                updateUI();
+                
+                setTimeout(() => {
+                    isSyncing = false;
+                    const now = new Date();
+                    lastSyncTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    updateUI();
+                }, 1000);
+            }
+            
+            // Auto-sync every 30 seconds
+            setInterval(triggerSync, 30000);
+            
+            // Update user online status
+            if (currentUser) {
+                liveDB.updateUser(currentUser.username, { 
                     isOnline: true,
                     lastLogin: new Date().toISOString()
                 });
+            }
+            
+            // Subscribe to users updates
+            const unsubscribe = liveDB.subscribe('users', (newUsers) => {
+                users = newUsers;
+                updateUI();
+            });
+            
+            // Initial data load
+            liveDB.getUsers().then(userData => {
+                users = userData;
+                updateUI();
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024) {
+                    setSidebarOpen(true);
+                } else {
+                    setSidebarOpen(false);
+                }
+            });
+            
+            // Initial render
+            updateUI();
+            
+            // Cleanup on unmount
+            return () => {
+                unsubscribe();
             };
-            updateOnlineStatus();
         }
-    }, [currentUser]);
 
-    const renderPage = () => {
-        if (!currentUser) return null;
-
-        switch (currentPage) {
-            case 'dashboard':
-                return React.createElement(Dashboard, { 
-                    currentUser, 
-                    onSyncTrigger: triggerSync 
-                });
-            case 'submissions':
-                return React.createElement(Submissions);
-            case 'team':
-                return React.createElement(Team, { currentUser });
-            case 'settings':
-                return React.createElement(Settings, { currentUser });
-            default:
-                return React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, 
-                    React.createElement('h2', { className: "text-2xl font-bold" }, currentPage), 
-                    React.createElement('p', null, "Page not found.")
-                );
-        }
-    };
-
-    if (!currentUser) {
-        return React.createElement(LoginScreen, { onLogin: handleLogin });
-    }
-
-    return React.createElement('div', { className: "flex min-h-screen bg-[#F8FAFC] text-[#1A1A2E]" },
-        React.createElement(Sidebar, { 
-            currentPage, 
-            setCurrentPage, 
-            isSidebarOpen, 
-            setSidebarOpen, 
-            users: users 
-        }),
-        React.createElement('div', {
-            className: `fixed inset-0 bg-black/50 z-30 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`,
-            onClick: () => setSidebarOpen(false)
-        }),
-        React.createElement('main', { className: "flex-1 transition-all duration-300 ease-in-out lg:ml-72 p-6 sm:p-8 md:p-12" },
-            React.createElement(Header, { 
-                user: currentUser, 
-                onLogout: handleLogout, 
-                toggleSidebar: () => setSidebarOpen(!isSidebarOpen),
-                pageTitle: currentPage
-            }),
-            React.createElement('div', { className: "mt-10" },
-                renderPage()
-            )
-        ),
-        React.createElement(SyncStatusIndicator, { 
-            isSyncing: isSyncing, 
-            lastSyncTime: lastSyncTime 
-        })
-    );
-};
-
-// --- RENDER ---
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
-}
-
-const root = ReactDOM.createRoot(rootElement);
-root.render(
-  React.createElement(StrictMode, null,
-    React.createElement(App, null)
-  )
-);
-
-</script>
-
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            App();
+        });
+    </script>
 </body>
 </html>
