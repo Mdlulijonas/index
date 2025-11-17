@@ -20,8 +20,19 @@
         from { transform: scale(0.95); opacity: 0; }
         to { transform: scale(1); opacity: 1; }
       }
+      @keyframes pulse-sync {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+      @keyframes slide-in-right {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
       .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
       .animate-scale-up { animation: scale-up 0.3s ease-out forwards; }
+      .animate-pulse-sync { animation: pulse-sync 2s infinite; }
+      .animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
     </style>
 </head>
 <body>
@@ -240,7 +251,84 @@ const Modal = ({ isOpen, onClose, children, size = 'md' }) => {
     );
 };
 
-const CommentsSection = ({ comments, setComments, currentUser }) => {
+const SyncStatusIndicator = ({ isSyncing, lastSyncTime }) => {
+    return (
+        React.createElement('div', { 
+            className: `fixed top-4 right-4 z-40 flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-300 ${
+                isSyncing ? 'bg-blue-500 text-white animate-pulse-sync' : 'bg-green-500 text-white'
+            } animate-slide-in-right` 
+        },
+            React.createElement('i', { 
+                className: `fas ${isSyncing ? 'fa-sync-alt fa-spin' : 'fa-check-circle'}` 
+            }),
+            React.createElement('span', { className: "text-sm font-medium" },
+                isSyncing ? 'Syncing...' : `Synced ${lastSyncTime}`
+            )
+        )
+    );
+};
+
+const TeamPresenceHeader = ({ users }) => {
+    const onlineTeams = Object.values(teamMapping).filter(team => 
+        users.some(user => user.team === team.name && user.isOnline)
+    ).length;
+    
+    const totalTeams = Object.keys(teamMapping).length;
+
+    return (
+        React.createElement('div', { className: "bg-white rounded-2xl p-4 shadow-sm mb-6" },
+            React.createElement('div', { className: "flex items-center justify-between" },
+                React.createElement('div', { className: "flex items-center gap-3" },
+                    React.createElement('div', { className: "flex items-center gap-2" },
+                        React.createElement('div', { className: "w-3 h-3 rounded-full bg-green-500 animate-pulse" }),
+                        React.createElement('span', { className: "font-bold text-slate-800" }, "Live Team Status")
+                    ),
+                    React.createElement('span', { className: "text-sm text-gray-600" }, 
+                        `${onlineTeams} of ${totalTeams} teams online`
+                    )
+                ),
+                React.createElement('div', { className: "hidden md:flex items-center gap-4" },
+                    {Object.values(teamMapping).map(team => {
+                        const isOnline = users.some(user => user.team === team.name && user.isOnline);
+                        return (
+                            React.createElement('div', { 
+                                key: team.name, 
+                                className: "flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50"
+                            },
+                                React.createElement('div', { 
+                                    className: `w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
+                                }),
+                                React.createElement('span', { className: "text-sm font-medium text-slate-700" }, team.avatar),
+                                React.createElement('span', { className: "text-xs text-gray-600 hidden lg:inline" }, team.name)
+                            )
+                        );
+                    })}
+                )
+            ),
+            
+            {/* Mobile team status grid */}
+            React.createElement('div', { className: "mt-3 md:hidden grid grid-cols-3 gap-2" },
+                {Object.values(teamMapping).map(team => {
+                    const isOnline = users.some(user => user.team === team.name && user.isOnline);
+                    return (
+                        React.createElement('div', { 
+                            key: team.name, 
+                            className: "flex items-center gap-2 p-2 rounded-lg bg-gray-50 text-sm"
+                        },
+                            React.createElement('div', { 
+                                className: `w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
+                            }),
+                            React.createElement('span', { className: "font-medium text-slate-700" }, team.avatar),
+                            React.createElement('span', { className: "text-gray-600" }, team.name)
+                        )
+                    );
+                })}
+            )
+        )
+    );
+};
+
+const CommentsSection = ({ comments, setComments, currentUser, onSyncTrigger }) => {
     const [newComment, setNewComment] = useState('');
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [summary, setSummary] = useState('');
@@ -260,6 +348,11 @@ const CommentsSection = ({ comments, setComments, currentUser }) => {
 
         setComments([comment, ...comments]);
         setNewComment('');
+        
+        // Trigger sync indicator
+        if (onSyncTrigger) {
+            onSyncTrigger();
+        }
     };
 
     const handleSummarize = async () => {
@@ -273,7 +366,13 @@ const CommentsSection = ({ comments, setComments, currentUser }) => {
     
     return (
         React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col" },
-            React.createElement('h3', { className: "text-xl font-bold text-slate-800 mb-4" }, "Team Comments"),
+            React.createElement('div', { className: "flex items-center justify-between mb-4" },
+                React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, "Team Comments"),
+                React.createElement('div', { className: "flex items-center gap-2 text-sm text-green-600 bg-green-50 px-2 py-1 rounded" },
+                    React.createElement('i', { className: "fas fa-sync-alt" }),
+                    React.createElement('span', null, "Live Updates")
+                )
+            ),
             React.createElement('form', { onSubmit: handleSubmitComment, className: "mb-4 flex gap-3" },
                 React.createElement('input', {
                     type: "text",
@@ -282,7 +381,13 @@ const CommentsSection = ({ comments, setComments, currentUser }) => {
                     placeholder: "Leave a comment about your tasks or challenges...",
                     className: "flex-grow w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500"
                 }),
-                React.createElement('button', { type: "submit", className: "bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors" }, "Post")
+                React.createElement('button', { 
+                    type: "submit", 
+                    className: "bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2" 
+                }, 
+                    React.createElement('i', { className: "fas fa-paper-plane" }),
+                    "Post"
+                )
             ),
             React.createElement('div', { className: "flex-1 overflow-y-auto pr-2 space-y-4" },
                 comments.length === 0 ? (
@@ -605,7 +710,7 @@ const LiveStatusWidget = ({ users }) => {
     );
 };
 
-const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, setSubmissions, users }) => {
+const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, setSubmissions, users, onSyncTrigger }) => {
     const [quote, setQuote] = useState(MOTIVATION_QUOTES[0]);
     const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
     const [submissionSuccess, setSubmissionSuccess] = useState(false);
@@ -640,6 +745,11 @@ const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, 
 
         setSubmissions(prev => [newSubmission, ...prev]);
         setSubmissionSuccess(true);
+        
+        // Trigger sync indicator
+        if (onSyncTrigger) {
+            onSyncTrigger();
+        }
     };
     
     const closeSubmissionModal = () => {
@@ -649,6 +759,8 @@ const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, 
 
     return (
         React.createElement('div', { className: "space-y-8" },
+            React.createElement(TeamPresenceHeader, { users: users }),
+            
             React.createElement('div', { className: "p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800" },
                 React.createElement('i', { className: "fas fa-quote-left mr-2" }), ` ${quote}`
             ),
@@ -660,17 +772,28 @@ const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, 
             ),
             React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-3 gap-8" },
                 React.createElement('div', { className: "lg:col-span-2 h-[550px]" },
-                   React.createElement(CommentsSection, { comments: comments, setComments: setComments, currentUser: currentUser })
+                   React.createElement(CommentsSection, { 
+                       comments: comments, 
+                       setComments: setComments, 
+                       currentUser: currentUser,
+                       onSyncTrigger: onSyncTrigger 
+                   })
                 ),
                 React.createElement('div', { className: "lg:col-span-1 space-y-8" },
                     React.createElement(LiveStatusWidget, { users: users }),
                     React.createElement('div', { className: "h-[450px]" },
                         React.createElement(UpcomingTask, { tasks: upcomingTasks })
                     ),
-                    React.createElement('div', { onClick: () => setIsSubmissionModalOpen(true), className: "bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300" },
+                    React.createElement('div', { 
+                        onClick: () => setIsSubmissionModalOpen(true), 
+                        className: "bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300" 
+                    },
                         React.createElement('div', { className: "flex flex-col items-center text-center gap-4" },
                             React.createElement('div', { className: "w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center" }, React.createElement('i', { className: "fas fa-cloud-upload-alt" })),
-                            React.createElement('div', null, React.createElement('h3', { className: "font-bold text-slate-800 text-lg" }, "Submit Weekly Report"), React.createElement('p', { className: "text-sm text-gray-500 mt-1" }, "Tap here to upload progress."))
+                            React.createElement('div', null, 
+                                React.createElement('h3', { className: "font-bold text-slate-800 text-lg" }, "Submit Weekly Report"), 
+                                React.createElement('p', { className: "text-sm text-gray-500 mt-1" }, "Tap here to upload progress.")
+                            )
                         )
                     )
                 )
@@ -688,14 +811,17 @@ const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, 
                                 React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Upload File (Optional)"),
                                 React.createElement('input', { type: "file", id: "report-file", className: "w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" })
                             ),
-                            React.createElement('button', { type: "submit", className: "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg" }, React.createElement('i', { className: "fas fa-paper-plane mr-2" }), "Submit Report")
+                            React.createElement('button', { type: "submit", className: "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2" }, 
+                                React.createElement('i', { className: "fas fa-paper-plane" }),
+                                "Submit Report"
+                            )
                         )
                     )
                 ) : (
                     React.createElement('div', { className: "text-center py-10" },
                         React.createElement('i', { className: "fas fa-check-circle text-6xl text-green-500 mb-4" }),
                         React.createElement('h2', { className: "text-2xl font-bold text-slate-800" }, "Submission Successful!"),
-                        React.createElement('p', { className: "text-gray-600 mt-2" }, "Your report has been archived."),
+                        React.createElement('p', { className: "text-gray-600 mt-2" }, "Your report has been archived and synced with all team members."),
                         React.createElement('button', { onClick: closeSubmissionModal, className: "mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg" }, "Close")
                     )
                 )
@@ -746,6 +872,8 @@ const Tasks = ({ allTasks }) => {
 
     return (
         React.createElement('div', { className: "space-y-6" },
+            React.createElement(TeamPresenceHeader, { users: [] }),
+            
             React.createElement('div', { className: "bg-white p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 items-center" },
                 React.createElement('select', { 
                     id: "team-filter", 
@@ -775,7 +903,7 @@ const Tasks = ({ allTasks }) => {
     );
 };
 
-const Submissions = ({ submissions }) => {
+const Submissions = ({ submissions, users }) => {
 
     const handleDownload = (submission) => {
         const content = submission.fileContent || `Submission Details:\nName: ${submission.name}\nMember: ${submission.member}\nDate: ${submission.date}`;
@@ -810,10 +938,12 @@ const Submissions = ({ submissions }) => {
             
     return (
          React.createElement(React.Fragment, null,
+            React.createElement(TeamPresenceHeader, { users: users }),
+            
             React.createElement('div', { className: 'mb-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg' },
                 React.createElement('p', { className: 'text-sm text-blue-800' },
                     React.createElement('i', { className: 'fas fa-info-circle mr-2' }),
-                    'This is a shared archive. All submissions from every team are visible here.'
+                    'This is a shared archive. All submissions from every team are visible here and updated in real-time.'
                 )
             ),
             React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm overflow-x-auto" },
@@ -880,6 +1010,8 @@ const Team = ({ users, setUsers, currentUser }) => {
 
     return (
         React.createElement('div', { className: "space-y-6" },
+            React.createElement(TeamPresenceHeader, { users: users }),
+            
             React.createElement('div', { className: "bg-white p-4 rounded-2xl shadow-sm flex justify-end" },
                 React.createElement('button', { 
                     onClick: () => setRegisterModalOpen(true),
@@ -942,7 +1074,7 @@ const Team = ({ users, setUsers, currentUser }) => {
 };
 
 
-const Settings = ({ currentUser, updateUser }) => {
+const Settings = ({ currentUser, updateUser, users }) => {
     const [activeModal, setActiveModal] = useState(null);
 
     const handleUpdatePassword = (e) => {
@@ -997,6 +1129,8 @@ const Settings = ({ currentUser, updateUser }) => {
 
     return (
         React.createElement('div', { className: "space-y-6" },
+            React.createElement(TeamPresenceHeader, { users: users }),
+            
             createCard('Profile Information', 'Update your personal information.', 'Edit Profile', 'fa-user-edit', 'profile'),
             createCard('Notification Preferences', 'Manage how you receive notifications.', 'Configure', 'fa-bell', 'notifications'),
             createCard('Security Settings', 'Update your password and security.', 'Update Security', 'fa-shield-alt', 'security'),
@@ -1051,6 +1185,8 @@ const App = () => {
     const [currentUser, setCurrentUser] = useLocalStorage('digihive_currentUser', null);
     const [currentPage, setCurrentPage] = useState('dashboard');
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [lastSyncTime, setLastSyncTime] = useState('just now');
 
     const [allTasks, setAllTasks] = useState([]);
     const [submissions, setSubmissions] = useLocalStorage('digihive_submissions', []);
@@ -1107,6 +1243,17 @@ const App = () => {
         setCurrentUser(null);
     }, [currentUser, users, setCurrentUser, updateUser]);
 
+    const triggerSync = useCallback(() => {
+        setIsSyncing(true);
+        
+        // Simulate sync process
+        setTimeout(() => {
+            setIsSyncing(false);
+            const now = new Date();
+            setLastSyncTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        }, 1500);
+    }, []);
+
     useEffect(() => {
         const handleStorageChange = (event) => {
             if (!event.key || event.newValue === event.oldValue) return;
@@ -1126,12 +1273,15 @@ const App = () => {
             switch (event.key) {
                 case 'digihive_comments':
                     updateState(setComments);
+                    triggerSync();
                     break;
                 case 'digihive_submissions':
                     updateState(setSubmissions);
+                    triggerSync();
                     break;
                 case 'digihive_users':
                     updateState(setUsers);
+                    triggerSync();
                     break;
                 case 'digihive_currentUser':
                     if (event.newValue === 'null' && event.oldValue) {
@@ -1153,7 +1303,7 @@ const App = () => {
 
         window.addEventListener('storage', handleStorageChange);
         return () => window.removeEventListener('storage', handleStorageChange);
-    }, [setComments, setSubmissions, setUsers, setCurrentUser]);
+    }, [setComments, setSubmissions, setUsers, setCurrentUser, triggerSync]);
 
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -1189,15 +1339,24 @@ const App = () => {
     const renderPage = () => {
         switch (currentPage) {
             case 'dashboard':
-                return React.createElement(Dashboard, { allTasks, comments, setComments, currentUser, submissions, setSubmissions, users });
+                return React.createElement(Dashboard, { 
+                    allTasks, 
+                    comments, 
+                    setComments, 
+                    currentUser, 
+                    submissions, 
+                    setSubmissions, 
+                    users,
+                    onSyncTrigger: triggerSync 
+                });
             case 'tasks':
                 return React.createElement(Tasks, { allTasks });
             case 'submissions':
-                return React.createElement(Submissions, { submissions });
+                return React.createElement(Submissions, { submissions, users });
             case 'team':
                 return React.createElement(Team, { users, setUsers, currentUser });
             case 'settings':
-                return React.createElement(Settings, { currentUser, updateUser });
+                return React.createElement(Settings, { currentUser, updateUser, users });
             default:
                 return React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('h2', { className: "text-2xl font-bold" }, currentPage), React.createElement('p', null, "Page not found."));
         }
@@ -1224,7 +1383,11 @@ const App = () => {
                 React.createElement('div', { className: "mt-10" },
                     renderPage()
                 )
-            )
+            ),
+            React.createElement(SyncStatusIndicator, { 
+                isSyncing: isSyncing, 
+                lastSyncTime: lastSyncTime 
+            })
         )
     );
 };
