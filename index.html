@@ -12,11 +12,6 @@
         background-color: #F8FAFC;
         color: #1A1A2E;
       }
-      .hidden { display: none; }
-      #sidebar { transition: transform 0.3s ease-in-out; }
-      .modal-content { transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
-      .modal.open .modal-content { transform: scale(1) translateY(0); opacity: 1; }
-      .modal .modal-content { transform: scale(0.95) translateY(10px); opacity: 0; }
        @keyframes fade-in {
         from { opacity: 0; }
         to { opacity: 1; }
@@ -30,51 +25,7 @@
     </style>
 </head>
 <body>
-
-    <!-- Main Application Wrapper (Hidden by default) -->
-    <div id="app-wrapper" class="hidden">
-      <div class="flex min-h-screen bg-[#F8FAFC] text-[#1A1A2E]">
-        <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-[#1E293B] text-slate-200 p-6 z-40 -translate-x-full lg:translate-x-0">
-          <!-- Sidebar content will be injected here -->
-        </aside>
-
-        <!-- Main Content -->
-        <main id="main-content-area" class="flex-1 transition-all duration-300 ease-in-out lg:ml-72 p-6 sm:p-8 md:p-12">
-            <header id="header-container" class="flex justify-between items-center mb-10">
-                <!-- Header will be injected here -->
-            </header>
-            <div id="page-content">
-                <!-- Page content will be dynamically rendered here -->
-            </div>
-        </main>
-      </div>
-    </div>
-    
-    <!-- Initial Login/Motivation Popup -->
-    <div id="login-popup" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center">
-            <div class="flex justify-center items-center gap-3 mb-4">
-              <div class="w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg">DH</div>
-              <span class="text-2xl font-extrabold text-slate-800">Welcome to DigiHive</span>
-            </div>
-            <div class="my-6 p-4 bg-gray-100 rounded-lg border-l-4 border-blue-500">
-                <p id="popup-quote" class="text-gray-700 italic">"The secret of getting ahead is getting started."</p>
-            </div>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <button id="show-login-btn" class="flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300">Login</button>
-                <button id="show-register-btn" class="flex-1 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-300">Register a Team Member</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Universal Modal Container -->
-    <div id="modal-container" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 hidden">
-        <div id="modal-content" class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative">
-            <!-- Modal content will be injected here -->
-        </div>
-    </div>
-    
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 lg:hidden hidden"></div>
+    <div id="root"></div>
 
 <script type="importmap">
 {
@@ -89,20 +40,24 @@
 
 <script type="module">
 import { GoogleGenAI } from "@google/genai";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 
-document.addEventListener('DOMContentLoaded', () => {
+const { useState, useEffect, useCallback, useMemo, StrictMode } = React;
 
-    // --- DATA STORE & CONSTANTS ---
-    const ADMIN_CODE = '212259497';
-    const MASTER_USERS = [
-        { username: 'admin', password: 'password', team: 'Administrator', isOnline: false },
-        { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false },
-        { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false },
-        { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false },
-        { username: 'support_agent', password: 'password', team: 'Support', isOnline: false },
-        { username: 'writer', password: 'password', team: 'Content', isOnline: false },
-    ];
-    const CSV_DATA = `Subject,Start Date,Start Time,End Date,End Time,Description,Location
+// --- CONSTANTS ---
+const ADMIN_CODE = '212259497';
+
+const MASTER_USERS = [
+    { username: 'admin', password: 'password', team: 'Administrator', isOnline: false },
+    { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false },
+    { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false },
+    { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false },
+    { username: 'support_agent', password: 'password', team: 'Support', isOnline: false },
+    { username: 'writer', password: 'password', team: 'Content', isOnline: false },
+];
+
+const CSV_DATA = `Subject,Start Date,Start Time,End Date,End Time,Description,Location
 Administrator Q1 Budget Review,2026-01-15,10:00,2026-01-15,12:00,Review and approve Q1 budget submissions from all teams,Remote
 Administrator Security Audit,2026-01-16,14:00,2026-01-16,16:00,Perform annual security audit of the platform,Remote
 Full-stack Server Setup,2026-01-13,09:00,2026-01-13,11:00,Set up cloud server environment and configure database architecture,Remote
@@ -116,551 +71,669 @@ Support Documentation,2026-01-14,16:00,2026-01-14,17:30,Create documentation str
 Content Planning,2026-01-13,13:00,2026-01-13,15:00,Plan 3-month content calendar and research trending topics,Remote
 Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create social media accounts,Remote`;
 
-    const teamMapping = {
-      'Administrator': { name: 'Administrator', color: 'bg-[#E53E3E]', avatar: 'AD', className: 'Administrator', role: 'System Administration' },
-      'Full-Stack': { name: 'Full-Stack', color: 'bg-[#2A5CAA]', avatar: 'FS', className: 'FullStack', role: 'Development Team' },
-      'UI/UX': { name: 'UI/UX', color: 'bg-[#673AB7]', avatar: 'UX', className: 'UIUX', role: 'Design Team' },
-      'Marketing': { name: 'Marketing', color: 'bg-[#4CAF50]', avatar: 'MK', className: 'Marketing', role: 'Marketing Team' },
-      'Support': { name: 'Support', color: 'bg-[#009688]', avatar: 'ST', className: 'Support', role: 'Support Team' },
-      'Content': { name: 'Content', color: 'bg-[#FF9800]', avatar: 'CT', className: 'Content', role: 'Content Team' },
-    };
-    
-    const MOTIVATION_QUOTES = [
-        "Every line of code you write brings us closer to empowering creators worldwide.",
-        "Your energy and focus today will build the foundation for tomorrow's achievements.",
-        "Collaboration multiplies our impact - together we achieve extraordinary results.",
-        "Great things in business are never done by one person. They're done by a team of people.",
-        "The strength of the team is each individual member. The strength of each member is the team.",
-        "Coming together is a beginning, staying together is progress, and working together is success."
-    ];
+const teamMapping = {
+    'Administrator': { name: 'Administrator', color: 'bg-[#E53E3E]', avatar: 'AD', className: 'Administrator', role: 'System Administration' },
+    'Full-Stack': { name: 'Full-Stack', color: 'bg-[#2A5CAA]', avatar: 'FS', className: 'FullStack', role: 'Development Team' },
+    'UI/UX': { name: 'UI/UX', color: 'bg-[#673AB7]', avatar: 'UX', className: 'UIUX', role: 'Design Team' },
+    'Marketing': { name: 'Marketing', color: 'bg-[#4CAF50]', avatar: 'MK', className: 'Marketing', role: 'Marketing Team' },
+    'Support': { name: 'Support', color: 'bg-[#009688]', avatar: 'ST', className: 'Support', role: 'Support Team' },
+    'Content': { name: 'Content', color: 'bg-[#FF9800]', avatar: 'CT', className: 'Content', role: 'Content Team' },
+};
 
-    const pageTitles = {
-        dashboard: 'Dashboard',
-        tasks: 'My Tasks - Full List',
-        submissions: 'Past Submissions Archive',
-        team: 'Team Directory',
-        settings: 'Settings'
-    };
-    
-    // --- STATE MANAGEMENT ---
-    let appState = {
-        currentPage: 'dashboard',
-        allTasks: [],
-        users: [],
-        submissions: [],
-        comments: [],
-        currentUser: null,
-        isSidebarOpen: false
-    };
+const MOTIVATION_QUOTES = [
+    "Every line of code you write brings us closer to empowering creators worldwide.",
+    "Your energy and focus today will build the foundation for tomorrow's achievements.",
+    "Collaboration multiplies our impact - together we achieve extraordinary results.",
+    "Small consistent efforts lead to massive accomplishments over time.",
+    "Your unique perspective adds value that no one else can contribute.",
+    "Challenges are opportunities in disguise - embrace them with enthusiasm."
+];
 
-    // --- DOM ELEMENT REFERENCES ---
-    const appWrapper = document.getElementById('app-wrapper');
-    const loginPopup = document.getElementById('login-popup');
-    const pageContentEl = document.getElementById('page-content');
-    const headerContainer = document.getElementById('header-container');
-    const sidebarEl = document.getElementById('sidebar');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const modalContainer = document.getElementById('modal-container');
-    const modalContent = document.getElementById('modal-content');
-    
-    // --- UTILITY & STORAGE FUNCTIONS ---
-    const getFromStorage = (key, defaultValue = []) => JSON.parse(localStorage.getItem(key)) || defaultValue;
-    const saveToStorage = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+const pageTitles = {
+    dashboard: 'Dashboard',
+    tasks: 'My Tasks - Full List',
+    calendar: 'Calendar',
+    progress: 'Progress Analytics',
+    submissions: 'Past Submissions Archive',
+    team: 'Team Directory',
+    settings: 'Settings'
+};
 
-    const parseTasks = (csv) => {
-        const lines = csv.trim().split('\n');
-        const headers = lines.shift()?.split(',');
-        if (!headers) return [];
-        return lines.map(line => {
-            const values = line.split(',');
-            const taskData = headers.reduce((obj, header, index) => ({...obj, [header]: values[index]}), {});
-            const teamKey = Object.keys(teamMapping).find(key => taskData.Subject.startsWith(key)) || 'Full-Stack';
-            const teamInfo = teamMapping[teamKey];
-            return {
-                subject: taskData.Subject,
-                startDate: new Date(`${taskData['Start Date']}T${taskData['Start Time']}`),
-                endDate: new Date(`${taskData['End Date']}T${taskData['End Time']}`),
-                description: taskData.Description, location: taskData.Location,
-                ...teamInfo,
-            };
-        });
-    };
-
-    // --- GEMINI API SERVICE ---
-    const summarizeComments = async (comments) => {
-        if (!process.env.API_KEY) {
-            console.error("API_KEY environment variable not set.");
-            return "API key is not configured. Please contact the administrator.";
-        }
-        try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const commentsText = comments.map(c => `- ${c.username} (${c.team}): "${c.text}"`).join('\n');
-            if (comments.length === 0) return "There are no comments to summarize.";
-            const prompt = `You are a helpful project management assistant for a dashboard called DigiHive. Summarize the following team comments, focusing on key points, challenges, and action items. Use a concise, easy-to-read format with bullet points.\n\nComments:\n${commentsText}`;
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            return response.text;
-        } catch (error) {
-            console.error("Error summarizing comments:", error);
-            return "Failed to generate summary. The AI service may be unavailable.";
-        }
-    };
-
-    // --- MODAL HANDLING ---
-    const openModal = (htmlContent, size = 'max-w-2xl') => {
-        modalContent.className = `bg-white rounded-2xl shadow-xl w-full ${size} max-h-[90vh] overflow-y-auto p-8 relative`;
-        modalContent.innerHTML = htmlContent;
-        modalContainer.classList.remove('hidden');
-        setTimeout(() => modalContainer.classList.add('open'), 10);
-        const closeModalHandler = () => closeModal();
-        modalContainer.addEventListener('click', closeModalHandler, { once: true });
-        modalContent.addEventListener('click', (e) => e.stopPropagation());
-    };
-
-    const closeModal = () => {
-        modalContainer.classList.remove('open');
-        setTimeout(() => modalContainer.classList.add('hidden'), 300);
-    };
-
-    // --- AUTHENTICATION & INITIALIZATION ---
-    function init() {
-        document.getElementById('popup-quote').textContent = `"${MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]}"`;
-        
-        let storedUsers = getFromStorage('digihive_users', null);
-        if (storedUsers === null) {
-            storedUsers = MASTER_USERS;
-        }
-        
-        const masterUsernames = MASTER_USERS.map(u => u.username);
-        const localOnlyUsers = storedUsers.filter(u => !masterUsernames.includes(u.username));
-        const updatedMasterUsers = MASTER_USERS.map(masterUser => {
-            const storedVersion = storedUsers.find(u => u.username === masterUser.username);
-            return storedVersion || masterUser;
-        });
-
-        appState.users = [...updatedMasterUsers, ...localOnlyUsers];
-        saveToStorage('digihive_users', appState.users);
-
-        appState.currentUser = getFromStorage('digihive_currentUser', null);
-
-        if (appState.currentUser) {
-            validateSessionAndInit();
-        } else {
-            showLoginScreen();
-        }
-
-        document.getElementById('show-login-btn').addEventListener('click', showLoginModal);
-        document.getElementById('show-register-btn').addEventListener('click', showRegisterModal);
-    }
-
-    function validateSessionAndInit() {
-        const userInDb = appState.users.find(u => u.username === appState.currentUser.username);
-        // REMOVED: || userInDb.sessionToken !== appState.currentUser.sessionToken
-        // This check is unreliable without a central database and causes the described bug.
-        if (!userInDb) { 
-            handleLogout(false); // Silent logout
-            alert('Your user account could not be found, possibly removed by an admin. Please log in again.');
-            showLoginScreen();
-        } else {
-            // Session is valid, proceed to initialize the app
-            const loggedInUser = { ...userInDb, sessionToken: appState.currentUser.sessionToken, isOnline: true };
-            appState.currentUser = loggedInUser;
-            saveToStorage('digihive_currentUser', loggedInUser);
-            updateUserRecord(loggedInUser);
-            initializeApp();
-        }
-    }
-
-    function showLoginScreen() {
-        loginPopup.classList.remove('hidden');
-        appWrapper.classList.add('hidden');
-    }
-
-    function initializeApp() {
-        loginPopup.classList.add('hidden');
-        appWrapper.classList.remove('hidden');
-
-        appState.allTasks = parseTasks(CSV_DATA);
-        appState.submissions = getFromStorage('digihive_submissions');
-        appState.comments = getFromStorage('digihive_comments');
-        
-        renderPage(appState.currentPage);
-        setupGlobalEventListeners();
-    }
-
-    function setupGlobalEventListeners() {
-        sidebarOverlay.addEventListener('click', () => {
-            appState.isSidebarOpen = false;
-            updateSidebarVisibility();
-        });
-        
-        pageContentEl.addEventListener('click', (e) => {
-            const deregisterButton = e.target.closest('.deregister-btn');
-            if (deregisterButton) handleDeregister(deregisterButton.dataset.username);
-
-            const downloadButton = e.target.closest('.download-btn');
-            if (downloadButton) {
-                const submission = appState.submissions[parseInt(downloadButton.dataset.index, 10)];
-                handleDownload(submission);
-            }
-        });
-
-        // Listen for storage changes to sync tabs
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'digihive_users' && !appWrapper.classList.contains('hidden')) {
-                appState.users = getFromStorage('digihive_users', []);
-                if (appState.currentPage === 'team') {
-                    renderPage('team'); // Re-render to show updated statuses
+// --- HOOKS ---
+function useLocalStorage(key, initialValue) {
+    const getStorageValue = (key, defaultValue) => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch (error) {
+                    console.error('Error parsing JSON from localStorage', error);
+                    return defaultValue;
                 }
             }
-             if (e.key === 'digihive_currentUser' && e.newValue === null && appState.currentUser) {
-                alert('You have been logged out from another tab.');
-                window.location.reload();
-            }
+        }
+        return defaultValue;
+    }
+
+    const [value, setValue] = useState(() => {
+        return getStorageValue(key, initialValue);
+    });
+
+    useEffect(() => {
+        localStorage.setItem(key, JSON.stringify(value));
+    }, [key, value]);
+
+    return [value, setValue];
+}
+
+// --- UTILS ---
+const parseTasks = (csv) => {
+    const lines = csv.trim().split('\n');
+    const headers = lines.shift()?.split(',');
+    if (!headers) return [];
+
+    return lines.map(line => {
+        const values = line.split(',');
+        const taskData = headers.reduce((obj, header, index) => {
+            obj[header] = values[index];
+            return obj;
+        }, {});
+
+        const teamKey = Object.keys(teamMapping).find(key => taskData.Subject.startsWith(key));
+        const teamInfo = teamKey ? teamMapping[teamKey] : { name: 'General', color: 'bg-gray-500', avatar: 'G', className: 'General', role: '' };
+
+        return {
+            subject: taskData.Subject,
+            startDate: new Date(`${taskData['Start Date']}T${taskData['Start Time']}`),
+            endDate: new Date(`${taskData['End Date']}T${taskData['End Time']}`),
+            description: taskData.Description,
+            location: taskData.Location,
+            team: teamInfo.name,
+            teamColor: teamInfo.color,
+            teamAvatar: teamInfo.avatar,
+            teamClass: teamInfo.className,
+        };
+    });
+};
+
+// --- SERVICES ---
+const summarizeComments = async (comments) => {
+    if (!process.env.API_KEY) {
+        console.error("API_KEY environment variable not set.");
+        return "API key is not configured. Please contact the administrator.";
+    }
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const commentsText = comments.map(c => `- ${c.username} (${c.team}): "${c.text}"`).join('\n');
+        
+        if (commentsText.length === 0) {
+            return "There are no comments to summarize.";
+        }
+
+        const prompt = `
+            You are an assistant for a project management dashboard called DigiHive.
+            Your task is to summarize the following team comments.
+            Focus on key points, challenges, and action items.
+            Provide the summary in a concise, easy-to-read format using bullet points.
+            
+            Comments:
+            ${commentsText}
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
         });
 
-        // Set user offline when they close the tab
-        window.addEventListener('beforeunload', () => {
-            if (appState.currentUser) {
-                // This is a "best effort" to mark user as offline.
-                const users = getFromStorage('digihive_users', []);
-                const userIndex = users.findIndex(u => u.username === appState.currentUser.username);
-                if (userIndex > -1) {
-                    users[userIndex].isOnline = false;
-                    users[userIndex].lastLogout = new Date().toISOString();
-                    saveToStorage('digihive_users', users);
-                }
+        return response.text;
+    } catch (error) {
+        console.error("Error summarizing comments with Gemini API:", error);
+        return "Failed to generate summary. The AI service may be temporarily unavailable.";
+    }
+};
+
+
+// --- COMPONENTS ---
+
+const Modal = ({ isOpen, onClose, children, size = 'md' }) => {
+    useEffect(() => {
+        const handleEsc = (event) => {
+            if (event.key === 'Escape') {
+                onClose();
             }
-        });
-    }
-    
-    // --- AUTH MODALS & LOGIC ---
-    function showLoginModal() {
-        const loginFormHTML = `
-            <button class="absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl" onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))"><i class="fas fa-times"></i></button>
-            <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Login to DigiHive</h2>
-            <form id="login-form">
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Username</label><input type="text" name="username" required class="w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500"></div>
-                <div class="mb-6"><label class="block text-sm font-medium text-gray-700 mb-1">Password</label><input type="password" name="password" required class="w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500"></div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">Login</button>
-            </form>`;
-        openModal(loginFormHTML, 'max-w-md');
-        document.getElementById('login-form').addEventListener('submit', handleLogin);
-    }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => {
+            window.removeEventListener('keydown', handleEsc);
+        };
+    }, [onClose]);
 
-    function showRegisterModal() {
-        const teamOptions = Object.values(teamMapping).map(t => `<option value="${t.name}">${t.name}</option>`).join('');
-        const registerFormHTML = `
-            <button class="absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl" onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))"><i class="fas fa-times"></i></button>
-            <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Register New Member</h2>
-            <form id="register-form">
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Username</label><input type="text" name="username" required class="w-full border-2 border-gray-200 rounded-lg p-2"></div>
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Password</label><input type="password" name="password" required class="w-full border-2 border-gray-200 rounded-lg p-2"></div>
-                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Team</label><select name="team" required class="w-full border-2 border-gray-200 rounded-lg p-2 bg-white">${teamOptions}</select></div>
-                <div class="mb-6"><label class="block text-sm font-medium text-gray-700 mb-1">Admin Code</label><input type="password" name="adminCode" placeholder="Required for registration" required class="w-full border-2 border-gray-200 rounded-lg p-2"></div>
-                <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">Register</button>
-            </form>`;
-        openModal(registerFormHTML, 'max-w-md');
-        document.getElementById('register-form').addEventListener('submit', handleRegister);
-    }
-    
-    const updateUserRecord = (updatedUser) => {
-        const userIndex = appState.users.findIndex(u => u.username === updatedUser.username);
-        if (userIndex > -1) {
-            appState.users[userIndex] = updatedUser;
-        } else {
-            appState.users.push(updatedUser);
-        }
-        saveToStorage('digihive_users', appState.users);
+    if (!isOpen) return null;
 
-        if (appState.currentUser && appState.currentUser.username === updatedUser.username) {
-            appState.currentUser = updatedUser;
-            saveToStorage('digihive_currentUser', appState.currentUser);
-        }
+    const sizeClasses = {
+        sm: 'max-w-sm',
+        md: 'max-w-md',
+        lg: 'max-w-2xl',
+        xl: 'max-w-4xl',
     };
 
-    function handleLogin(e) {
+    return (
+        React.createElement('div', { 
+            className: "fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in",
+            onClick: onClose 
+        },
+            React.createElement('div', { 
+                className: `bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative animate-scale-up`,
+                onClick: (e) => e.stopPropagation() 
+            },
+                React.createElement('button', { 
+                    className: "absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl",
+                    onClick: onClose 
+                },
+                    React.createElement('i', { className: "fas fa-times" })
+                ),
+                children
+            )
+        )
+    );
+};
+
+const CommentsSection = ({ comments, setComments, currentUser }) => {
+    const [newComment, setNewComment] = useState('');
+    const [isSummarizing, setIsSummarizing] = useState(false);
+    const [summary, setSummary] = useState('');
+    const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+
+    const handleSubmitComment = (e) => {
         e.preventDefault();
-        const username = e.target.username.value;
-        const password = e.target.password.value;
-        const user = appState.users.find(u => u.username === username && u.password === password);
-        
-        if (user) {
-            const sessionToken = Date.now().toString() + Math.random().toString();
-            const loggedInUser = { ...user, sessionToken, isOnline: true, lastLogin: new Date().toISOString() };
-            
-            appState.currentUser = loggedInUser;
-            saveToStorage('digihive_currentUser', loggedInUser);
-            
-            updateUserRecord(loggedInUser);
+        if (newComment.trim() === '') return;
 
-            initializeApp();
-            closeModal();
+        const comment = {
+            id: Date.now(),
+            username: currentUser.username,
+            team: currentUser.team,
+            timestamp: new Date().toISOString(),
+            text: newComment.trim(),
+        };
+
+        setComments([comment, ...comments]);
+        setNewComment('');
+    };
+
+    const handleSummarize = async () => {
+        setIsSummarizing(true);
+        setSummary('');
+        const result = await summarizeComments(comments);
+        setSummary(result);
+        setIsSummarizing(false);
+        setIsSummaryModalOpen(true);
+    };
+    
+    return (
+        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col" },
+            React.createElement('h3', { className: "text-xl font-bold text-slate-800 mb-4" }, "Team Comments"),
+            React.createElement('form', { onSubmit: handleSubmitComment, className: "mb-4 flex gap-3" },
+                React.createElement('input', {
+                    type: "text",
+                    value: newComment,
+                    onChange: (e) => setNewComment(e.target.value),
+                    placeholder: "Leave a comment about your tasks or challenges...",
+                    className: "flex-grow w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500"
+                }),
+                React.createElement('button', { type: "submit", className: "bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors" }, "Post")
+            ),
+            React.createElement('div', { className: "flex-1 overflow-y-auto pr-2 space-y-4" },
+                comments.length === 0 ? (
+                    React.createElement('div', { className: "text-center text-gray-400 pt-8" },
+                        React.createElement('i', { className: "fas fa-comments text-4xl mb-2" }),
+                        React.createElement('p', null, "No comments yet. Be the first to post!")
+                    )
+                ) : (
+                    comments.map(comment => {
+                         const commentTeamInfo = teamMapping[comment.team];
+                         return (
+                            React.createElement('div', { key: comment.id, className: "flex items-start gap-3" },
+                                React.createElement('div', { className: `w-10 h-10 ${commentTeamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` },
+                                    comment.username.substring(0, 2).toUpperCase()
+                                ),
+                                React.createElement('div', { className: "flex-1 bg-gray-50 rounded-lg p-3" },
+                                    React.createElement('div', { className: "flex justify-between items-baseline" },
+                                        React.createElement('p', { className: "font-bold text-slate-700" }, comment.username),
+                                        React.createElement('p', { className: "text-xs text-gray-400" }, new Date(comment.timestamp).toLocaleString())
+                                    ),
+                                    React.createElement('p', { className: "text-sm text-gray-800 mt-1" }, comment.text)
+                                )
+                            )
+                        )
+                    })
+                )
+            ),
+            React.createElement('button', {
+                onClick: handleSummarize,
+                disabled: isSummarizing || comments.length === 0,
+                className: "w-full mt-4 bg-violet-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-violet-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            },
+                isSummarizing ? (
+                    React.createElement(React.Fragment, null,
+                        React.createElement('i', { className: "fas fa-spinner fa-spin" }),
+                        React.createElement('span', null, "Generating Summary...")
+                    )
+                ) : (
+                    React.createElement(React.Fragment, null,
+                       React.createElement('i', { className: "fas fa-wand-magic-sparkles" }),
+                       React.createElement('span', null, "Summarize with AI")
+                    )
+                )
+            ),
+            React.createElement(Modal, { isOpen: isSummaryModalOpen, onClose: () => setIsSummaryModalOpen(false), size: "lg" },
+                 React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-4" }, "AI-Generated Summary"),
+                 React.createElement('div', { className: "prose prose-sm max-w-none whitespace-pre-wrap bg-gray-50 p-4 rounded-lg" },
+                    summary.split('\n').map((line, i) => React.createElement('p', { key: i }, line))
+                 ),
+                 React.createElement('button', { onClick: () => setIsSummaryModalOpen(false), className: "mt-6 w-full bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg" }, "Close")
+            )
+        )
+    );
+};
+
+const Header = ({ user, onLogout, toggleSidebar, pageTitle }) => {
+    return (
+        React.createElement('header', { className: "flex justify-between items-center" },
+            React.createElement('div', null,
+                React.createElement('h1', { className: "text-2xl md:text-4xl font-bold text-[#1A1A2E]" },
+                    pageTitles[pageTitle] || 'Dashboard'
+                )
+            ),
+            React.createElement('div', { className: "flex items-center gap-4" },
+                React.createElement('button', { onClick: toggleSidebar, className: "lg:hidden text-2xl text-gray-600" },
+                    React.createElement('i', { className: "fas fa-bars" })
+                ),
+                React.createElement('div', { className: "flex items-center gap-3 bg-white p-2 rounded-full shadow-sm" },
+                    React.createElement('div', { className: "w-10 h-10 rounded-full bg-[#2A5CAA] text-white flex items-center justify-center font-bold" },
+                        user.username.substring(0, 2).toUpperCase()
+                    ),
+                    React.createElement('span', { className: "font-semibold text-sm hidden sm:block pr-2" }, user.username)
+                ),
+                 React.createElement('button', { onClick: onLogout, className: "text-gray-500 hover:text-red-500", title: "Logout" },
+                    React.createElement('i', { className: "fas fa-sign-out-alt text-xl" })
+                )
+            )
+        )
+    );
+};
+
+const Sidebar = ({ currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen }) => {
+    
+    const handleNavClick = (page) => {
+        setCurrentPage(page);
+        if (window.innerWidth < 1024) {
+            setSidebarOpen(false);
+        }
+    };
+
+    const navLinks = Object.keys(pageTitles).map(page => {
+        const icons = {
+            dashboard: 'fa-chart-line', tasks: 'fa-tasks', submissions: 'fa-file-archive', team: 'fa-users', settings: 'fa-cog'
+        };
+        const isActive = currentPage === page;
+        if (!icons[page]) return null;
+        return (
+            React.createElement('li', { key: page },
+              React.createElement('a', { href: "#", onClick: (e) => { e.preventDefault(); handleNavClick(page); }, className: `nav-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-slate-200 opacity-80 hover:bg-white/10 hover:opacity-100 ${isActive ? 'bg-[#2A5CAA] opacity-100 shadow-lg' : ''}` },
+                React.createElement('i', { className: `w-5 text-center text-lg fas ${icons[page]}` }),
+                React.createElement('span', null, pageTitles[page])
+              )
+            )
+        );
+    }).filter(Boolean);
+
+    const teamMembers = Object.values(teamMapping).map(team => (
+        React.createElement('li', { key: team.name, className: "flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200" },
+            React.createElement('div', { className: `w-9 h-9 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` }, team.avatar),
+            React.createElement('div', { className: "flex-1" },
+              React.createElement('p', { className: "text-sm font-semibold text-slate-200 leading-tight" }, team.name),
+              React.createElement('p', { className: "text-xs text-slate-200 opacity-70 leading-tight" }, team.role)
+            ),
+            React.createElement('div', { className: "w-2.5 h-2.5 rounded-full bg-green-400 flex-shrink-0" })
+        )
+    ));
+
+    return (
+        React.createElement('aside', { className: `fixed top-0 left-0 h-full w-72 bg-[#1E293B] text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0` },
+            React.createElement('div', { className: "flex items-center gap-3 mb-12 px-2" },
+                React.createElement('div', { className: "w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg" }, "DH"),
+                React.createElement('span', { className: "text-2xl font-extrabold text-slate-200" }, "DigiHive")
+            ),
+            React.createElement('nav', null, React.createElement('ul', { className: "space-y-2" }, navLinks)),
+            React.createElement('div', { className: "mt-12" },
+                React.createElement('h3', { className: "text-sm font-semibold text-slate-200 opacity-70 mb-4 px-2" }, "TEAMS"),
+                React.createElement('ul', { className: "space-y-2" }, teamMembers)
+            )
+        )
+    );
+};
+
+// --- PAGES ---
+const LoginScreen = ({ users, setUsers, onLogin }) => {
+    const [isLoginModalOpen, setLoginModalOpen] = useState(false);
+    const [isRegisterModalOpen, setRegisterModalOpen] = useState(false);
+    
+    const [quote] = useState(MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]);
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const username = formData.get('username');
+        const password = formData.get('password');
+        
+        const user = users.find(u => u.username === username && u.password === password);
+        if (user) {
+            onLogin(user);
         } else {
             alert('Invalid username or password.');
         }
-    }
+    };
     
-    function handleRegister(e) {
+    const handleRegister = (e) => {
         e.preventDefault();
-        if (e.target.adminCode.value !== ADMIN_CODE) return alert('Invalid Admin Code.');
+        const formData = new FormData(e.currentTarget);
+        if (formData.get('adminCode') !== ADMIN_CODE) {
+            alert('Invalid Admin Code. Registration failed.');
+            return;
+        }
 
-        const newUser = {
-            username: e.target.username.value,
-            password: e.target.password.value,
-            team: e.target.team.value,
-            isOnline: false
-        };
+        const username = formData.get('username');
+        const password = formData.get('password');
+        const team = formData.get('team');
         
-        if (appState.users.find(u => u.username === newUser.username)) return alert('Username already exists.');
+        if (users.find(u => u.username === username)) {
+            alert('Username already exists.');
+            return;
+        }
 
-        updateUserRecord(newUser);
+        const newUser = { username, password, team, isOnline: false };
+        setUsers([...users, newUser]);
         alert('Registration successful! Please log in.');
-        closeModal();
-        if (loginPopup.classList.contains('hidden')) { // If admin is logged in and registering
-             renderPage('team'); // Re-render team page
-        } else {
-            showLoginModal();
-        }
-    }
-    
-    function handleLogout(confirmLogout = true) {
-        if (confirmLogout && !confirm('Are you sure you want to log out?')) return;
-        
-        if(appState.currentUser) {
-            const userToUpdate = appState.users.find(u => u.username === appState.currentUser.username);
-            if (userToUpdate) {
-                updateUserRecord({ ...userToUpdate, isOnline: false, sessionToken: null, lastLogout: new Date().toISOString() });
-            }
-        }
-        
-        appState.currentUser = null;
-        saveToStorage('digihive_currentUser', null);
-        window.location.reload();
-    }
-    
-    function handleDeregister(username) {
-        if (username === appState.currentUser.username) return alert("You cannot deregister yourself.");
-        const code = prompt("Enter Admin Code to deregister this member:");
-        if (code !== ADMIN_CODE) { if (code !== null) alert("Invalid Admin Code."); return; }
-        if (confirm(`Are you sure you want to deregister ${username}?`)) {
-            appState.users = appState.users.filter(u => u.username !== username);
-            saveToStorage('digihive_users', appState.users);
-            alert(`${username} has been deregistered.`);
-            renderPage('team');
-        }
-    }
+        setRegisterModalOpen(false);
+        setLoginModalOpen(true);
+    };
 
-    // --- RENDERING LOGIC ---
-    function renderHeader() {
-        headerContainer.innerHTML = `
-            <div><h1 class="text-2xl md:text-4xl font-bold text-[#1A1A2E]">${pageTitles[appState.currentPage]}</h1></div>
-            <div class="flex items-center gap-4">
-                <button id="menu-toggle" class="lg:hidden text-2xl text-gray-600"><i class="fas fa-bars"></i></button>
-                <div class="flex items-center gap-3 bg-white p-2 rounded-full shadow-sm">
-                    <div class="w-10 h-10 rounded-full bg-[#2A5CAA] text-white flex items-center justify-center font-bold">${appState.currentUser.username.substring(0,2).toUpperCase()}</div>
-                    <span class="font-semibold text-sm hidden sm:block pr-2">${appState.currentUser.username}</span>
-                </div>
-                <button id="logout-button" class="text-gray-500 hover:text-red-500" title="Logout"><i class="fas fa-sign-out-alt text-xl"></i></button>
-            </div>`;
-        document.getElementById('menu-toggle').addEventListener('click', () => {
-            appState.isSidebarOpen = !appState.isSidebarOpen;
-            updateSidebarVisibility();
+    const teamOptions = Object.values(teamMapping).map(t => React.createElement('option', { key: t.name, value: t.name }, t.name));
+
+    return (
+        React.createElement('div', { className: "fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4" },
+            React.createElement('div', { className: "bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center" },
+                React.createElement('div', { className: "flex justify-center items-center gap-3 mb-4" },
+                  React.createElement('div', { className: "w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg" }, "DH"),
+                  React.createElement('span', { className: "text-2xl font-extrabold text-slate-800" }, "Welcome to DigiHive")
+                ),
+                React.createElement('div', { className: "my-6 p-4 bg-gray-100 rounded-lg border-l-4 border-blue-500" },
+                    React.createElement('p', { className: "text-gray-700 italic" }, `"${quote}"`)
+                ),
+                React.createElement('div', { className: "flex flex-col sm:flex-row gap-4" },
+                    React.createElement('button', { onClick: () => setLoginModalOpen(true), className: "flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300" }, "Login"),
+                    React.createElement('button', { onClick: () => setRegisterModalOpen(true), className: "flex-1 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-300" }, "Register a Team Member")
+                )
+            ),
+            React.createElement(Modal, { isOpen: isLoginModalOpen, onClose: () => setLoginModalOpen(false) },
+                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Login to DigiHive"),
+                React.createElement('form', { onSubmit: handleLogin },
+                    React.createElement('div', { className: "mb-4" },
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
+                        React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500" })
+                    ),
+                    React.createElement('div', { className: "mb-6" },
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
+                        React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500" })
+                    ),
+                    React.createElement('button', { type: "submit", className: "w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors" }, "Login")
+                )
+            ),
+            React.createElement(Modal, { isOpen: isRegisterModalOpen, onClose: () => setRegisterModalOpen(false) },
+                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Register New Member"),
+                React.createElement('form', { onSubmit: handleRegister },
+                    React.createElement('div', { className: "mb-4" },
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
+                        React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                    ),
+                    React.createElement('div', { className: "mb-4" },
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
+                        React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                    ),
+                     React.createElement('div', { className: "mb-4" },
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Team"),
+                        React.createElement('select', { name: "team", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 bg-white" }, teamOptions)
+                    ),
+                     React.createElement('div', { className: "mb-6" },
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Admin Code"),
+                        React.createElement('input', { type: "password", name: "adminCode", placeholder: "Required for registration", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                    ),
+                    React.createElement('button', { type: "submit", className: "w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors" }, "Register")
+                )
+            )
+        )
+    );
+};
+
+const UpcomingTask = ({ tasks }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    if (tasks.length === 0) {
+        return (
+            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center text-center h-full" },
+                React.createElement('i', { className: "fas fa-calendar-check text-4xl text-gray-300 mb-4" }),
+                React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, "All Tasks Completed!"),
+                React.createElement('p', { className: "text-gray-500 mt-2" }, "No upcoming tasks found.")
+            )
+        );
+    }
+    
+    const task = tasks[currentIndex];
+    const teamColorValue = task.teamColor.replace(/bg-\\[|\\]/g, '');
+
+    return (
+        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm flex flex-col h-full" },
+            React.createElement('div', { className: "flex justify-between items-center mb-4" },
+                 React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, "Upcoming Tasks"),
+                 React.createElement('div', { className: "flex items-center gap-2" },
+                    React.createElement('button', { onClick: () => setCurrentIndex((currentIndex - 1 + tasks.length) % tasks.length), className: "w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600" }, React.createElement('i', { className: "fas fa-chevron-left" })),
+                    React.createElement('span', { className: "text-sm font-medium text-gray-500" }, `${currentIndex + 1} / ${tasks.length}`),
+                    React.createElement('button', { onClick: () => setCurrentIndex((currentIndex + 1) % tasks.length), className: "w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600" }, React.createElement('i', { className: "fas fa-chevron-right" }))
+                )
+            ),
+            React.createElement('div', { className: "flex-1 flex flex-col gap-4 mt-2" },
+                 React.createElement('div', { className: "flex items-center gap-3 p-4 rounded-lg bg-gray-50 border-l-4", style: { borderColor: teamColorValue } },
+                     React.createElement('div', { className: `w-10 h-10 ${task.teamColor} rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-base` }, task.teamAvatar),
+                     React.createElement('div', null,
+                         React.createElement('p', { className: "font-bold text-slate-700" }, task.team),
+                         React.createElement('p', { className: "text-sm font-medium" }, task.subject)
+                     )
+                 ),
+                 React.createElement('div', { className: "text-sm text-gray-600 bg-gray-50 p-4 rounded-lg flex-1" },
+                     React.createElement('p', { className: "font-semibold mb-2 text-gray-700" }, "Description:"),
+                     React.createElement('p', null, task.description)
+                 ),
+                 React.createElement('div', { className: "text-sm text-gray-500 flex items-center gap-4 bg-gray-50 p-3 rounded-lg" },
+                    React.createElement('div', { className: "flex items-center gap-2" }, React.createElement('i', { className: "far fa-calendar-alt" }), React.createElement('span', { className: "font-medium" }, task.startDate.toLocaleDateString())),
+                    React.createElement('div', { className: "flex items-center gap-2" }, React.createElement('i', { className: "far fa-clock" }), React.createElement('span', { className: "font-medium" }, task.startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })))
+                 )
+            )
+        )
+    );
+};
+
+const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, setSubmissions }) => {
+    const [quote, setQuote] = useState(MOTIVATION_QUOTES[0]);
+    const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
+    const [submissionSuccess, setSubmissionSuccess] = useState(false);
+
+    useEffect(() => {
+        const quoteInterval = setInterval(() => {
+            setQuote(MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]);
+        }, 10000);
+        return () => clearInterval(quoteInterval);
+    }, []);
+
+    const upcomingTasks = allTasks.filter(task => task.startDate > new Date());
+    const completedThisWeek = submissions.filter(s => {
+        const submissionDate = new Date(s.date);
+        const today = new Date();
+        const oneWeekAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
+        return submissionDate >= oneWeekAgo;
+    }).length;
+
+    const handleSubmission = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const fileInput = e.currentTarget.querySelector('#report-file');
+        
+        const newSubmission = {
+            name: formData.get('title'),
+            member: formData.get('team'),
+            date: new Date().toLocaleDateString('en-CA'),
+            fileType: fileInput.files && fileInput.files.length > 0 ? fileInput.files[0].type : 'N/A',
+            fileContent: `Report Title: ${formData.get('title')}\nProgress: ${formData.get('progress')}\nNext Week's Plan: ${formData.get('plan')}`
+        };
+
+        setSubmissions(prev => [newSubmission, ...prev]);
+        setSubmissionSuccess(true);
+    };
+    
+    const closeSubmissionModal = () => {
+        setIsSubmissionModalOpen(false);
+        setSubmissionSuccess(false);
+    };
+
+    return (
+        React.createElement('div', { className: "space-y-8" },
+            React.createElement('div', { className: "p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800" },
+                React.createElement('i', { className: "fas fa-quote-left mr-2" }), ` ${quote}`
+            ),
+            React.createElement('div', { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" },
+                React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-blue-500" }, React.createElement('i', { className: "fas fa-list-check" })), React.createElement('div', { className: "mt-4" }, React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, upcomingTasks.length), React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Upcoming Tasks"))),
+                React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-violet-500" }, React.createElement('i', { className: "fas fa-check-double" })), React.createElement('div', { className: "mt-4" }, React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, completedThisWeek), React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Completed This Week"))),
+                React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-teal-500" }, React.createElement('i', { className: "fas fa-percent" })), React.createElement('div', { className: "mt-4" }, React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, "75%"), React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Overall Progress"))),
+                React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-amber-500" }, React.createElement('i', { className: "fas fa-users" })), React.createElement('div', { className: "mt-4" }, React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, Object.keys(teamMapping).length), React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Active Teams")))
+            ),
+            React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-3 gap-8" },
+                React.createElement('div', { className: "lg:col-span-2 h-[550px]" },
+                   React.createElement(CommentsSection, { comments: comments, setComments: setComments, currentUser: currentUser })
+                ),
+                React.createElement('div', { className: "lg:col-span-1 space-y-8" },
+                    React.createElement('div', { className: "h-[450px]" },
+                        React.createElement(UpcomingTask, { tasks: upcomingTasks })
+                    ),
+                    React.createElement('div', { onClick: () => setIsSubmissionModalOpen(true), className: "bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300" },
+                        React.createElement('div', { className: "flex flex-col items-center text-center gap-4" },
+                            React.createElement('div', { className: "w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center" }, React.createElement('i', { className: "fas fa-cloud-upload-alt" })),
+                            React.createElement('div', null, React.createElement('h3', { className: "font-bold text-slate-800 text-lg" }, "Submit Weekly Report"), React.createElement('p', { className: "text-sm text-gray-500 mt-1" }, "Tap here to upload progress."))
+                        )
+                    )
+                )
+            ),
+            React.createElement(Modal, { isOpen: isSubmissionModalOpen, onClose: closeSubmissionModal, size: "lg" },
+                !submissionSuccess ? (
+                    React.createElement(React.Fragment, null,
+                        React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6" }, "Weekly Report Submission"),
+                        React.createElement('form', { onSubmit: handleSubmission, className: "space-y-4" },
+                            React.createElement('div', null, React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Report Title"), React.createElement('input', { type: "text", name: "title", placeholder: "e.g., Q1 Week 4 Progress Report", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })),
+                            React.createElement('div', null, React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Team"), React.createElement('select', { name: "team", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 bg-white" }, React.createElement('option', { value: "" }, "Select Team"), Object.values(teamMapping).map(t => React.createElement('option', { key: t.name, value: t.name }, t.name)))),
+                            React.createElement('div', null, React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Progress Report"), React.createElement('textarea', { name: "progress", placeholder: "Describe your progress...", required: true, rows: 4, className: "w-full border-2 border-gray-200 rounded-lg p-2" })),
+                            React.createElement('div', null, React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Next Week's Plan"), React.createElement('textarea', { name: "plan", placeholder: "Outline your plans...", required: true, rows: 3, className: "w-full border-2 border-gray-200 rounded-lg p-2" })),
+                            React.createElement('div', null,
+                                React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Upload File (Optional)"),
+                                React.createElement('input', { type: "file", id: "report-file", className: "w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" })
+                            ),
+                            React.createElement('button', { type: "submit", className: "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg" }, React.createElement('i', { className: "fas fa-paper-plane mr-2" }), "Submit Report")
+                        )
+                    )
+                ) : (
+                    React.createElement('div', { className: "text-center py-10" },
+                        React.createElement('i', { className: "fas fa-check-circle text-6xl text-green-500 mb-4" }),
+                        React.createElement('h2', { className: "text-2xl font-bold text-slate-800" }, "Submission Successful!"),
+                        React.createElement('p', { className: "text-gray-600 mt-2" }, "Your report has been archived."),
+                        React.createElement('button', { onClick: closeSubmissionModal, className: "mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg" }, "Close")
+                    )
+                )
+            )
+        )
+    );
+};
+
+
+const Tasks = ({ allTasks }) => {
+    const [teamFilter, setTeamFilter] = useState('All');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredTasks = useMemo(() => {
+        return allTasks.filter(task => {
+            const teamMatch = teamFilter === 'All' || task.teamClass === teamFilter;
+            const searchMatch = searchQuery === '' || 
+                                task.subject.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                task.description.toLowerCase().includes(searchQuery.toLowerCase());
+            return teamMatch && searchMatch;
         });
-        document.getElementById('logout-button').addEventListener('click', handleLogout);
-    }
-    
-    function renderSidebar() {
-        const navLinks = Object.keys(pageTitles).map(page => `
-            <li><a href="#" data-page="${page}" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${appState.currentPage === page ? 'bg-[#2A5CAA] opacity-100' : 'opacity-80 hover:bg-white/10'}"><i class="w-5 text-center fas ${ {dashboard: 'fa-chart-line', tasks: 'fa-tasks', submissions: 'fa-file-archive', team: 'fa-users', settings: 'fa-cog'}[page] }"></i><span>${pageTitles[page]}</span></a></li>`
-        ).join('');
-        const teamMembers = Object.values(teamMapping).map(team => `
-            <li class="flex items-center gap-3 px-2 py-2"><div class="w-9 h-9 ${team.color} rounded-md shrink-0 flex items-center justify-center text-white font-bold text-sm">${team.avatar}</div><div><p class="text-sm font-semibold">${team.name}</p><p class="text-xs opacity-70">${team.role}</p></div></li>`
-        ).join('');
-        sidebarEl.innerHTML = `
-            <div class="flex items-center gap-3 mb-12 px-2"><div class="w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg">DH</div><span class="text-2xl font-extrabold">DigiHive</span></div>
-            <nav><ul class="space-y-2">${navLinks}</ul></nav>
-            <div class="mt-12"><h3 class="text-sm font-semibold opacity-70 mb-4 px-2">TEAMS</h3><ul class="space-y-2">${teamMembers}</ul></div>`;
-        sidebarEl.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                appState.isSidebarOpen = false;
-                updateSidebarVisibility();
-                renderPage(e.currentTarget.dataset.page);
-            });
-        });
-    }
+    }, [allTasks, teamFilter, searchQuery]);
 
-    function updateSidebarVisibility() {
-        sidebarEl.classList.toggle('-translate-x-full', !appState.isSidebarOpen);
-        sidebarOverlay.classList.toggle('hidden', !appState.isSidebarOpen);
-    }
-
-    function renderPage(page) {
-        appState.currentPage = page;
-        renderHeader();
-        renderSidebar();
-        
-        switch(page) {
-            case 'dashboard': renderDashboardView(); break;
-            case 'tasks': renderMyTasksView(); break;
-            case 'submissions': renderSubmissionsView(); break;
-            case 'team': renderTeamView(); break;
-            case 'settings': renderSettingsView(); break;
-            default: pageContentEl.innerHTML = `<div class="text-center p-8 bg-white rounded-lg"><h2>Page not found</h2></div>`; break;
+    const renderList = (tasks) => {
+        if (tasks.length === 0) {
+            return (
+                React.createElement('div', { className: "md:col-span-2 xl:col-span-3 text-center py-16 bg-white rounded-2xl shadow-sm" },
+                    React.createElement('i', { className: "fas fa-box-open text-5xl text-gray-300 mb-4" }),
+                    React.createElement('h3', { className: "text-xl font-bold text-slate-700" }, "No Tasks Found"),
+                    React.createElement('p', { className: "text-gray-500 mt-2" }, "Try adjusting your filters.")
+                )
+            );
         }
-    }
+        return tasks.map(task => {
+            const teamColorValue = task.teamColor.replace(/bg-\\[|\\]/g, '');
+            return (
+                React.createElement('div', { key: task.subject, className: "bg-white rounded-2xl p-5 shadow-sm", style: { borderLeft: `5px solid ${teamColorValue}` } },
+                    React.createElement('h4', { className: "font-bold text-slate-800 mb-2" }, task.subject),
+                    React.createElement('div', { className: "flex justify-between items-center text-sm mb-3" },
+                        React.createElement('span', { className: "font-semibold text-gray-600" }, `Team: ${task.team}`),
+                        React.createElement('span', { className: "font-semibold text-gray-400" }, `Due: ${task.startDate.toLocaleDateString()}`)
+                    ),
+                    React.createElement('p', { className: "text-sm text-gray-500 leading-relaxed" }, task.description)
+                )
+            );
+        });
+    };
 
-    function renderDashboardView() {
-        const upcomingTasks = appState.allTasks.filter(task => task.startDate > new Date());
-        let currentTaskIndex = 0;
-        
-        const upcomingTasksHTML = () => {
-            if (upcomingTasks.length === 0) return `<div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center h-full"><i class="fas fa-calendar-check text-4xl text-gray-300 mb-4"></i><h3 class="text-xl font-bold">All Tasks Completed!</h3></div>`;
-            const task = upcomingTasks[currentTaskIndex];
-            const teamColorValue = task.color.replace(/bg-\[|\]/g, '');
-            return `
-                <div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col h-full">
-                    <div class="flex justify-between items-center mb-4">
-                         <h3 class="text-xl font-bold text-slate-800">Upcoming Tasks</h3>
-                         <div class="flex items-center gap-2">
-                            <button id="prev-task" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200"><i class="fas fa-chevron-left"></i></button>
-                            <span class="text-sm font-medium text-gray-500">${currentTaskIndex + 1} / ${upcomingTasks.length}</span>
-                            <button id="next-task" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200"><i class="fas fa-chevron-right"></i></button>
-                        </div>
-                    </div>
-                    <div class="flex-1 flex flex-col gap-4 mt-2">
-                         <div class="flex items-center gap-3 p-4 rounded-lg bg-gray-50 border-l-4" style="border-color: ${teamColorValue}">
-                             <div class="w-10 h-10 ${task.color} rounded-lg shrink-0 flex items-center justify-center text-white font-bold">${task.avatar}</div>
-                             <div><p class="font-bold">${task.team}</p><p class="text-sm">${task.subject}</p></div>
-                         </div>
-                         <div class="text-sm bg-gray-50 p-4 rounded-lg flex-1"><p class="font-semibold mb-2">Description:</p><p>${task.description}</p></div>
-                         <div class="text-sm flex items-center gap-4 bg-gray-50 p-3 rounded-lg"><div class="flex items-center gap-2"><i class="far fa-calendar-alt"></i><span>${task.startDate.toLocaleDateString()}</span></div><div class="flex items-center gap-2"><i class="far fa-clock"></i><span>${task.startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div></div>
-                    </div>
-                </div>`;
-        };
-        
-        const commentsHTML = () => {
-            const commentsList = appState.comments.length === 0 ? `<div class="text-center text-gray-400 pt-8"><i class="fas fa-comments text-4xl mb-2"></i><p>No comments yet.</p></div>` : appState.comments.map(comment => {
-                const commentTeamInfo = teamMapping[comment.team];
-                return `<div class="flex items-start gap-3"><div class="w-10 h-10 ${commentTeamInfo.color} rounded-full shrink-0 flex items-center justify-center text-white font-bold text-sm">${comment.username.substring(0,2).toUpperCase()}</div><div class="flex-1 bg-gray-50 rounded-lg p-3"><div class="flex justify-between items-baseline"><p class="font-bold text-slate-700">${comment.username}</p><p class="text-xs text-gray-400">${new Date(comment.timestamp).toLocaleString()}</p></div><p class="text-sm text-gray-800 mt-1">${comment.text}</p></div></div>`
-            }).join('');
-            
-            return `
-                <div class="bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col">
-                    <h3 class="text-xl font-bold text-slate-800 mb-4">Team Comments</h3>
-                    <form id="comment-form" class="mb-4 flex gap-3"><input type="text" name="comment" placeholder="Leave a comment..." class="flex-grow w-full border-2 rounded-lg p-2 focus:border-blue-500"><button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Post</button></form>
-                    <div id="comments-list" class="flex-1 overflow-y-auto pr-2 space-y-4">${commentsList}</div>
-                    <button id="summarize-btn" class="w-full mt-4 bg-violet-600 text-white font-bold py-3 rounded-lg hover:bg-violet-700 disabled:bg-gray-300 flex items-center justify-center gap-2"><i class="fas fa-wand-magic-sparkles"></i><span>Summarize with AI</span></button>
-                </div>`;
-        };
+    return (
+        React.createElement('div', { className: "space-y-6" },
+            React.createElement('div', { className: "bg-white p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 items-center" },
+                React.createElement('select', { 
+                    id: "team-filter", 
+                    value: teamFilter,
+                    onChange: (e) => setTeamFilter(e.target.value),
+                    className: "w-full md:w-auto bg-gray-100 border-none rounded-lg px-4 py-2"
+                },
+                    React.createElement('option', { value: "All" }, "Filter by Team (All)"),
+                    Object.values(teamMapping).map(team => React.createElement('option', { key: team.className, value: team.className }, team.name))
+                ),
+                React.createElement('div', { className: "relative flex-grow w-full" },
+                    React.createElement('i', { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" }),
+                    React.createElement('input', { 
+                        type: "text", 
+                        id: "search-tasks", 
+                        placeholder: "Search task name...",
+                        value: searchQuery,
+                        onChange: (e) => setSearchQuery(e.target.value),
+                        className: "w-full bg-gray-100 border-none rounded-lg pl-10 pr-4 py-2"
+                    })
+                )
+            ),
+            React.createElement('div', { id: "tasks-list", className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" },
+                renderList(filteredTasks)
+            )
+        )
+    );
+};
 
-        const render = () => {
-            pageContentEl.innerHTML = `
-                <div class="space-y-8">
-                  <div class="p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800" id="dashboard-motivation"></div>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white bg-blue-500"><i class="fas fa-list-check"></i></div><div class="mt-4"><p class="text-4xl font-bold">${upcomingTasks.length}</p><p class="text-gray-500">Upcoming Tasks</p></div></div>
-                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white bg-violet-500"><i class="fas fa-check-double"></i></div><div class="mt-4"><p class="text-4xl font-bold">10</p><p class="text-gray-500">Completed This Week</p></div></div>
-                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white bg-teal-500"><i class="fas fa-percent"></i></div><div class="mt-4"><p class="text-4xl font-bold">75%</p><p class="text-gray-500">Overall Progress</p></div></div>
-                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white bg-amber-500"><i class="fas fa-users"></i></div><div class="mt-4"><p class="text-4xl font-bold">${Object.keys(teamMapping).length}</p><p class="text-gray-500">Active Teams</p></div></div>
-                  </div>
-                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-2 h-[550px]">${commentsHTML()}</div>
-                    <div class="lg:col-span-1 space-y-8">
-                        <div id="upcoming-task-container" class="h-[450px]">${upcomingTasksHTML()}</div>
-                        <div id="upload-card" class="bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all"><div class="flex flex-col items-center text-center gap-4"><div class="w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center"><i class="fas fa-cloud-upload-alt"></i></div><div><h3 class="font-bold text-lg">Submit Weekly Report</h3><p class="text-sm text-gray-500 mt-1">Tap here to upload.</p></div></div></div>
-                    </div>
-                  </div>
-                </div>`;
-
-            // Add event listeners for dynamic content
-            if (upcomingTasks.length > 0) {
-                document.getElementById('prev-task').addEventListener('click', () => {
-                    currentTaskIndex = (currentTaskIndex - 1 + upcomingTasks.length) % upcomingTasks.length;
-                    document.getElementById('upcoming-task-container').innerHTML = upcomingTasksHTML();
-                });
-                document.getElementById('next-task').addEventListener('click', () => {
-                    currentTaskIndex = (currentTaskIndex + 1) % upcomingTasks.length;
-                    document.getElementById('upcoming-task-container').innerHTML = upcomingTasksHTML();
-                });
-            }
-            document.getElementById('upload-card').addEventListener('click', showSubmissionModal);
-
-            document.getElementById('comment-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const text = e.target.comment.value.trim();
-                if (!text) return;
-                const newComment = { id: Date.now(), username: appState.currentUser.username, team: appState.currentUser.team, timestamp: new Date().toISOString(), text };
-                appState.comments.unshift(newComment);
-                saveToStorage('digihive_comments', appState.comments);
-                renderDashboardView(); // Re-render to show new comment
-            });
-
-            const summarizeBtn = document.getElementById('summarize-btn');
-            summarizeBtn.disabled = appState.comments.length === 0;
-            summarizeBtn.addEventListener('click', async () => {
-                summarizeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i><span>Generating...</span>`;
-                summarizeBtn.disabled = true;
-                const summary = await summarizeComments(appState.comments);
-                const summaryHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-4">AI-Generated Summary</h2><div class="prose prose-sm max-w-none whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">${summary.replace(/\n/g, '<br>')}</div><button onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))" class="mt-6 w-full bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg">Close</button>`;
-                openModal(summaryHTML, 'max-w-2xl');
-                summarizeBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i><span>Summarize with AI</span>`;
-                summarizeBtn.disabled = false;
-            });
-
-            const quoteEl = document.getElementById('dashboard-motivation');
-            let quoteIndex = 0;
-            const updateQuote = () => {
-                quoteEl.innerHTML = `<i class="fas fa-quote-left mr-2"></i> ${MOTIVATION_QUOTES[quoteIndex]}`;
-                quoteIndex = (quoteIndex + 1) % MOTIVATION_QUOTES.length;
-            };
-            updateQuote();
-            setInterval(updateQuote, 10000);
-        };
-        render();
-    }
-    
-    function renderMyTasksView() {
-        const renderList = (tasks) => {
-            if (tasks.length === 0) return `<div class="md:col-span-2 xl:col-span-3 text-center py-16 bg-white rounded-2xl shadow-sm"><i class="fas fa-box-open text-5xl text-gray-300 mb-4"></i><h3 class="text-xl font-bold">No Tasks Found</h3><p class="text-gray-500 mt-2">Try adjusting filters.</p></div>`;
-            return tasks.map(task => {
-                const teamColorValue = task.color.replace(/bg-\[|\]/g, '');
-                return `<div class="bg-white rounded-2xl p-5 shadow-sm" style="border-left: 5px solid ${teamColorValue}">
-                    <h4 class="font-bold text-slate-800 mb-2">${task.subject}</h4>
-                    <div class="flex justify-between items-center text-sm mb-3"><span class="font-semibold text-gray-600">Team: ${task.name}</span><span class="font-semibold text-gray-400">Due: ${task.startDate.toLocaleDateString()}</span></div>
-                    <p class="text-sm text-gray-500">${task.description}</p>
-                </div>`
-            }).join('');
-        };
-        
-        pageContentEl.innerHTML = `
-            <div class="space-y-6">
-              <div class="bg-white p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 items-center">
-                <select id="team-filter" class="w-full md:w-auto bg-gray-100 border-none rounded-lg px-4 py-2"><option value="All">Filter by Team (All)</option>${Object.values(teamMapping).map(team => `<option value="${team.className}">${team.name}</option>`).join('')}</select>
-                <div class="relative flex-grow w-full"><i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i><input type="text" id="search-tasks" placeholder="Search tasks..." class="w-full bg-gray-100 border-none rounded-lg pl-10 pr-4 py-2"></div>
-              </div>
-              <div id="tasks-list" class="grid grid-cols-1 md:grid-cols-2 xl:col-cols-3 gap-6">${renderList(appState.allTasks)}</div>
-            </div>`;
-            
-        const applyFilters = () => {
-            const team = document.getElementById('team-filter').value;
-            const search = document.getElementById('search-tasks').value.toLowerCase();
-            const filtered = appState.allTasks.filter(task => (team === 'All' || task.className === team) && (task.subject.toLowerCase().includes(search) || task.description.toLowerCase().includes(search)));
-            document.getElementById('tasks-list').innerHTML = renderList(filtered);
-        };
-        
-        document.getElementById('team-filter').addEventListener('change', applyFilters);
-        document.getElementById('search-tasks').addEventListener('input', applyFilters);
-    }
-    
-    function renderSubmissionsView() {
-        const rows = appState.submissions.length === 0 ? `<tr><td colspan="5"><div class="text-center py-16 text-gray-400"><i class="fas fa-folder-open text-5xl mb-4"></i><h3 class="text-xl font-bold">No Submissions Yet</h3></div></td></tr>` : appState.submissions.map((s, i) => `
-            <tr class="border-b last:border-b-0">
-                <td class="p-4">${s.name}</td><td class="p-4">${s.member}</td><td class="p-4">${s.date}</td><td class="p-4">${s.fileType}</td>
-                <td class="p-4"><button class="download-btn bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm" data-index="${i}"><i class="fas fa-download mr-2"></i> Download</button></td>
-            </tr>`).join('');
-        pageContentEl.innerHTML = `<div class="bg-white rounded-2xl p-6 shadow-sm overflow-x-auto"><table class="w-full text-left min-w-[600px]"><thead><tr class="bg-gray-100"><th class="p-4 font-bold rounded-tl-lg">Submission Name</th><th class="p-4 font-bold">Team Member</th><th class="p-4 font-bold">Date</th><th class="p-4 font-bold">File Type</th><th class="p-4 font-bold rounded-tr-lg">Action</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-    }
+const Submissions = ({ submissions }) => {
 
     const handleDownload = (submission) => {
         const content = submission.fileContent || `Submission Details:\nName: ${submission.name}\nMember: ${submission.member}\nDate: ${submission.date}`;
@@ -669,127 +742,443 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
         const a = document.createElement('a');
         a.href = url;
         a.download = `${submission.name.replace(/\s+/g, '_')}_${submission.date}.txt`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
-    
-     function renderTeamView() {
-        const teamMemberCards = appState.users.map(user => {
-            const teamInfo = teamMapping[user.team] || { name: 'General', color: 'bg-gray-500', avatar: 'G', role: 'Team Member' };
-            const lastSeen = user.isOnline ? '' : `<p class="text-xs text-gray-400 mt-1">Last seen: ${user.lastLogout ? new Date(user.lastLogout).toLocaleString() : 'N/A'}</p>`;
-            return `
-                <div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div class="flex items-center gap-5">
-                        <div class="relative"><div class="w-16 h-16 ${teamInfo.color} rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-2xl">${teamInfo.avatar}</div><div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}"></div></div>
-                        <div><h3 class="text-xl font-bold">${user.username}</h3><p class="text-gray-500">${teamInfo.role}</p>${lastSeen}</div>
-                    </div>
-                    <button class="deregister-btn bg-red-100 text-red-600 hover:bg-red-200 font-bold py-2 px-4 rounded-lg w-full sm:w-auto" data-username="${user.username}"><i class="fas fa-user-minus mr-2"></i>Deregister</button>
-                </div>`;
-        }).join('');
-        pageContentEl.innerHTML = `<div class="space-y-6"><div class="bg-white p-4 rounded-2xl shadow-sm flex justify-end"><button id="show-register-modal-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700"><i class="fas fa-user-plus mr-2"></i> Register New Member</button></div>${teamMemberCards}</div>`;
-        document.getElementById('show-register-modal-btn').addEventListener('click', showRegisterModal);
-    }
 
-    function renderSettingsView() {
-        const createCard = (title, desc, btnText, icon, modalKey) => `<div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"><div class="flex items-center gap-5"><div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl"><i class="fas ${icon}"></i></div><div><h3 class="text-lg font-bold">${title}</h3><p class="text-gray-500 text-sm">${desc}</p></div></div><button data-modal="${modalKey}" class="settings-btn bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 w-full md:w-auto">${btnText}</button></div>`;
-        pageContentEl.innerHTML = `<div class="space-y-6">
-            ${createCard('Profile Information', 'Update your personal information.', 'Edit Profile', 'fa-user-edit', 'profile')}
-            ${createCard('Notification Preferences', 'Manage how you receive notifications.', 'Configure', 'fa-bell', 'notifications')}
-            ${createCard('Security Settings', 'Update your password and security.', 'Update Security', 'fa-shield-alt', 'security')}
-            ${createCard('Team Preferences', 'Customize how you interact with your team.', 'Manage', 'fa-users-cog', 'team')}
-        </div>`;
-        
-        pageContentEl.querySelectorAll('.settings-btn').forEach(btn => btn.addEventListener('click', () => showSettingsModal(btn.dataset.modal)));
-    }
-    
-    // --- MODAL CONTENT & HANDLERS ---
-    function showSubmissionModal() {
-        const modalHTML = `
-            <div id="submission-form-content">
-                <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold">Weekly Report Submission</h2><button onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))" class="text-gray-400 hover:text-gray-600 text-2xl"><i class="fas fa-times"></i></button></div>
-                <form id="submission-form" class="space-y-4">
-                    <div><label class="block text-sm font-medium mb-1">Report Title</label><input type="text" name="title" required class="w-full border-2 rounded-lg p-2"></div>
-                    <div><label class="block text-sm font-medium mb-1">Team</label><select name="team" required class="w-full border-2 rounded-lg p-2 bg-white"><option value="">Select Team</option>${Object.values(teamMapping).map(t => `<option value="${t.name}">${t.name}</option>`).join('')}</select></div>
-                    <div><label class="block text-sm font-medium mb-1">Progress Report</label><textarea name="progress" required rows="4" class="w-full border-2 rounded-lg p-2"></textarea></div>
-                    <div><label class="block text-sm font-medium mb-1">Next Week's Plan</label><textarea name="plan" required rows="3" class="w-full border-2 rounded-lg p-2"></textarea></div>
-                    <div><label class="block text-sm font-medium mb-1">Upload File (Optional)</label><input type="file" id="report-file" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/></div>
-                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg"><i class="fas fa-paper-plane mr-2"></i>Submit</button>
-                </form>
-            </div>
-            <div id="submission-success" class="hidden text-center py-10"><i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i><h2 class="text-2xl font-bold">Submission Successful!</h2><p class="mt-2">Your report has been archived.</p><button onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))" class="mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg">Close</button></div>`;
-        openModal(modalHTML);
-        document.getElementById('submission-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const fileInput = document.getElementById('report-file');
-            const newSubmission = {
-                name: e.target.title.value, member: e.target.team.value, date: new Date().toLocaleDateString('en-CA'),
-                fileType: fileInput.files.length > 0 ? fileInput.files[0].type || 'file' : 'N/A',
-                fileContent: `Report Title: ${e.target.title.value}\nProgress: ${e.target.progress.value}\nNext Week's Plan: ${e.target.plan.value}`
-            };
-            appState.submissions.unshift(newSubmission);
-            saveToStorage('digihive_submissions', appState.submissions);
-            document.getElementById('submission-form-content').classList.add('hidden');
-            document.getElementById('submission-success').classList.remove('hidden');
-            if (appState.currentPage === 'submissions') renderSubmissionsView();
-        });
-    }
+    const rows = submissions.length === 0 ? (
+        React.createElement('tr', null, React.createElement('td', { colSpan: 5 }, React.createElement('div', { className: "text-center py-16 text-gray-400" }, React.createElement('i', { className: "fas fa-folder-open text-5xl mb-4" }), React.createElement('h3', { className: "text-xl font-bold text-slate-700" }, "No Submissions Yet"), React.createElement('p', { className: "text-gray-500 mt-2" }, "Your team's submissions will appear here."))))
+    ) : (
+        submissions.map((s, index) => (
+            React.createElement('tr', { key: index, className: "border-b last:border-b-0" },
+                React.createElement('td', { className: "p-4" }, s.name),
+                React.createElement('td', { className: "p-4" }, s.member),
+                React.createElement('td', { className: "p-4" }, s.date),
+                React.createElement('td', { className: "p-4" }, s.fileType),
+                React.createElement('td', { className: "p-4" },
+                    React.createElement('button', { onClick: () => handleDownload(s), className: "bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm" },
+                        React.createElement('i', { className: "fas fa-download mr-2" }), " Download"
+                    )
+                )
+            )
+        ))
+    );
+            
+    return (
+        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm overflow-x-auto" },
+            React.createElement('table', { className: "w-full text-left min-w-[600px]" },
+                React.createElement('thead', null,
+                    React.createElement('tr', { className: "bg-gray-100" },
+                        React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tl-lg" }, "Submission Name"),
+                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Team Member"),
+                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Date Submitted"),
+                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "File Type"),
+                        React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tr-lg" }, "Action")
+                    )
+                ),
+                React.createElement('tbody', null, rows)
+            )
+        )
+    );
+};
 
-    function showSettingsModal(type) {
-        let modalContentHTML = '';
-        switch (type) {
-            case 'profile':
-                modalContentHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Profile Information</h2><p class="text-center text-gray-500">Username: <strong>${appState.currentUser.username}</strong><br>Team: <strong>${appState.currentUser.team}</strong></p><p class="text-center text-gray-400 mt-4 text-sm">(Profile editing coming soon)</p>`;
-                break;
-            case 'notifications':
-                modalContentHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Notification Preferences</h2>
-                <form id="notifications-form" class="space-y-4">
-                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"><span class="font-medium">Email Notifications</span><input type="checkbox" name="email" ${appState.currentUser.notifications?.email ? 'checked' : ''} class="h-6 w-6 rounded text-blue-600"/></label>
-                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"><span class="font-medium">Push Notifications</span><input type="checkbox" name="push" ${appState.currentUser.notifications?.push ? 'checked' : ''} class="h-6 w-6 rounded text-blue-600"/></label>
-                    <button type="submit" class="w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg">Save Preferences</button>
-                </form>`;
-                break;
-            case 'security':
-                modalContentHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Update Password</h2>
-                <form id="security-form" class="space-y-4">
-                    <div><label class="block text-sm font-medium mb-1">Current Password</label><input type="password" name="currentPassword" required class="w-full border-2 rounded-lg p-2"/></div>
-                    <div><label class="block text-sm font-medium mb-1">New Password</label><input type="password" name="newPassword" required class="w-full border-2 rounded-lg p-2"/></div>
-                    <div><label class="block text-sm font-medium mb-1">Confirm New Password</label><input type="password" name="confirmPassword" required class="w-full border-2 rounded-lg p-2"/></div>
-                    <button type="submit" class="w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg">Update Password</button>
-                </form>`;
-                break;
-            case 'team':
-                modalContentHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Team Preferences</h2><p class="text-center text-gray-500">Team preference settings will be available in a future update.</p>`;
-                break;
+const Team = ({ users, setUsers, currentUser }) => {
+    const [isRegisterModalOpen, setRegisterModalOpen] = useState(false);
+    
+    const handleRegister = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        if (formData.get('adminCode') !== ADMIN_CODE) {
+            alert('Invalid Admin Code. Registration failed.');
+            return;
         }
-        openModal(`<button class="absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl" onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))"><i class="fas fa-times"></i></button>${modalContentHTML}`, 'max-w-md');
+
+        const username = formData.get('username');
+        const password = formData.get('password');
+        const team = formData.get('team');
         
-        if (type === 'notifications') document.getElementById('notifications-form').addEventListener('submit', handleUpdateNotifications);
-        if (type === 'security') document.getElementById('security-form').addEventListener('submit', handleUpdatePassword);
-    }
-    
-    function handleUpdatePassword(e) {
+        if (users.find(u => u.username === username)) {
+            alert('Username already exists.');
+            return;
+        }
+
+        const newUser = { username, password, team, isOnline: false };
+        setUsers([...users, newUser]);
+        alert('Registration successful!');
+        setRegisterModalOpen(false);
+    };
+
+    const handleDeregister = (username) => {
+        if (username === currentUser.username) {
+            alert("You cannot deregister yourself.");
+            return;
+        }
+        
+        const code = prompt("Enter Admin Code to deregister this member:");
+        if (code !== ADMIN_CODE) {
+            if (code !== null) alert("Invalid Admin Code. Action cancelled.");
+            return;
+        }
+
+        if (confirm(`Are you sure you want to deregister ${username}? This action cannot be undone.`)) {
+            setUsers(users.filter(u => u.username !== username));
+            alert(`${username} has been deregistered.`);
+        }
+    };
+
+    return (
+        React.createElement('div', { className: "space-y-6" },
+            React.createElement('div', { className: "bg-white p-4 rounded-2xl shadow-sm flex justify-end" },
+                React.createElement('button', { 
+                    onClick: () => setRegisterModalOpen(true),
+                    className: "bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                },
+                    React.createElement('i', { className: "fas fa-user-plus mr-2" }), " Register New Member"
+                )
+            ),
+
+            users.map(user => {
+                const teamInfo = Object.values(teamMapping).find(t => t.name === user.team) || { name: 'General', color: 'bg-gray-500', avatar: 'G', role: 'Team Member' };
+                const lastSeen = user.isOnline ? null : (user.lastLogout ? new Date(user.lastLogout).toLocaleString() : 'N/A');
+
+                return (
+                    React.createElement('div', { key: user.username, className: "bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" },
+                        React.createElement('div', { className: "flex items-center gap-5" },
+                            React.createElement('div', { className: "relative" },
+                                React.createElement('div', { className: `w-16 h-16 ${teamInfo.color} rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl` }, teamInfo.avatar),
+                                React.createElement('div', { className: `absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}` })
+                            ),
+                            React.createElement('div', null,
+                                React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, user.username),
+                                React.createElement('p', { className: "text-gray-500" }, teamInfo.role),
+                                !user.isOnline && React.createElement('p', { className: "text-xs text-gray-400 mt-1" }, `Last seen: ${lastSeen}`)
+                            )
+                        ),
+                        React.createElement('button', { onClick: () => handleDeregister(user.username), className: "deregister-btn bg-red-100 text-red-600 hover:bg-red-200 font-bold py-2 px-4 rounded-lg w-full sm:w-auto" },
+                           React.createElement('i', { className: "fas fa-user-minus mr-2" }), " Deregister"
+                        )
+                    )
+                );
+            }),
+            
+            React.createElement(Modal, { isOpen: isRegisterModalOpen, onClose: () => setRegisterModalOpen(false) },
+                 React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Register New Member"),
+                React.createElement('form', { onSubmit: handleRegister },
+                    React.createElement('div', { className: "mb-4" },
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
+                        React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                    ),
+                    React.createElement('div', { className: "mb-4" },
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
+                        React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                    ),
+                     React.createElement('div', { className: "mb-4" },
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Team"),
+                        React.createElement('select', { name: "team", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 bg-white" },
+                            Object.values(teamMapping).map(t => React.createElement('option', { key: t.name, value: t.name }, t.name))
+                        )
+                    ),
+                     React.createElement('div', { className: "mb-6" },
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Admin Code"),
+                        React.createElement('input', { type: "password", name: "adminCode", placeholder: "Required for registration", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                    ),
+                    React.createElement('button', { type: "submit", className: "w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors" }, "Register")
+                )
+            )
+        )
+    );
+};
+
+
+const Settings = ({ currentUser, updateUser }) => {
+    const [activeModal, setActiveModal] = useState(null);
+
+    const handleUpdatePassword = (e) => {
         e.preventDefault();
-        const { currentPassword, newPassword, confirmPassword } = e.target;
-        if (currentPassword.value !== appState.currentUser.password) return alert('Current password does not match.');
-        if (newPassword.value !== confirmPassword.value) return alert('New passwords do not match.');
-        if (newPassword.value.length < 6) return alert('Password must be at least 6 characters.');
-        
-        updateUserRecord({ ...appState.currentUser, password: newPassword.value });
+        const formData = new FormData(e.currentTarget);
+        const currentPassword = formData.get('currentPassword');
+        const newPassword = formData.get('newPassword');
+        const confirmPassword = formData.get('confirmPassword');
+
+        if (currentPassword !== currentUser.password) {
+            alert('Current password does not match.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            alert('New passwords do not match.');
+            return;
+        }
+        if (newPassword.length < 6) {
+            alert('New password must be at least 6 characters long.');
+            return;
+        }
+
+        updateUser({ ...currentUser, password: newPassword });
         alert('Password updated successfully!');
-        closeModal();
-    }
+        setActiveModal(null);
+    };
 
-    function handleUpdateNotifications(e) {
+    const handleUpdateNotifications = (e) => {
         e.preventDefault();
-        const updatedUser = { ...appState.currentUser, notifications: { email: e.target.email.checked, push: e.target.push.checked }};
-        updateUserRecord(updatedUser);
+        const formData = new FormData(e.currentTarget);
+        const updatedUser = {
+            ...currentUser,
+            notifications: {
+                email: formData.get('email') === 'on',
+                push: formData.get('push') === 'on'
+            }
+        };
+        updateUser(updatedUser);
         alert('Notification preferences updated!');
-        closeModal();
+        setActiveModal(null);
+    };
+
+    const createCard = (title, desc, btnText, icon, modalKey) => (
+        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4" },
+            React.createElement('div', { className: "flex items-center gap-5" },
+                React.createElement('div', { className: "w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl" }, React.createElement('i', { className: `fas ${icon}` })),
+                React.createElement('div', null, React.createElement('h3', { className: "text-lg font-bold text-slate-800" }, title), React.createElement('p', { className: "text-gray-500 text-sm" }, desc))
+            ),
+            React.createElement('button', { onClick: () => setActiveModal(modalKey), className: "bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 w-full md:w-auto" }, btnText)
+        )
+    );
+
+    return (
+        React.createElement('div', { className: "space-y-6" },
+            createCard('Profile Information', 'Update your personal information.', 'Edit Profile', 'fa-user-edit', 'profile'),
+            createCard('Notification Preferences', 'Manage how you receive notifications.', 'Configure', 'fa-bell', 'notifications'),
+            createCard('Security Settings', 'Update your password and security.', 'Update Security', 'fa-shield-alt', 'security'),
+            createCard('Team Preferences', 'Customize how you interact with your team.', 'Manage', 'fa-users-cog', 'team'),
+            React.createElement(Modal, { isOpen: activeModal === 'profile', onClose: () => setActiveModal(null) },
+                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Edit Profile"),
+                React.createElement('p', { className: "text-center text-gray-500" }, "This feature is coming soon. For now, your username is ", React.createElement('strong', null, currentUser.username), " and you are on the ", React.createElement('strong', null, currentUser.team), " team.")
+            ),
+            React.createElement(Modal, { isOpen: activeModal === 'notifications', onClose: () => setActiveModal(null) },
+                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Notification Preferences"),
+                React.createElement('form', { onSubmit: handleUpdateNotifications, className: "space-y-4" },
+                    React.createElement('label', { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg" },
+                        React.createElement('span', { className: "font-medium text-gray-700" }, "Email Notifications"),
+                        React.createElement('input', { type: "checkbox", name: "email", defaultChecked: currentUser.notifications?.email, className: "h-6 w-6 rounded text-blue-600 focus:ring-blue-500" })
+                    ),
+                    React.createElement('label', { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg" },
+                        React.createElement('span', { className: "font-medium text-gray-700" }, "Push Notifications"),
+                        React.createElement('input', { type: "checkbox", name: "push", defaultChecked: currentUser.notifications?.push, className: "h-6 w-6 rounded text-blue-600 focus:ring-blue-500" })
+                    ),
+                    React.createElement('button', { type: "submit", className: "w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg" }, "Save Preferences")
+                )
+            ),
+            React.createElement(Modal, { isOpen: activeModal === 'security', onClose: () => setActiveModal(null) },
+                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Update Password"),
+                React.createElement('form', { onSubmit: handleUpdatePassword, className: "space-y-4" },
+                    React.createElement('div', null,
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Current Password"),
+                        React.createElement('input', { type: "password", name: "currentPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                    ),
+                     React.createElement('div', null,
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "New Password"),
+                        React.createElement('input', { type: "password", name: "newPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                    ),
+                     React.createElement('div', null,
+                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Confirm New Password"),
+                        React.createElement('input', { type: "password", name: "confirmPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                    ),
+                    React.createElement('button', { type: "submit", className: "w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg" }, "Update Password")
+                )
+            ),
+            React.createElement(Modal, { isOpen: activeModal === 'team', onClose: () => setActiveModal(null) },
+                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Team Preferences"),
+                 React.createElement('p', { className: "text-center text-gray-500" }, "Team preference settings will be available in a future update.")
+            )
+        )
+    );
+};
+
+// --- APP ---
+const App = () => {
+    const [users, setUsers] = useLocalStorage('digihive_users', []);
+    const [currentUser, setCurrentUser] = useLocalStorage('digihive_currentUser', null);
+    const [currentPage, setCurrentPage] = useState('dashboard');
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+    const [allTasks, setAllTasks] = useState([]);
+    const [submissions, setSubmissions] = useLocalStorage('digihive_submissions', []);
+    const [comments, setComments] = useLocalStorage('digihive_comments', []);
+
+    useEffect(() => {
+        setAllTasks(parseTasks(CSV_DATA));
+        
+        const storedUsers = JSON.parse(localStorage.getItem('digihive_users') || '[]');
+        const masterUsernames = MASTER_USERS.map(u => u.username);
+        const hasMasterUsers = storedUsers.some(u => masterUsernames.includes(u.username));
+
+        if (!hasMasterUsers) {
+            const localOnlyUsers = storedUsers.filter(u => !masterUsernames.includes(u.username));
+            setUsers([...MASTER_USERS, ...localOnlyUsers]);
+        }
+    }, [setUsers]);
+
+    const updateUser = useCallback((updatedUser) => {
+        setUsers(prevUsers => {
+            const userExists = prevUsers.some(u => u.username === updatedUser.username);
+            if (userExists) {
+                return prevUsers.map(u => u.username === updatedUser.username ? updatedUser : u);
+            }
+            return [...prevUsers, updatedUser];
+        });
+    }, [setUsers]);
+    
+    const handleLogin = (user) => {
+        const sessionToken = Date.now().toString() + Math.random().toString();
+        const updatedUser = {
+            ...user,
+            sessionToken,
+            isOnline: true,
+            lastLogin: new Date().toISOString()
+        };
+        updateUser(updatedUser);
+        setCurrentUser(updatedUser);
+    };
+
+    const handleLogout = useCallback(() => {
+        if (currentUser) {
+            const userToUpdate = users.find(u => u.username === currentUser.username);
+            if(userToUpdate) {
+                const updatedUser = {
+                    ...userToUpdate,
+                    isOnline: false,
+                    lastLogout: new Date().toISOString(),
+                    sessionToken: undefined
+                };
+                updateUser(updatedUser);
+            }
+        }
+        setCurrentUser(null);
+    }, [currentUser, users, setCurrentUser, updateUser]);
+
+    useEffect(() => {
+        const handleStorageChange = (event) => {
+            if (!event.key || !event.newValue) return;
+
+            const updateState = (setter) => {
+                try {
+                    setter(JSON.parse(event.newValue));
+                } catch (e) {
+                    console.error("Failed to parse storage update", e);
+                }
+            };
+
+            switch (event.key) {
+                case 'digihive_comments':
+                    updateState(setComments);
+                    break;
+                case 'digihive_submissions':
+                    updateState(setSubmissions);
+                    break;
+                case 'digihive_users':
+                    updateState(setUsers);
+                    break;
+                case 'digihive_currentUser':
+                    if (event.newValue === 'null') {
+                       handleLogout();
+                    }
+                    break;
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, [setComments, setSubmissions, setUsers, handleLogout]);
+
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (currentUser) {
+                const latestUsers = JSON.parse(localStorage.getItem('digihive_users') || '[]');
+                const userIndex = latestUsers.findIndex(u => u.username === currentUser.username);
+                if (userIndex !== -1) {
+                    latestUsers[userIndex].isOnline = false;
+                    latestUsers[userIndex].lastLogout = new Date().toISOString();
+                    localStorage.setItem('digihive_users', JSON.stringify(latestUsers));
+                }
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [currentUser]);
+
+    useEffect(() => {
+        if (currentUser) {
+            const userInDb = users.find(u => u.username === currentUser.username);
+            if (!userInDb) {
+                handleLogout();
+                alert('Your user account could not be found. Please log in again.');
+            } else if (!currentUser.isOnline) {
+                const updatedUser = { ...currentUser, isOnline: true };
+                updateUser(updatedUser);
+                setCurrentUser(updatedUser);
+            }
+        }
+    }, [currentUser, users, handleLogout, updateUser, setCurrentUser]);
+
+    const renderPage = () => {
+        switch (currentPage) {
+            case 'dashboard':
+                return React.createElement(Dashboard, { allTasks, comments, setComments, currentUser, submissions, setSubmissions });
+            case 'tasks':
+                return React.createElement(Tasks, { allTasks });
+            case 'submissions':
+                return React.createElement(Submissions, { submissions });
+            case 'team':
+                return React.createElement(Team, { users, setUsers, currentUser });
+            case 'settings':
+                return React.createElement(Settings, { currentUser, updateUser });
+            default:
+                return React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('h2', { className: "text-2xl font-bold" }, currentPage), React.createElement('p', null, "Page not found."));
+        }
+    };
+
+    if (!currentUser) {
+        return React.createElement(LoginScreen, { users, setUsers, onLogin: handleLogin });
     }
 
-    // --- START THE APP ---
-    init();
-});
+    return (
+        React.createElement('div', { className: "flex min-h-screen bg-[#F8FAFC] text-[#1A1A2E]" },
+            React.createElement(Sidebar, { currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen }),
+             React.createElement('div', {
+                className: `fixed inset-0 bg-black/50 z-30 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`,
+                onClick: () => setSidebarOpen(false)
+            }),
+            React.createElement('main', { className: "flex-1 transition-all duration-300 ease-in-out lg:ml-72 p-6 sm:p-8 md:p-12" },
+                React.createElement(Header, { 
+                    user: currentUser, 
+                    onLogout: handleLogout, 
+                    toggleSidebar: () => setSidebarOpen(!isSidebarOpen),
+                    pageTitle: currentPage
+                }),
+                React.createElement('div', { className: "mt-10" },
+                    renderPage()
+                )
+            )
+        )
+    );
+};
+
+// --- RENDER ---
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
+}
+
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  React.createElement(StrictMode, null,
+    React.createElement(App, null)
+  )
+);
+
 </script>
+
 </body>
 </html>
