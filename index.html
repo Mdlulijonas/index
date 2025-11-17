@@ -568,7 +568,44 @@ const UpcomingTask = ({ tasks }) => {
     );
 };
 
-const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, setSubmissions }) => {
+const LiveStatusWidget = ({ users }) => {
+    return (
+        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" },
+            React.createElement('h3', { className: "text-xl font-bold text-slate-800 mb-4" }, "Live Sync Status"),
+            React.createElement('div', { className: "space-y-4" },
+                React.createElement('div', { className: "flex items-center justify-between p-3 bg-green-50 rounded-lg" },
+                    React.createElement('div', { className: "flex items-center gap-3" },
+                        React.createElement('i', { className: "fas fa-sync-alt text-green-600" }),
+                        React.createElement('span', { className: "font-semibold text-sm text-green-800" }, "Real-Time Data Sync")
+                    ),
+                    React.createElement('span', { className: "font-bold text-sm text-green-600" }, "Active")
+                ),
+                React.createElement('div', null,
+                    React.createElement('h4', { className: "text-sm font-semibold text-slate-600 mb-2 px-1" }, "Live Team Status"),
+                    React.createElement('ul', { className: "space-y-2" },
+                        Object.values(teamMapping).map(team => {
+                            const isAnyMemberOnline = users.some(user => user.team === team.name && user.isOnline);
+                            return (
+                                React.createElement('li', { key: team.name, className: "flex items-center justify-between p-2 bg-gray-50 rounded-lg" },
+                                    React.createElement('div', { className: "flex items-center gap-2" },
+                                        React.createElement('div', { className: `w-5 h-5 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` }, team.avatar),
+                                        React.createElement('span', { className: "text-sm font-medium text-slate-700" }, team.name)
+                                    ),
+                                    React.createElement('div', { className: "flex items-center gap-2" },
+                                        React.createElement('div', { className: `w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors ${isAnyMemberOnline ? 'bg-green-400' : 'bg-gray-400'}` }),
+                                        React.createElement('span', { className: `text-xs font-semibold ${isAnyMemberOnline ? 'text-green-600' : 'text-gray-500'}` }, isAnyMemberOnline ? 'Online' : 'Offline')
+                                    )
+                                )
+                            );
+                        })
+                    )
+                )
+            )
+        )
+    );
+};
+
+const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, setSubmissions, users }) => {
     const [quote, setQuote] = useState(MOTIVATION_QUOTES[0]);
     const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
     const [submissionSuccess, setSubmissionSuccess] = useState(false);
@@ -626,6 +663,7 @@ const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, 
                    React.createElement(CommentsSection, { comments: comments, setComments: setComments, currentUser: currentUser })
                 ),
                 React.createElement('div', { className: "lg:col-span-1 space-y-8" },
+                    React.createElement(LiveStatusWidget, { users: users }),
                     React.createElement('div', { className: "h-[450px]" },
                         React.createElement(UpcomingTask, { tasks: upcomingTasks })
                     ),
@@ -1078,7 +1116,6 @@ const App = () => {
                     if (event.newValue) {
                         setter(JSON.parse(event.newValue));
                     } else {
-                        // Handle item removal from storage if necessary
                         setter([]); 
                     }
                 } catch (e) {
@@ -1097,12 +1134,10 @@ const App = () => {
                     updateState(setUsers);
                     break;
                 case 'digihive_currentUser':
-                    // If a user logs out on another tab, currentUser will become null.
                     if (event.newValue === 'null' && event.oldValue) {
                         try {
                             const loggedOutUser = JSON.parse(event.oldValue);
                             if (loggedOutUser && loggedOutUser.username) {
-                                // Use functional update to ensure we have the latest users state
                                 setUsers(prevUsers => prevUsers.map(u => 
                                     u.username === loggedOutUser.username 
                                     ? { ...u, isOnline: false, lastLogout: new Date().toISOString() } 
@@ -1154,7 +1189,7 @@ const App = () => {
     const renderPage = () => {
         switch (currentPage) {
             case 'dashboard':
-                return React.createElement(Dashboard, { allTasks, comments, setComments, currentUser, submissions, setSubmissions });
+                return React.createElement(Dashboard, { allTasks, comments, setComments, currentUser, submissions, setSubmissions, users });
             case 'tasks':
                 return React.createElement(Tasks, { allTasks });
             case 'submissions':
