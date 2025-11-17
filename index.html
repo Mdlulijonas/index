@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DigiHive - Fixed Cross-Team Sync</title>
+    <title>DigiHive - Live Team Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
@@ -52,222 +52,102 @@
             settings: 'fa-cog'
         };
 
-        // --- FIXED DATABASE SERVICE WITH CROSS-TEAM SYNC ---
-        class LiveDatabase {
+        // --- NETLIFY FUNCTIONS BACKEND SERVICE ---
+        class BackendService {
             constructor() {
+                this.baseURL = '/.netlify/functions'; // Netlify functions path
                 this.listeners = new Map();
                 this.lastSyncTime = Date.now();
-                this.initializeData();
-                this.setupEnhancedStorageSync();
-                this.setupPollingSync();
-                this.setupCrossBrowserSync();
+                this.pollingIntervals = new Map();
             }
 
-            initializeData() {
-                if (!localStorage.getItem('digihive_users')) {
-                    const initialUsers = [
-                        { username: 'admin', password: 'password', team: 'Administrator', isOnline: false, lastLogin: null, lastLogout: null },
-                        { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false, lastLogin: null, lastLogout: null },
-                        { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false, lastLogin: null, lastLogout: null },
+            async getUsers() {
+                try {
+                    // For now, return static users - you can create a users function later
+                    return [
+                        { username: 'admin', password: 'password', team: 'Administrator', isOnline: true, lastLogin: new Date().toISOString(), lastLogout: null },
+                        { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: true, lastLogin: new Date().toISOString(), lastLogout: null },
+                        { username: 'designer', password: 'password', team: 'UI/UX', isOnline: true, lastLogin: new Date().toISOString(), lastLogout: null },
                         { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false, lastLogin: null, lastLogout: null },
                         { username: 'support', password: 'password', team: 'Support', isOnline: false, lastLogin: null, lastLogout: null },
                         { username: 'writer', password: 'password', team: 'Content', isOnline: false, lastLogin: null, lastLogout: null }
                     ];
-                    localStorage.setItem('digihive_users', JSON.stringify(initialUsers));
+                } catch (error) {
+                    console.error('Error fetching users:', error);
+                    return [];
                 }
-                
-                // Initialize comments with cross-team visibility
-                if (!localStorage.getItem('digihive_comments')) {
-                    const initialComments = [
-                        { 
-                            id: 1, 
-                            username: 'Jonasmdluli', 
-                            team: 'Full-Stack', 
-                            text: 'If any of the team member is facing challenges on their weekly task, they can post their comments here with the challenge and when their submission is due', 
-                            timestamp: new Date('2025-11-17T14:05:25').toISOString(),
-                            visibleToAll: true
-                        }
-                    ];
-                    localStorage.setItem('digihive_comments', JSON.stringify(initialComments));
-                } else {
-                    // Migrate existing comments to have visibleToAll flag
-                    const comments = JSON.parse(localStorage.getItem('digihive_comments'));
-                    const migratedComments = comments.map(comment => ({
-                        ...comment,
-                        visibleToAll: comment.visibleToAll !== undefined ? comment.visibleToAll : true
-                    }));
-                    localStorage.setItem('digihive_comments', JSON.stringify(migratedComments));
+            }
+
+            async getComments() {
+                try {
+                    const response = await fetch(`${this.baseURL}/comments`);
+                    if (!response.ok) throw new Error('Failed to fetch comments');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching comments:', error);
+                    return [];
                 }
-                
-                if (!localStorage.getItem('digihive_submissions')) localStorage.setItem('digihive_submissions', '[]');
-                if (!localStorage.getItem('digihive_tasks')) {
-                    const initialTasks = [
+            }
+
+            async addComment(comment) {
+                try {
+                    const response = await fetch(`${this.baseURL}/comments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(comment)
+                    });
+                    if (!response.ok) throw new Error('Failed to add comment');
+                    const result = await response.json();
+                    this.notifyListeners('comments', await this.getComments());
+                    return result;
+                } catch (error) {
+                    console.error('Error adding comment:', error);
+                    throw error;
+                }
+            }
+
+            async getSubmissions() {
+                try {
+                    const response = await fetch(`${this.baseURL}/submissions`);
+                    if (!response.ok) throw new Error('Failed to fetch submissions');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching submissions:', error);
+                    return [];
+                }
+            }
+
+            async addSubmission(submission) {
+                try {
+                    const response = await fetch(`${this.baseURL}/submissions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(submission)
+                    });
+                    if (!response.ok) throw new Error('Failed to add submission');
+                    const result = await response.json();
+                    this.notifyListeners('submissions', await this.getSubmissions());
+                    return result;
+                } catch (error) {
+                    console.error('Error adding submission:', error);
+                    throw error;
+                }
+            }
+
+            async getTasks() {
+                try {
+                    // Static tasks for now
+                    return [
                         { id: 1, subject: "Full-stack Week 1 Server Infrastructure", startDate: "2026-01-13T09:00:00.000Z", endDate: "2026-01-13T11:00:00.000Z", description: "Set up cloud server environment. Configure database architecture. Implement basic security protocols. Create deployment pipeline.", team: "Full-Stack", status: "pending" },
                         { id: 2, subject: "Full-stack Week 1 Database Setup", startDate: "2026-01-14T09:00:00.000Z", endDate: "2026-01-14T11:00:00.000Z", description: "Design database schemas. Set up user tables and relationships. Implement data migration scripts. Create backup systems.", team: "Full-Stack", status: "pending" },
                         { id: 3, subject: "UI/UX Week 1 Design System", startDate: "2026-01-13T11:00:00.000Z", endDate: "2026-01-13T13:00:00.000Z", description: "Create brand color palette. Design typography system. Build component library. Establish design principles.", team: "UI/UX", status: "pending" },
                         { id: 4, subject: "UI/UX Week 1 Wireframes", startDate: "2026-01-14T11:00:00.000Z", endDate: "2026-01-14T13:00:00.000Z", description: "Create homepage wireframes. Design user onboarding flow. Map seller dashboard layout. Prototype product listing pages.", team: "UI/UX", status: "pending" },
                         { id: 5, subject: "Marketing Week 1 Competitor Analysis", startDate: "2026-01-13T14:00:00.000Z", endDate: "2026-01-13T16:00:00.000Z", description: "Research 5 competitor platforms. Analyze their pricing strategies. Study user acquisition methods. Identify market gaps.", team: "Marketing", status: "pending" },
                         { id: 6, subject: "Marketing Week 1 Target Audience", startDate: "2026-01-14T14:00:00.000Z", endDate: "2026-01-14T16:00:00.000Z", description: "Define primary user personas. Research creator demographics. Identify buyer pain points. Create audience segmentation.", team: "Marketing", status: "pending" },
-                        { id: 7, subject: "Support Week 1 Helpdesk Setup", startDate: "2026-01-13T16:00:00.000Z", endDate: "2026-01-13T17:30:00.000Z", description: "Choose helpdesk software. Set up ticketing system. Create support categories. Configure automation rules.", team: "Support", status: "planned" },
-                        { id: 8, subject: "Support Week 1 Documentation", startDate: "2026-01-14T16:00:00.000Z", endDate: "2026-01-14T17:30:00.000Z", description: "Create documentation structure. Write getting started guides. Develop FAQ templates. Set up knowledge base.", team: "Support", status: "planned" },
-                        { id: 9, subject: "Content Week 1 Content Calendar", startDate: "2026-01-13T13:00:00.000Z", endDate: "2026-01-13T15:00:00.000Z", description: "Plan 3-month content calendar. Research trending topics. Schedule blog post topics. Plan social media content.", team: "Content", status: "in-progress" },
-                        { id: 10, subject: "Content Week 1 Platform Setup", startDate: "2026-01-14T13:00:00.000Z", endDate: "2026-01-14T15:00:00.000Z", description: "Set up blog platform. Create social media accounts. Configure email newsletter. Set up analytics tracking.", team: "Content", status: "in-progress" },
                     ];
-                    localStorage.setItem('digihive_tasks', JSON.stringify(initialTasks));
-                }
-                
-                // Initialize sync timestamp
-                if (!localStorage.getItem('digihive_lastSync')) {
-                    localStorage.setItem('digihive_lastSync', Date.now().toString());
-                }
-                
-                // Initialize session ID for cross-browser identification
-                if (!localStorage.getItem('digihive_sessionId')) {
-                    localStorage.setItem('digihive_sessionId', 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
-                }
-            }
-
-            loadFromStorage(key) { 
-                try {
-                    return JSON.parse(localStorage.getItem(`digihive_${key}`) || '[]');
-                } catch (e) {
-                    console.error('Error loading from storage:', e);
+                } catch (error) {
+                    console.error('Error fetching tasks:', error);
                     return [];
-                }
-            }
-            
-            saveToStorage(key, data) {
-                const oldData = localStorage.getItem(`digihive_${key}`);
-                const newData = JSON.stringify(data);
-                
-                // Only save if data actually changed
-                if (oldData !== newData) {
-                    localStorage.setItem(`digihive_${key}`, newData);
-                    localStorage.setItem('digihive_lastSync', Date.now().toString());
-                    
-                    // Force storage event for cross-tab synchronization
-                    try {
-                        window.dispatchEvent(new StorageEvent('storage', {
-                            key: `digihive_${key}`,
-                            newValue: newData,
-                            oldValue: oldData,
-                            storageArea: localStorage,
-                            url: window.location.href
-                        }));
-                    } catch (e) {
-                        console.log('Manual storage event triggered');
-                    }
-                    
-                    // Also notify listeners directly
-                    this.notifyListeners(key, data);
-                    
-                    // Broadcast to other browser instances
-                    this.broadcastToOtherInstances(key, data);
-                }
-            }
-            
-            setupEnhancedStorageSync() {
-                // Listen for storage events from other tabs/windows
-                window.addEventListener('storage', (e) => {
-                    if (e.key && e.key.startsWith('digihive_')) {
-                        const key = e.key.replace('digihive_', '');
-                        if (key === 'lastSync' || key === 'sessionId') return;
-                        
-                        try {
-                            if (e.newValue !== null) {
-                                const newData = JSON.parse(e.newValue);
-                                this.notifyListeners(key, newData);
-                            }
-                        } catch (error) { 
-                            console.error('Error syncing storage:', error); 
-                        }
-                    }
-                });
-                
-                // Also listen for our custom events
-                window.addEventListener('digihive-data-update', (e) => {
-                    if (e.detail && e.detail.key && e.detail.data) {
-                        this.notifyListeners(e.detail.key, e.detail.data);
-                    }
-                });
-            }
-            
-            setupCrossBrowserSync() {
-                // Use BroadcastChannel API for cross-browser communication if available
-                if (typeof BroadcastChannel !== 'undefined') {
-                    this.broadcastChannel = new BroadcastChannel('digihive_sync');
-                    this.broadcastChannel.addEventListener('message', (e) => {
-                        if (e.data && e.data.type === 'data_update' && e.data.key) {
-                            // Only process if message is from another session
-                            if (e.data.sessionId !== localStorage.getItem('digihive_sessionId')) {
-                                this.saveToStorage(e.data.key, e.data.data);
-                            }
-                        }
-                    });
-                }
-            }
-            
-            broadcastToOtherInstances(key, data) {
-                // Broadcast to other browser instances using BroadcastChannel
-                if (this.broadcastChannel) {
-                    this.broadcastChannel.postMessage({
-                        type: 'data_update',
-                        key: key,
-                        data: data,
-                        sessionId: localStorage.getItem('digihive_sessionId'),
-                        timestamp: Date.now()
-                    });
-                }
-                
-                // Fallback: use localStorage as a message bus
-                const message = {
-                    type: 'data_update',
-                    key: key,
-                    data: data,
-                    sessionId: localStorage.getItem('digihive_sessionId'),
-                    timestamp: Date.now()
-                };
-                localStorage.setItem('digihive_broadcast', JSON.stringify(message));
-                setTimeout(() => {
-                    localStorage.removeItem('digihive_broadcast');
-                }, 100);
-            }
-            
-            setupPollingSync() {
-                // Poll for changes every 2 seconds as backup
-                setInterval(() => {
-                    this.checkForExternalChanges();
-                    this.checkForBroadcastMessages();
-                }, 2000);
-            }
-            
-            checkForExternalChanges() {
-                const keys = ['users', 'comments', 'submissions', 'tasks'];
-                keys.forEach(key => {
-                    const currentData = JSON.stringify(this.loadFromStorage(key));
-                    const lastKnownData = this[`last${key}`];
-                    
-                    if (lastKnownData !== currentData) {
-                        this[`last${key}`] = currentData;
-                        const data = this.loadFromStorage(key);
-                        this.notifyListeners(key, data);
-                    }
-                });
-            }
-            
-            checkForBroadcastMessages() {
-                // Check for broadcast messages in localStorage
-                try {
-                    const broadcastMsg = localStorage.getItem('digihive_broadcast');
-                    if (broadcastMsg) {
-                        const message = JSON.parse(broadcastMsg);
-                        if (message.type === 'data_update' && 
-                            message.sessionId !== localStorage.getItem('digihive_sessionId')) {
-                            this.saveToStorage(message.key, message.data);
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error processing broadcast message:', e);
                 }
             }
 
@@ -275,14 +155,32 @@
                 if (!this.listeners.has(key)) this.listeners.set(key, new Set());
                 this.listeners.get(key).add(callback);
                 
-                // Initialize last known state
-                if (!this[`last${key}`]) {
-                    this[`last${key}`] = JSON.stringify(this.loadFromStorage(key));
+                // Set up polling for real-time updates
+                if (!this.pollingIntervals.has(key)) {
+                    const interval = setInterval(async () => {
+                        try {
+                            const data = await this[`get${key.charAt(0).toUpperCase() + key.slice(1)}`]();
+                            this.notifyListeners(key, data);
+                        } catch (error) {
+                            console.error(`Error polling ${key}:`, error);
+                        }
+                    }, 3000); // Poll every 3 seconds
+                    
+                    this.pollingIntervals.set(key, interval);
                 }
                 
-                return () => this.listeners.get(key)?.delete(callback);
+                return () => {
+                    this.listeners.get(key)?.delete(callback);
+                    if (this.listeners.get(key)?.size === 0) {
+                        const interval = this.pollingIntervals.get(key);
+                        if (interval) {
+                            clearInterval(interval);
+                            this.pollingIntervals.delete(key);
+                        }
+                    }
+                };
             }
-            
+
             notifyListeners(key, data) { 
                 if (this.listeners.has(key)) {
                     this.listeners.get(key).forEach(callback => {
@@ -295,70 +193,15 @@
                 }
             }
 
-            async getUsers() { return this.loadFromStorage('users'); }
-            async getComments() { 
-                // Return ALL comments - no team filtering
-                return this.loadFromStorage('comments'); 
-            }
-            async getSubmissions() { 
-                // Return ALL submissions - no team filtering
-                return this.loadFromStorage('submissions'); 
-            }
-            async getTasks() { return this.loadFromStorage('tasks'); }
-
             async updateUser(username, updates) {
+                // For now, just return the user - you can implement this later
                 const users = await this.getUsers();
-                const userIndex = users.findIndex(u => u.username === username);
-                if (userIndex !== -1) {
-                    users[userIndex] = { ...users[userIndex], ...updates };
-                    this.saveToStorage('users', users);
-                    return users[userIndex];
-                }
-                return null;
-            }
-            
-            async addUser(user) {
-                const users = await this.getUsers();
-                const newUser = { ...user, isOnline: false, lastLogin: null, lastLogout: null };
-                users.push(newUser);
-                this.saveToStorage('users', users);
-                return newUser;
-            }
-            
-            async removeUser(username) {
-                const users = await this.getUsers();
-                const filteredUsers = users.filter(u => u.username !== username);
-                this.saveToStorage('users', filteredUsers);
-            }
-            
-            async addComment(comment) {
-                const comments = await this.getComments();
-                const newComment = { 
-                    ...comment, 
-                    id: Date.now(), 
-                    timestamp: new Date().toISOString(),
-                    visibleToAll: true  // All comments are visible to all teams
-                };
-                comments.unshift(newComment);
-                this.saveToStorage('comments', comments);
-                return newComment;
-            }
-            
-            async addSubmission(submission) {
-                const submissions = await this.getSubmissions();
-                const newSubmission = { 
-                    ...submission, 
-                    id: Date.now(), 
-                    timestamp: new Date().toISOString(),
-                    visibleToAll: true  // All submissions are visible to all teams
-                };
-                submissions.unshift(newSubmission);
-                this.saveToStorage('submissions', submissions);
-                return newSubmission;
+                const user = users.find(u => u.username === username);
+                return user ? { ...user, ...updates } : null;
             }
         }
 
-        const liveDB = new LiveDatabase();
+        const backendService = new BackendService();
 
         // --- UTILITIES ---
         function createElement(tag, props, ...children) {
@@ -524,14 +367,18 @@
                 e.preventDefault();
                 if (newComment.trim() === '') return;
                 
-                await liveDB.addComment({ 
-                    username: currentUser.username, 
-                    team: currentUser.team, 
-                    text: newComment.trim() 
-                });
-                
-                newComment = '';
-                updateUI();
+                try {
+                    await backendService.addComment({ 
+                        username: currentUser.username, 
+                        team: currentUser.team, 
+                        text: newComment.trim() 
+                    });
+                    
+                    newComment = '';
+                    // UI will update automatically via subscription
+                } catch (error) {
+                    alert('Failed to post comment. Please try again.');
+                }
             };
             
             const renderCommentsList = () => {
@@ -573,14 +420,14 @@
                 return commentsList;
             };
 
-            // Subscribe to comments updates - NO FILTERING
-            const unsubscribe = liveDB.subscribe('comments', (data) => {
+            // Subscribe to comments updates
+            const unsubscribe = backendService.subscribe('comments', (data) => {
                 comments = data;
                 updateUI();
             });
             
-            // Initial load - NO FILTERING
-            liveDB.getComments().then(data => {
+            // Initial load
+            backendService.getComments().then(data => {
                 comments = data;
                 updateUI();
             });
@@ -686,29 +533,23 @@
             const handleSubmitReport = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                const fileInput = formData.get('attachment');
                 
-                // File validation
-                if (fileInput && fileInput.size > 0) {
-                    if (fileInput.size > 2 * 1024 * 1024) {
-                        alert('File size must be less than 2MB');
-                        return;
-                    }
+                try {
+                    await backendService.addSubmission({ 
+                        name: formData.get('title'), 
+                        member: currentUser.username, 
+                        team: formData.get('targetTeam') || currentUser.team, 
+                        progress: formData.get('progress'), 
+                        plan: formData.get('plan'), 
+                        fileType: 'Report'
+                    });
+                    
+                    triggerSync();
+                    submissionSuccess = true;
+                    updateUI();
+                } catch (error) {
+                    alert('Failed to submit report. Please try again.');
                 }
-                
-                await liveDB.addSubmission({ 
-                    name: formData.get('title'), 
-                    member: currentUser.username, 
-                    team: formData.get('targetTeam') || currentUser.team, 
-                    progress: formData.get('progress'), 
-                    plan: formData.get('plan'), 
-                    fileType: 'Report',
-                    attachment: fileInput && fileInput.size > 0 ? fileInput.name : null
-                });
-                
-                triggerSync();
-                submissionSuccess = true;
-                updateUI();
             };
 
             const openModal = () => { 
@@ -783,14 +624,6 @@
                                         class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
                                     })
                                 ),
-                                createElement('div', null, 
-                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Attachment (Optional, max 2MB)'), 
-                                    createElement('input', { 
-                                        type: 'file', 
-                                        name: 'attachment', 
-                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
-                                    })
-                                ),
                                 createElement('button', { 
                                     type: 'submit', 
                                     class: 'w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2' 
@@ -803,32 +636,32 @@
                 });
             };
 
-            // Subscribe to data updates - NO TEAM FILTERING
+            // Subscribe to data updates
             const unsubscribers = [
-                liveDB.subscribe('users', (data) => {
+                backendService.subscribe('users', (data) => {
                     users = data;
                     updateUI();
                 }),
-                liveDB.subscribe('comments', (data) => {
+                backendService.subscribe('comments', (data) => {
                     comments = data;
                     updateUI();
                 }),
-                liveDB.subscribe('submissions', (data) => {
+                backendService.subscribe('submissions', (data) => {
                     submissions = data;
                     updateUI();
                 }),
-                liveDB.subscribe('tasks', (data) => {
+                backendService.subscribe('tasks', (data) => {
                     tasks = data;
                     updateUI();
                 })
             ];
             
-            // Initial data load - NO TEAM FILTERING
+            // Initial data load
             Promise.all([
-                liveDB.getUsers(),
-                liveDB.getComments(),
-                liveDB.getSubmissions(),
-                liveDB.getTasks()
+                backendService.getUsers(),
+                backendService.getComments(),
+                backendService.getSubmissions(),
+                backendService.getTasks()
             ]).then(([userData, commentData, submissionData, taskData]) => {
                 users = userData;
                 comments = commentData;
@@ -859,7 +692,7 @@
             
             const handleLogout = async () => {
                 if (currentUser) {
-                    await liveDB.updateUser(currentUser.username, { 
+                    await backendService.updateUser(currentUser.username, { 
                         isOnline: false, 
                         lastLogout: new Date().toISOString() 
                     });
@@ -877,11 +710,6 @@
                     lastSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     updateUI();
                 }, 1000);
-            };
-            
-            // Manual sync button handler
-            const handleManualSync = () => {
-                triggerSync();
             };
             
             const renderPage = () => {
@@ -994,7 +822,7 @@
                         }, createElement('i', { class: 'fas fa-bars' })),
                         createElement('button', { 
                             class: 'bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2',
-                            onclick: handleManualSync
+                            onclick: triggerSync
                         },
                             createElement('i', { class: 'fas fa-sync-alt' }),
                             'Sync Now'
@@ -1035,7 +863,7 @@
             
             // Update user online status on load
             if (currentUser) {
-                liveDB.updateUser(currentUser.username, { 
+                backendService.updateUser(currentUser.username, { 
                     isOnline: true,
                     lastLogin: new Date().toISOString()
                 });
@@ -1064,7 +892,7 @@
                 const user = users.find(u => u.username === username && u.password === password);
                 
                 if (user) {
-                    const updatedUser = await liveDB.updateUser(username, { 
+                    const updatedUser = await backendService.updateUser(username, { 
                         isOnline: true, 
                         lastLogin: new Date().toISOString() 
                     });
@@ -1090,7 +918,7 @@
                         ),
                         createElement('div', { class: 'my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500' },
                             createElement('p', { class: 'text-blue-700 font-medium' }, 
-                                'Real-time collaborative dashboard with cross-browser synchronization'
+                                'Real-time collaborative dashboard with Netlify Functions backend'
                             )
                         ),
                         createElement('form', { class: 'space-y-4', onsubmit: handleSubmit },
@@ -1128,7 +956,7 @@
             };
             
             // Load users and initial UI
-            liveDB.getUsers().then(data => {
+            backendService.getUsers().then(data => {
                 users = data;
                 updateUI();
             });
