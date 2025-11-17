@@ -91,12 +91,34 @@
                 }
             }
 
+            async loginUser(username, password) {
+                try {
+                    const response = await fetch(`${this.baseURL}/users`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            action: 'login', 
+                            username: username, 
+                            updates: { password: password } 
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        return await response.json();
+                    } else {
+                        throw new Error('Invalid credentials');
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    throw error;
+                }
+            }
+
             async getComments() {
                 try {
                     const response = await fetch(`${this.baseURL}/comments`);
                     if (!response.ok) throw new Error('Failed to fetch comments');
                     const comments = await response.json();
-                    // Return ALL comments - no filtering by team
                     return comments;
                 } catch (error) {
                     console.error('Error fetching comments:', error);
@@ -127,7 +149,6 @@
                     const response = await fetch(`${this.baseURL}/submissions`);
                     if (!response.ok) throw new Error('Failed to fetch submissions');
                     const submissions = await response.json();
-                    // Return ALL submissions - no filtering by team
                     return submissions;
                 } catch (error) {
                     console.error('Error fetching submissions:', error);
@@ -157,7 +178,6 @@
                     const response = await fetch(`${this.baseURL}/tasks`);
                     if (!response.ok) throw new Error('Failed to fetch tasks');
                     const tasks = await response.json();
-                    // Return ALL tasks - no filtering by team
                     return tasks;
                 } catch (error) {
                     console.error('Error fetching tasks:', error);
@@ -896,7 +916,6 @@
                 class: 'min-h-screen bg-slate-100 flex items-center justify-center p-4 animate-fade-in' 
             });
             
-            let users = [];
             let error = '';
 
             const handleSubmit = async (e) => {
@@ -906,11 +925,11 @@
                 const username = formData.get('username');
                 const password = formData.get('password');
                 
-                const user = users.find(u => u.username === username && u.password === password);
-                
-                if (user) {
+                try {
+                    const user = await backendService.loginUser(username, password);
                     onLogin(user);
-                } else {
+                } catch (error) {
+                    console.error('Login error:', error);
                     error = 'Invalid username or password.';
                     updateUI();
                 }
@@ -968,11 +987,8 @@
                 );
             };
             
-            // Load users and initial UI
-            backendService.getUsers().then(data => {
-                users = data;
-                updateUI();
-            });
+            // Initial UI
+            updateUI();
             
             return container;
         }
