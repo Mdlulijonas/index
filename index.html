@@ -52,29 +52,42 @@
             settings: 'fa-cog'
         };
 
-        // --- NETLIFY FUNCTIONS BACKEND SERVICE ---
+        // --- REAL BACKEND SERVICE WITH LIVE DATA ---
         class BackendService {
             constructor() {
-                this.baseURL = '/.netlify/functions'; // Netlify functions path
+                this.baseURL = '/.netlify/functions';
                 this.listeners = new Map();
-                this.lastSyncTime = Date.now();
                 this.pollingIntervals = new Map();
+                this.currentUser = null;
+            }
+
+            setCurrentUser(user) {
+                this.currentUser = user;
             }
 
             async getUsers() {
                 try {
-                    // For now, return static users - you can create a users function later
-                    return [
-                        { username: 'admin', password: 'password', team: 'Administrator', isOnline: true, lastLogin: new Date().toISOString(), lastLogout: null },
-                        { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: true, lastLogin: new Date().toISOString(), lastLogout: null },
-                        { username: 'designer', password: 'password', team: 'UI/UX', isOnline: true, lastLogin: new Date().toISOString(), lastLogout: null },
-                        { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false, lastLogin: null, lastLogout: null },
-                        { username: 'support', password: 'password', team: 'Support', isOnline: false, lastLogin: null, lastLogout: null },
-                        { username: 'writer', password: 'password', team: 'Content', isOnline: false, lastLogin: null, lastLogout: null }
-                    ];
+                    const response = await fetch(`${this.baseURL}/users`);
+                    if (!response.ok) throw new Error('Failed to fetch users');
+                    return await response.json();
                 } catch (error) {
                     console.error('Error fetching users:', error);
                     return [];
+                }
+            }
+
+            async updateUser(username, updates) {
+                try {
+                    const response = await fetch(`${this.baseURL}/users`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, updates, action: 'update' })
+                    });
+                    if (!response.ok) throw new Error('Failed to update user');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error updating user:', error);
+                    throw error;
                 }
             }
 
@@ -82,7 +95,9 @@
                 try {
                     const response = await fetch(`${this.baseURL}/comments`);
                     if (!response.ok) throw new Error('Failed to fetch comments');
-                    return await response.json();
+                    const comments = await response.json();
+                    // Return ALL comments - no filtering by team
+                    return comments;
                 } catch (error) {
                     console.error('Error fetching comments:', error);
                     return [];
@@ -98,6 +113,7 @@
                     });
                     if (!response.ok) throw new Error('Failed to add comment');
                     const result = await response.json();
+                    // Notify all subscribers about the new data
                     this.notifyListeners('comments', await this.getComments());
                     return result;
                 } catch (error) {
@@ -110,7 +126,9 @@
                 try {
                     const response = await fetch(`${this.baseURL}/submissions`);
                     if (!response.ok) throw new Error('Failed to fetch submissions');
-                    return await response.json();
+                    const submissions = await response.json();
+                    // Return ALL submissions - no filtering by team
+                    return submissions;
                 } catch (error) {
                     console.error('Error fetching submissions:', error);
                     return [];
@@ -136,15 +154,11 @@
 
             async getTasks() {
                 try {
-                    // Static tasks for now
-                    return [
-                        { id: 1, subject: "Full-stack Week 1 Server Infrastructure", startDate: "2026-01-13T09:00:00.000Z", endDate: "2026-01-13T11:00:00.000Z", description: "Set up cloud server environment. Configure database architecture. Implement basic security protocols. Create deployment pipeline.", team: "Full-Stack", status: "pending" },
-                        { id: 2, subject: "Full-stack Week 1 Database Setup", startDate: "2026-01-14T09:00:00.000Z", endDate: "2026-01-14T11:00:00.000Z", description: "Design database schemas. Set up user tables and relationships. Implement data migration scripts. Create backup systems.", team: "Full-Stack", status: "pending" },
-                        { id: 3, subject: "UI/UX Week 1 Design System", startDate: "2026-01-13T11:00:00.000Z", endDate: "2026-01-13T13:00:00.000Z", description: "Create brand color palette. Design typography system. Build component library. Establish design principles.", team: "UI/UX", status: "pending" },
-                        { id: 4, subject: "UI/UX Week 1 Wireframes", startDate: "2026-01-14T11:00:00.000Z", endDate: "2026-01-14T13:00:00.000Z", description: "Create homepage wireframes. Design user onboarding flow. Map seller dashboard layout. Prototype product listing pages.", team: "UI/UX", status: "pending" },
-                        { id: 5, subject: "Marketing Week 1 Competitor Analysis", startDate: "2026-01-13T14:00:00.000Z", endDate: "2026-01-13T16:00:00.000Z", description: "Research 5 competitor platforms. Analyze their pricing strategies. Study user acquisition methods. Identify market gaps.", team: "Marketing", status: "pending" },
-                        { id: 6, subject: "Marketing Week 1 Target Audience", startDate: "2026-01-14T14:00:00.000Z", endDate: "2026-01-14T16:00:00.000Z", description: "Define primary user personas. Research creator demographics. Identify buyer pain points. Create audience segmentation.", team: "Marketing", status: "pending" },
-                    ];
+                    const response = await fetch(`${this.baseURL}/tasks`);
+                    if (!response.ok) throw new Error('Failed to fetch tasks');
+                    const tasks = await response.json();
+                    // Return ALL tasks - no filtering by team
+                    return tasks;
                 } catch (error) {
                     console.error('Error fetching tasks:', error);
                     return [];
@@ -155,7 +169,7 @@
                 if (!this.listeners.has(key)) this.listeners.set(key, new Set());
                 this.listeners.get(key).add(callback);
                 
-                // Set up polling for real-time updates
+                // Set up polling for real-time updates (every 2 seconds)
                 if (!this.pollingIntervals.has(key)) {
                     const interval = setInterval(async () => {
                         try {
@@ -164,7 +178,7 @@
                         } catch (error) {
                             console.error(`Error polling ${key}:`, error);
                         }
-                    }, 3000); // Poll every 3 seconds
+                    }, 2000);
                     
                     this.pollingIntervals.set(key, interval);
                 }
@@ -191,13 +205,6 @@
                         }
                     });
                 }
-            }
-
-            async updateUser(username, updates) {
-                // For now, just return the user - you can implement this later
-                const users = await this.getUsers();
-                const user = users.find(u => u.username === username);
-                return user ? { ...user, ...updates } : null;
             }
         }
 
@@ -686,7 +693,15 @@
             
             const handleLogin = (user) => {
                 currentUser = user;
+                backendService.setCurrentUser(user);
                 localStorage.setItem('digihive_currentUser', JSON.stringify(user));
+                
+                // Update user online status
+                backendService.updateUser(user.username, { 
+                    isOnline: true,
+                    lastLogin: new Date().toISOString()
+                });
+                
                 updateUI();
             };
             
@@ -698,6 +713,7 @@
                     });
                 }
                 currentUser = null;
+                backendService.setCurrentUser(null);
                 localStorage.removeItem('digihive_currentUser');
                 updateUI();
             };
@@ -863,6 +879,7 @@
             
             // Update user online status on load
             if (currentUser) {
+                backendService.setCurrentUser(currentUser);
                 backendService.updateUser(currentUser.username, { 
                     isOnline: true,
                     lastLogin: new Date().toISOString()
@@ -892,11 +909,7 @@
                 const user = users.find(u => u.username === username && u.password === password);
                 
                 if (user) {
-                    const updatedUser = await backendService.updateUser(username, { 
-                        isOnline: true, 
-                        lastLogin: new Date().toISOString() 
-                    });
-                    if (updatedUser) onLogin(updatedUser);
+                    onLogin(user);
                 } else {
                     error = 'Invalid username or password.';
                     updateUI();
@@ -918,7 +931,7 @@
                         ),
                         createElement('div', { class: 'my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500' },
                             createElement('p', { class: 'text-blue-700 font-medium' }, 
-                                'Real-time collaborative dashboard with Netlify Functions backend'
+                                'Real-time collaborative dashboard with shared data across all teams'
                             )
                         ),
                         createElement('form', { class: 'space-y-4', onsubmit: handleSubmit },
