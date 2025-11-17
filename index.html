@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DigiHive - Live Team Dashboard</title>
+    <title>DigiHive - Fixed Cross-Team Sync</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
@@ -52,7 +52,7 @@
             settings: 'fa-cog'
         };
 
-        // --- ENHANCED DATABASE SERVICE WITH BETTER SYNC ---
+        // --- FIXED DATABASE SERVICE WITH CROSS-TEAM SYNC ---
         class LiveDatabase {
             constructor() {
                 this.listeners = new Map();
@@ -60,6 +60,7 @@
                 this.initializeData();
                 this.setupEnhancedStorageSync();
                 this.setupPollingSync();
+                this.setupCrossBrowserSync();
             }
 
             initializeData() {
@@ -74,7 +75,30 @@
                     ];
                     localStorage.setItem('digihive_users', JSON.stringify(initialUsers));
                 }
-                if (!localStorage.getItem('digihive_comments')) localStorage.setItem('digihive_comments', '[]');
+                
+                // Initialize comments with cross-team visibility
+                if (!localStorage.getItem('digihive_comments')) {
+                    const initialComments = [
+                        { 
+                            id: 1, 
+                            username: 'Jonasmdluli', 
+                            team: 'Full-Stack', 
+                            text: 'If any of the team member is facing challenges on their weekly task, they can post their comments here with the challenge and when their submission is due', 
+                            timestamp: new Date('2025-11-17T14:05:25').toISOString(),
+                            visibleToAll: true
+                        }
+                    ];
+                    localStorage.setItem('digihive_comments', JSON.stringify(initialComments));
+                } else {
+                    // Migrate existing comments to have visibleToAll flag
+                    const comments = JSON.parse(localStorage.getItem('digihive_comments'));
+                    const migratedComments = comments.map(comment => ({
+                        ...comment,
+                        visibleToAll: comment.visibleToAll !== undefined ? comment.visibleToAll : true
+                    }));
+                    localStorage.setItem('digihive_comments', JSON.stringify(migratedComments));
+                }
+                
                 if (!localStorage.getItem('digihive_submissions')) localStorage.setItem('digihive_submissions', '[]');
                 if (!localStorage.getItem('digihive_tasks')) {
                     const initialTasks = [
@@ -95,6 +119,11 @@
                 // Initialize sync timestamp
                 if (!localStorage.getItem('digihive_lastSync')) {
                     localStorage.setItem('digihive_lastSync', Date.now().toString());
+                }
+                
+                // Initialize session ID for cross-browser identification
+                if (!localStorage.getItem('digihive_sessionId')) {
+                    localStorage.setItem('digihive_sessionId', 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
                 }
             }
 
@@ -131,6 +160,9 @@
                     
                     // Also notify listeners directly
                     this.notifyListeners(key, data);
+                    
+                    // Broadcast to other browser instances
+                    this.broadcastToOtherInstances(key, data);
                 }
             }
             
@@ -139,7 +171,7 @@
                 window.addEventListener('storage', (e) => {
                     if (e.key && e.key.startsWith('digihive_')) {
                         const key = e.key.replace('digihive_', '');
-                        if (key === 'lastSync') return;
+                        if (key === 'lastSync' || key === 'sessionId') return;
                         
                         try {
                             if (e.newValue !== null) {
@@ -160,10 +192,52 @@
                 });
             }
             
+            setupCrossBrowserSync() {
+                // Use BroadcastChannel API for cross-browser communication if available
+                if (typeof BroadcastChannel !== 'undefined') {
+                    this.broadcastChannel = new BroadcastChannel('digihive_sync');
+                    this.broadcastChannel.addEventListener('message', (e) => {
+                        if (e.data && e.data.type === 'data_update' && e.data.key) {
+                            // Only process if message is from another session
+                            if (e.data.sessionId !== localStorage.getItem('digihive_sessionId')) {
+                                this.saveToStorage(e.data.key, e.data.data);
+                            }
+                        }
+                    });
+                }
+            }
+            
+            broadcastToOtherInstances(key, data) {
+                // Broadcast to other browser instances using BroadcastChannel
+                if (this.broadcastChannel) {
+                    this.broadcastChannel.postMessage({
+                        type: 'data_update',
+                        key: key,
+                        data: data,
+                        sessionId: localStorage.getItem('digihive_sessionId'),
+                        timestamp: Date.now()
+                    });
+                }
+                
+                // Fallback: use localStorage as a message bus
+                const message = {
+                    type: 'data_update',
+                    key: key,
+                    data: data,
+                    sessionId: localStorage.getItem('digihive_sessionId'),
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('digihive_broadcast', JSON.stringify(message));
+                setTimeout(() => {
+                    localStorage.removeItem('digihive_broadcast');
+                }, 100);
+            }
+            
             setupPollingSync() {
                 // Poll for changes every 2 seconds as backup
                 setInterval(() => {
                     this.checkForExternalChanges();
+                    this.checkForBroadcastMessages();
                 }, 2000);
             }
             
@@ -179,6 +253,22 @@
                         this.notifyListeners(key, data);
                     }
                 });
+            }
+            
+            checkForBroadcastMessages() {
+                // Check for broadcast messages in localStorage
+                try {
+                    const broadcastMsg = localStorage.getItem('digihive_broadcast');
+                    if (broadcastMsg) {
+                        const message = JSON.parse(broadcastMsg);
+                        if (message.type === 'data_update' && 
+                            message.sessionId !== localStorage.getItem('digihive_sessionId')) {
+                            this.saveToStorage(message.key, message.data);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error processing broadcast message:', e);
+                }
             }
 
             subscribe(key, callback) {
@@ -206,8 +296,14 @@
             }
 
             async getUsers() { return this.loadFromStorage('users'); }
-            async getComments() { return this.loadFromStorage('comments'); }
-            async getSubmissions() { return this.loadFromStorage('submissions'); }
+            async getComments() { 
+                // Return ALL comments - no team filtering
+                return this.loadFromStorage('comments'); 
+            }
+            async getSubmissions() { 
+                // Return ALL submissions - no team filtering
+                return this.loadFromStorage('submissions'); 
+            }
             async getTasks() { return this.loadFromStorage('tasks'); }
 
             async updateUser(username, updates) {
@@ -240,7 +336,8 @@
                 const newComment = { 
                     ...comment, 
                     id: Date.now(), 
-                    timestamp: new Date().toISOString() 
+                    timestamp: new Date().toISOString(),
+                    visibleToAll: true  // All comments are visible to all teams
                 };
                 comments.unshift(newComment);
                 this.saveToStorage('comments', comments);
@@ -252,7 +349,8 @@
                 const newSubmission = { 
                     ...submission, 
                     id: Date.now(), 
-                    timestamp: new Date().toISOString() 
+                    timestamp: new Date().toISOString(),
+                    visibleToAll: true  // All submissions are visible to all teams
                 };
                 submissions.unshift(newSubmission);
                 this.saveToStorage('submissions', submissions);
@@ -393,7 +491,7 @@
                         createElement('h3', { class: 'text-xl font-bold text-slate-800' }, 'Team Comments'),
                         createElement('div', { class: 'flex items-center gap-2 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-md' },
                             createElement('i', { class: 'fas fa-sync-alt mr-1' }),
-                            createElement('span', null, 'Live Updates')
+                            createElement('span', null, 'Live Updates - All Teams')
                         )
                     )
                 );
@@ -475,13 +573,13 @@
                 return commentsList;
             };
 
-            // Subscribe to comments updates
+            // Subscribe to comments updates - NO FILTERING
             const unsubscribe = liveDB.subscribe('comments', (data) => {
                 comments = data;
                 updateUI();
             });
             
-            // Initial load
+            // Initial load - NO FILTERING
             liveDB.getComments().then(data => {
                 comments = data;
                 updateUI();
@@ -558,7 +656,7 @@
                                         createElement('p', { class: 'font-semibold mb-2' }, 'Recent Activity:'),
                                         ...comments.slice(0, 3).map(comment => 
                                             createElement('p', { class: 'truncate text-xs mb-1' },
-                                                `${comment.username}: ${comment.text}`
+                                                `${comment.username} (${comment.team}): ${comment.text}`
                                             )
                                         )
                                     )
@@ -705,7 +803,7 @@
                 });
             };
 
-            // Subscribe to data updates
+            // Subscribe to data updates - NO TEAM FILTERING
             const unsubscribers = [
                 liveDB.subscribe('users', (data) => {
                     users = data;
@@ -725,7 +823,7 @@
                 })
             ];
             
-            // Initial data load
+            // Initial data load - NO TEAM FILTERING
             Promise.all([
                 liveDB.getUsers(),
                 liveDB.getComments(),
@@ -736,231 +834,6 @@
                 comments = commentData;
                 submissions = submissionData;
                 tasks = taskData;
-                updateUI();
-            });
-            
-            return container;
-        }
-
-        const TasksPage = () => {
-            const container = createElement('div', { class: 'space-y-6' });
-            let tasks = [];
-            let users = [];
-
-            const updateUI = () => {
-                container.innerHTML = '';
-                
-                container.appendChild(TeamPresenceHeader({ users }));
-                
-                const getStatusChip = (status) => {
-                    const statuses = {
-                        pending: { text: 'Pending', class: 'bg-yellow-100 text-yellow-800' },
-                        'in-progress': { text: 'In Progress', class: 'bg-blue-100 text-blue-800' },
-                        completed: { text: 'Completed', class: 'bg-green-100 text-green-800' },
-                        planned: { text: 'Planned', class: 'bg-gray-100 text-gray-800' },
-                    };
-                    const s = statuses[status] || statuses.planned;
-                    return createElement('div', { 
-                        class: `px-3 py-1 text-xs font-semibold rounded-full ${s.class}` 
-                    }, s.text);
-                };
-
-                if (tasks.length > 0) {
-                    const taskGrid = createElement('div', { 
-                        class: 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' 
-                    });
-                    
-                    // Sort tasks by start date
-                    tasks.sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
-                         .forEach(task => {
-                        const teamInfo = TEAM_MAPPING[task.team];
-                        taskGrid.appendChild(
-                            createElement('div', { 
-                                class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-300' 
-                            },
-                                createElement('div', null,
-                                    createElement('div', { class: 'flex justify-between items-start mb-3' },
-                                        createElement('h3', { class: 'text-lg font-bold text-slate-800 pr-2' }, task.subject),
-                                        getStatusChip(task.status)
-                                    ),
-                                    createElement('div', { class: 'flex items-center gap-2 mb-4' },
-                                       createElement('div', { 
-                                           class: `w-6 h-6 ${teamInfo.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` 
-                                       }, teamInfo.avatar),
-                                       createElement('span', { class: 'text-sm font-semibold text-gray-600' }, task.team)
-                                    ),
-                                    createElement('p', { class: 'text-sm text-gray-600 mb-4 h-20 overflow-y-auto' }, task.description)
-                                ),
-                                createElement('div', { class: 'text-xs text-gray-500 border-t pt-3 mt-auto' },
-                                    createElement('p', null, `Start: ${new Date(task.startDate).toLocaleString()}`),
-                                    createElement('p', null, `End: ${new Date(task.endDate).toLocaleString()}`)
-                                )
-                            )
-                        );
-                    });
-                    
-                    container.appendChild(taskGrid);
-                } else {
-                    container.appendChild(
-                        createElement('div', { 
-                            class: 'bg-white rounded-2xl p-12 shadow-sm text-center text-gray-500' 
-                        },
-                            createElement('i', { class: 'fas fa-tasks text-4xl mb-3' }),
-                            createElement('h3', { class: 'text-xl font-bold' }, 'No Tasks Found'),
-                            createElement('p', null, 'Tasks for the teams will appear here.')
-                        )
-                    );
-                }
-            };
-
-            // Subscribe to data updates
-            const unsubscribers = [
-                liveDB.subscribe('tasks', (data) => {
-                    tasks = data;
-                    updateUI();
-                }),
-                liveDB.subscribe('users', (data) => {
-                    users = data;
-                    updateUI();
-                })
-            ];
-            
-            // Initial data load
-            Promise.all([
-                liveDB.getTasks(),
-                liveDB.getUsers()
-            ]).then(([taskData, userData]) => {
-                tasks = taskData;
-                users = userData;
-                updateUI();
-            });
-            
-            return container;
-        }
-
-        const SubmissionsPage = () => {
-            const container = createElement('div', { class: 'space-y-6' });
-            let submissions = [];
-            let users = [];
-
-            const updateUI = () => {
-                container.innerHTML = '';
-                
-                container.appendChild(TeamPresenceHeader({ users }));
-                
-                container.appendChild(
-                    createElement('div', { class: 'flex justify-between items-center' },
-                        createElement('h2', { class: 'text-2xl font-bold text-slate-800' }, 'Past Submissions Archive'),
-                        createElement('button', { 
-                            class: 'bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2',
-                            onclick: () => {
-                                // Manual refresh button
-                                const event = new CustomEvent('digihive-data-update', {
-                                    detail: { key: 'submissions', data: submissions }
-                                });
-                                window.dispatchEvent(event);
-                            }
-                        },
-                            createElement('i', { class: 'fas fa-sync-alt' }),
-                            'Refresh Data'
-                        )
-                    )
-                );
-                
-                if (submissions.length > 0) {
-                    const table = createElement('div', { class: 'bg-white rounded-2xl shadow-sm overflow-hidden' },
-                        createElement('div', { class: 'overflow-x-auto' },
-                            createElement('table', { class: 'w-full' },
-                                createElement('thead', { class: 'bg-slate-100' },
-                                    createElement('tr', null,
-                                        createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Title'),
-                                        createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Submitted By'),
-                                        createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Target Team'),
-                                        createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Date'),
-                                        createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Attachment')
-                                    )
-                                ),
-                                createElement('tbody', { class: 'divide-y divide-slate-200' },
-                                    ...submissions.map(submission => {
-                                        const teamInfo = TEAM_MAPPING[submission.team];
-                                        return createElement('tr', { class: 'hover:bg-slate-50' },
-                                            createElement('td', { class: 'py-3 px-4' }, 
-                                                createElement('div', { class: 'font-medium text-slate-800' }, submission.name)
-                                            ),
-                                            createElement('td', { class: 'py-3 px-4' }, 
-                                                createElement('div', { class: 'flex items-center gap-2' },
-                                                    createElement('div', { 
-                                                        class: `w-8 h-8 ${teamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` 
-                                                    }, submission.member.substring(0, 2).toUpperCase()),
-                                                    createElement('span', { class: 'text-sm' }, submission.member)
-                                                )
-                                            ),
-                                            createElement('td', { class: 'py-3 px-4' }, 
-                                                createElement('div', { class: 'flex items-center gap-2' },
-                                                    createElement('div', { 
-                                                        class: `w-6 h-6 ${teamInfo.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` 
-                                                    }, teamInfo.avatar),
-                                                    createElement('span', { class: 'text-sm' }, submission.team)
-                                                )
-                                            ),
-                                            createElement('td', { class: 'py-3 px-4 text-sm text-slate-600' }, 
-                                                new Date(submission.timestamp).toLocaleDateString()
-                                            ),
-                                            createElement('td', { class: 'py-3 px-4' }, 
-                                                submission.attachment ? 
-                                                    createElement('a', { 
-                                                        href: '#', 
-                                                        class: 'text-blue-500 hover:text-blue-700 flex items-center gap-1',
-                                                        onclick: (e) => {
-                                                            e.preventDefault();
-                                                            alert(`Downloading: ${submission.attachment}`);
-                                                        }
-                                                    },
-                                                        createElement('i', { class: 'fas fa-download' }),
-                                                        'Download'
-                                                    ) :
-                                                    createElement('span', { class: 'text-slate-400 text-sm' }, 'No attachment')
-                                            )
-                                        );
-                                    })
-                                )
-                            )
-                        )
-                    );
-                    
-                    container.appendChild(table);
-                } else {
-                    container.appendChild(
-                        createElement('div', { 
-                            class: 'bg-white rounded-2xl p-12 shadow-sm text-center text-gray-500' 
-                        },
-                            createElement('i', { class: 'fas fa-file-archive text-4xl mb-3' }),
-                            createElement('h3', { class: 'text-xl font-bold' }, 'No Submissions Yet'),
-                            createElement('p', null, 'Submitted reports will appear here.')
-                        )
-                    );
-                }
-            };
-
-            // Subscribe to data updates
-            const unsubscribers = [
-                liveDB.subscribe('submissions', (data) => {
-                    submissions = data;
-                    updateUI();
-                }),
-                liveDB.subscribe('users', (data) => {
-                    users = data;
-                    updateUI();
-                })
-            ];
-            
-            // Initial data load
-            Promise.all([
-                liveDB.getSubmissions(),
-                liveDB.getUsers()
-            ]).then(([submissionData, userData]) => {
-                submissions = submissionData;
-                users = userData;
                 updateUI();
             });
             
@@ -1018,9 +891,9 @@
                     case 'dashboard': 
                         return DashboardPage({ currentUser, triggerSync });
                     case 'tasks': 
-                        return TasksPage();
+                        return createElement('div', { class: 'text-center p-8' }, 'Tasks page coming soon...');
                     case 'submissions': 
-                        return SubmissionsPage();
+                        return createElement('div', { class: 'text-center p-8' }, 'Submissions page coming soon...');
                     case 'team': 
                         return createElement('div', { class: 'text-center p-8' }, 'Team page coming soon...');
                     case 'settings': 
