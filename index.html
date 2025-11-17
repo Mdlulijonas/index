@@ -367,7 +367,7 @@ const Header = ({ user, onLogout, toggleSidebar, pageTitle }) => {
     );
 };
 
-const Sidebar = ({ currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen }) => {
+const Sidebar = ({ currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen, users }) => {
     
     const handleNavClick = (page) => {
         setCurrentPage(page);
@@ -392,16 +392,17 @@ const Sidebar = ({ currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen })
         );
     }).filter(Boolean);
 
-    const teamMembers = Object.values(teamMapping).map(team => (
-        React.createElement('li', { key: team.name, className: "flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200" },
+    const teamMembers = Object.values(teamMapping).map(team => {
+        const isAnyMemberOnline = users.some(user => user.team === team.name && user.isOnline);
+        return React.createElement('li', { key: team.name, className: "flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200" },
             React.createElement('div', { className: `w-9 h-9 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` }, team.avatar),
             React.createElement('div', { className: "flex-1" },
               React.createElement('p', { className: "text-sm font-semibold text-slate-200 leading-tight" }, team.name),
               React.createElement('p', { className: "text-xs text-slate-200 opacity-70 leading-tight" }, team.role)
             ),
-            React.createElement('div', { className: "w-2.5 h-2.5 rounded-full bg-green-400 flex-shrink-0" })
-        )
-    ));
+            React.createElement('div', { className: `w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors ${isAnyMemberOnline ? 'bg-green-400' : 'bg-gray-400'}` })
+        );
+    });
 
     return (
         React.createElement('aside', { className: `fixed top-0 left-0 h-full w-72 bg-[#1E293B] text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0` },
@@ -1070,13 +1071,18 @@ const App = () => {
 
     useEffect(() => {
         const handleStorageChange = (event) => {
-            if (!event.key || !event.newValue) return;
+            if (!event.key || event.newValue === event.oldValue) return;
 
             const updateState = (setter) => {
                 try {
-                    setter(JSON.parse(event.newValue));
+                    if (event.newValue) {
+                        setter(JSON.parse(event.newValue));
+                    } else {
+                        // Handle item removal from storage if necessary
+                        setter([]); 
+                    }
                 } catch (e) {
-                    console.error("Failed to parse storage update", e);
+                    console.error("Failed to parse storage update for key:", event.key, e);
                 }
             };
 
@@ -1091,16 +1097,28 @@ const App = () => {
                     updateState(setUsers);
                     break;
                 case 'digihive_currentUser':
-                    if (event.newValue === 'null') {
-                       handleLogout();
+                    // If a user logs out on another tab, currentUser will become null.
+                    if (event.newValue === 'null' && event.oldValue) {
+                        try {
+                            const loggedOutUser = JSON.parse(event.oldValue);
+                            if (loggedOutUser && loggedOutUser.username) {
+                                // Use functional update to ensure we have the latest users state
+                                setUsers(prevUsers => prevUsers.map(u => 
+                                    u.username === loggedOutUser.username 
+                                    ? { ...u, isOnline: false, lastLogout: new Date().toISOString() } 
+                                    : u
+                                ));
+                            }
+                        } catch(e) { console.error('Error handling user logout sync:', e); }
                     }
+                    updateState(setCurrentUser);
                     break;
             }
         };
 
         window.addEventListener('storage', handleStorageChange);
         return () => window.removeEventListener('storage', handleStorageChange);
-    }, [setComments, setSubmissions, setUsers, handleLogout]);
+    }, [setComments, setSubmissions, setUsers, setCurrentUser]);
 
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -1156,7 +1174,7 @@ const App = () => {
 
     return (
         React.createElement('div', { className: "flex min-h-screen bg-[#F8FAFC] text-[#1A1A2E]" },
-            React.createElement(Sidebar, { currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen }),
+            React.createElement(Sidebar, { currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen, users: users }),
              React.createElement('div', {
                 className: `fixed inset-0 bg-black/50 z-30 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`,
                 onClick: () => setSidebarOpen(false)
