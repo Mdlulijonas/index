@@ -40,6 +40,28 @@
         .animate-pulse-sync { animation: pulse-sync 2s infinite; }
         .animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
         
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .mobile-stack {
+                flex-direction: column !important;
+            }
+            .mobile-full {
+                width: 100% !important;
+            }
+            .mobile-text-center {
+                text-align: center !important;
+            }
+            .mobile-p-4 {
+                padding: 1rem !important;
+            }
+            .mobile-hidden {
+                display: none !important;
+            }
+            .mobile-block {
+                display: block !important;
+            }
+        }
+        
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
@@ -51,28 +73,6 @@
         ::-webkit-scrollbar-thumb {
             background: #c1c1c1;
             border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
-        
-        /* Mobile responsiveness */
-        @media (max-width: 768px) {
-            .mobile-hidden {
-                display: none;
-            }
-            .mobile-full {
-                width: 100%;
-            }
-            .mobile-stack {
-                flex-direction: column;
-            }
-            .mobile-p-4 {
-                padding: 1rem;
-            }
-            .mobile-text-center {
-                text-align: center;
-            }
         }
     </style>
 </head>
@@ -129,33 +129,6 @@
                         endDate: new Date(Date.now() + 345600000).toISOString(),
                         description: "Redesign dashboard interface for better user experience and accessibility",
                         team: "UI/UX",
-                        status: "in-progress"
-                    },
-                    {
-                        id: 4,
-                        subject: "Marketing Campaign Launch",
-                        startDate: new Date(Date.now() + 86400000).toISOString(),
-                        endDate: new Date(Date.now() + 259200000).toISOString(),
-                        description: "Launch new marketing campaign targeting enterprise clients",
-                        team: "Marketing",
-                        status: "pending"
-                    },
-                    {
-                        id: 5,
-                        subject: "Customer Support Training",
-                        startDate: new Date(Date.now() + 172800000).toISOString(),
-                        endDate: new Date(Date.now() + 259200000).toISOString(),
-                        description: "Train support team on new product features and troubleshooting",
-                        team: "Support",
-                        status: "planned"
-                    },
-                    {
-                        id: 6,
-                        subject: "Content Strategy Development",
-                        startDate: new Date(Date.now() + 86400000).toISOString(),
-                        endDate: new Date(Date.now() + 172800000).toISOString(),
-                        description: "Develop quarterly content strategy and editorial calendar",
-                        team: "Content",
                         status: "in-progress"
                     }
                 ];
@@ -330,6 +303,8 @@
                 Object.keys(props).forEach(key => {
                     if (key.startsWith('on') && typeof props[key] === 'function') {
                         element.addEventListener(key.substring(2).toLowerCase(), props[key]);
+                    } else if (key === 'class') {
+                        element.className = props[key];
                     } else {
                         element.setAttribute(key, props[key]);
                     }
@@ -406,8 +381,8 @@
             const onlineUsers = users.filter(user => user.isOnline).length;
 
             return createElement('div', { class: 'bg-white rounded-2xl p-4 shadow-sm mb-6' },
-                createElement('div', { class: 'flex items-center justify-between mobile-stack' },
-                    createElement('div', { class: 'flex items-center gap-3 mobile-stack mobile-text-center' },
+                createElement('div', { class: 'flex flex-col md:flex-row md:items-center justify-between gap-4' },
+                    createElement('div', { class: 'flex items-center gap-3 justify-center md:justify-start' },
                         createElement('div', { class: 'flex items-center gap-2' },
                             createElement('div', { class: 'w-3 h-3 rounded-full bg-green-500 animate-pulse' }),
                             createElement('span', { class: 'font-bold text-slate-800' }, 'Live Team Status')
@@ -416,7 +391,7 @@
                             `${onlineUsers} users online • ${onlineTeams} of ${totalTeams} teams active`
                         )
                     ),
-                    createElement('div', { class: 'hidden md:flex items-center gap-2 mobile-hidden' },
+                    createElement('div', { class: 'hidden md:flex items-center gap-2 flex-wrap justify-center' },
                         ...Object.values(teamMapping).map(team => {
                             const isOnline = users.some(user => user.team === team.name && user.isOnline);
                             const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
@@ -434,7 +409,7 @@
                         })
                     )
                 ),
-                createElement('div', { class: 'mt-3 md:hidden grid grid-cols-3 gap-2' },
+                createElement('div', { class: 'mt-3 md:hidden grid grid-cols-2 sm:grid-cols-3 gap-2' },
                     ...Object.values(teamMapping).map(team => {
                         const isOnline = users.some(user => user.team === team.name && user.isOnline);
                         const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
@@ -445,6 +420,7 @@
                                 class: `w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
                             }),
                             createElement('span', { class: 'font-medium text-slate-700' }, team.avatar),
+                            createElement('span', { class: 'text-gray-600 text-xs' }, team.name),
                             isOnline && onlineCount > 1 ? 
                                 createElement('span', { class: 'text-xs bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center' }, onlineCount) 
                                 : null
@@ -456,7 +432,7 @@
 
         // Comments Section
         function CommentsSection(currentUser, onSyncTrigger) {
-            const container = createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col' });
+            const container = createElement('div', { class: 'bg-white rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col' });
             
             // State for comments and new comment
             let comments = [];
@@ -468,7 +444,7 @@
                 
                 container.appendChild(
                     createElement('div', { class: 'flex items-center justify-between mb-4' },
-                        createElement('h3', { class: 'text-xl font-bold text-slate-800' }, 'Team Comments'),
+                        createElement('h3', { class: 'text-lg sm:text-xl font-bold text-slate-800' }, 'Team Comments'),
                         createElement('div', { class: 'flex items-center gap-2 text-sm text-green-600 bg-green-50 px-2 py-1 rounded' },
                             createElement('i', { class: 'fas fa-sync-alt mr-1' }),
                             createElement('span', null, 'Live Updates')
@@ -477,7 +453,7 @@
                 );
                 
                 const form = createElement('form', { 
-                    class: 'mb-4 flex gap-3 mobile-stack',
+                    class: 'mb-4 flex flex-col sm:flex-row gap-3',
                     onsubmit: (e) => {
                         e.preventDefault();
                         if (newComment.trim() === '') return;
@@ -495,7 +471,7 @@
                 },
                     createElement('input', {
                         type: 'text',
-                        class: 'flex-grow w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500 mobile-full',
+                        class: 'flex-grow w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500',
                         placeholder: 'Leave a comment about your tasks or challenges...',
                         value: newComment,
                         oninput: (e) => {
@@ -504,7 +480,7 @@
                     }),
                     createElement('button', { 
                         type: 'submit', 
-                        class: 'bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mobile-full' 
+                        class: 'bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 sm:w-auto w-full' 
                     },
                         createElement('i', { class: 'fas fa-paper-plane' }),
                         'Post'
@@ -513,11 +489,11 @@
                 
                 container.appendChild(form);
                 
-                const commentsContainer = createElement('div', { class: 'flex-1 overflow-y-auto pr-2 space-y-4' });
+                const commentsContainer = createElement('div', { class: 'flex-1 overflow-y-auto pr-2 space-y-4 max-h-96' });
                 
                 if (comments.length === 0) {
                     commentsContainer.appendChild(
-                        createElement('div', { class: 'text-center text-gray-400 pt-8' },
+                        createElement('div', { class: 'text-center text-gray-400 py-8' },
                             createElement('i', { class: 'fas fa-comments text-4xl mb-2' }),
                             createElement('p', null, 'No comments yet. Be the first to post!')
                         )
@@ -527,14 +503,14 @@
                         const commentTeamInfo = teamMapping[comment.team];
                         commentsContainer.appendChild(
                             createElement('div', { class: 'flex items-start gap-3' },
-                                createElement('div', { class: `w-10 h-10 ${commentTeamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` },
+                                createElement('div', { class: `w-8 h-8 sm:w-10 sm:h-10 ${commentTeamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-xs sm:text-sm` },
                                     comment.username.substring(0, 2).toUpperCase()
                                 ),
                                 createElement('div', { class: 'flex-1 bg-gray-50 rounded-lg p-3' },
-                                    createElement('div', { class: 'flex justify-between items-baseline mobile-stack' },
-                                        createElement('p', { class: 'font-bold text-slate-700' }, 
+                                    createElement('div', { class: 'flex flex-col sm:flex-row sm:justify-between sm:items-baseline gap-1' },
+                                        createElement('p', { class: 'font-bold text-slate-700 text-sm sm:text-base' }, 
                                             comment.username,
-                                            createElement('span', { class: 'font-normal text-sm text-gray-500 ml-1.5' }, `(${comment.team})`)
+                                            createElement('span', { class: 'font-normal text-xs sm:text-sm text-gray-500 ml-1.5' }, `(${comment.team})`)
                                         ),
                                         createElement('p', { class: 'text-xs text-gray-400' }, new Date(comment.timestamp).toLocaleString())
                                     ),
@@ -568,26 +544,26 @@
 
         // Header Component
         function Header(user, onLogout, toggleSidebar, pageTitle) {
-            return createElement('header', { class: 'flex justify-between items-center mobile-stack mobile-p-4' },
-                createElement('div', null,
-                    createElement('h1', { class: 'text-2xl md:text-4xl font-bold text-slate-800 mobile-text-center' },
+            return createElement('header', { class: 'flex flex-col sm:flex-row justify-between items-center gap-4 p-4 sm:p-0' },
+                createElement('div', { class: 'w-full sm:w-auto' },
+                    createElement('h1', { class: 'text-xl sm:text-2xl md:text-4xl font-bold text-slate-800 text-center sm:text-left' },
                         pageTitles[pageTitle] || 'Dashboard'
                     )
                 ),
-                createElement('div', { class: 'flex items-center gap-4 mobile-stack' },
+                createElement('div', { class: 'flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end' },
                     createElement('button', { 
                         onclick: toggleSidebar, 
-                        class: 'lg:hidden text-2xl text-gray-600 mobile-hidden' 
+                        class: 'text-2xl text-gray-600 sm:hidden' 
                     }, '☰'),
                     createElement('div', { class: 'flex items-center gap-3 bg-white p-2 rounded-full shadow-sm' },
-                        createElement('div', { class: 'w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold' },
+                        createElement('div', { class: 'w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm' },
                             user.username.substring(0, 2).toUpperCase()
                         ),
-                        createElement('span', { class: 'font-semibold text-sm hidden sm:block pr-2 mobile-hidden' }, user.username)
+                        createElement('span', { class: 'font-semibold text-sm hidden sm:block pr-2' }, user.username)
                     ),
                     createElement('button', { 
                         onclick: onLogout, 
-                        class: 'text-gray-500 hover:text-red-500', 
+                        class: 'text-gray-500 hover:text-red-500 text-xl', 
                         title: 'Logout' 
                     }, '🚪')
                 )
@@ -597,7 +573,7 @@
         // Sidebar Component
         function Sidebar(currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen, users) {
             const sidebar = createElement('aside', { 
-                class: `fixed top-0 left-0 h-full w-72 bg-slate-800 text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${
+                class: `fixed top-0 left-0 h-full w-80 bg-slate-800 text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${
                     isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
                 } lg:translate-x-0 overflow-y-auto`
             });
@@ -643,7 +619,7 @@
                 return createElement('li', { 
                     class: 'flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200'
                 },
-                    createElement('div', { class: `w-9 h-9 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` }, 
+                    createElement('div', { class: `w-8 h-8 sm:w-9 sm:h-9 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-xs sm:text-sm` }, 
                         team.avatar
                     ),
                     createElement('div', { class: 'flex-1' },
@@ -651,7 +627,7 @@
                         createElement('p', { class: 'text-xs text-slate-200 opacity-70 leading-tight' }, team.role)
                     ),
                     createElement('div', { class: 'flex items-center gap-1' },
-                        createElement('div', { class: `w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors ${
+                        createElement('div', { class: `w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 transition-colors ${
                             isAnyMemberOnline ? 'bg-green-400' : 'bg-gray-400'
                         }` }),
                         isAnyMemberOnline && onlineCount > 0 ? 
@@ -662,9 +638,9 @@
             });
             
             sidebar.appendChild(
-                createElement('div', { class: 'flex items-center gap-3 mb-12 px-2' },
-                    createElement('div', { class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' }, 'DH'),
-                    createElement('span', { class: 'text-2xl font-extrabold text-slate-200' }, 'DigiHive')
+                createElement('div', { class: 'flex items-center gap-3 mb-8 sm:mb-12 px-2' },
+                    createElement('div', { class: 'w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' }, 'DH'),
+                    createElement('span', { class: 'text-xl sm:text-2xl font-extrabold text-slate-200' }, 'DigiHive')
                 )
             );
             
@@ -675,7 +651,7 @@
             );
             
             sidebar.appendChild(
-                createElement('div', { class: 'mt-12' },
+                createElement('div', { class: 'mt-8 sm:mt-12' },
                     createElement('h3', { class: 'text-sm font-semibold text-slate-200 opacity-70 mb-4 px-2' }, 'TEAMS'),
                     createElement('ul', { class: 'space-y-2' }, ...teamMembers)
                 )
@@ -687,7 +663,7 @@
         // Login Screen
         function LoginScreen(onLogin) {
             const container = createElement('div', { 
-                class: 'fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4' 
+                class: 'min-h-screen bg-gray-900 flex items-center justify-center p-4' 
             });
             
             let users = [];
@@ -697,80 +673,76 @@
                 users = userData;
             });
             
-            const loginModal = () => {
-                const modal = createElement('div', { 
-                    class: 'bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center animate-scale-up' 
-                },
-                    createElement('div', { class: 'flex justify-center items-center gap-3 mb-4' },
-                        createElement('div', { class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' }, 'DH'),
-                        createElement('span', { class: 'text-2xl font-extrabold text-slate-800' }, 'DigiHive')
-                    ),
-                    createElement('div', { class: 'my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500' },
-                        createElement('p', { class: 'text-blue-700 font-medium' }, 
-                            'Real-time collaborative dashboard with live team synchronization'
-                        )
-                    ),
-                    createElement('form', { 
-                        class: 'space-y-4',
-                        onsubmit: async (e) => {
-                            e.preventDefault();
-                            const formData = new FormData(e.target);
-                            const username = formData.get('username');
-                            const password = formData.get('password');
-                            
-                            const user = users.find(u => u.username === username && u.password === password);
-                            if (user) {
-                                await liveDB.updateUser(username, { 
-                                    isOnline: true, 
-                                    lastLogin: new Date().toISOString() 
-                                });
-                                onLogin({ ...user, isOnline: true });
-                            } else {
-                                alert('Invalid username or password.');
-                            }
-                        }
-                    },
-                        createElement('div', null,
-                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Username'),
-                            createElement('input', { 
-                                type: 'text', 
-                                name: 'username', 
-                                required: true, 
-                                class: 'w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500',
-                                placeholder: 'Enter your username'
-                            })
-                        ),
-                        createElement('div', null,
-                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Password'),
-                            createElement('input', { 
-                                type: 'password', 
-                                name: 'password', 
-                                required: true, 
-                                class: 'w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500',
-                                placeholder: 'Enter your password'
-                            })
-                        ),
-                        createElement('button', { 
-                            type: 'submit', 
-                            class: 'w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors' 
-                        }, 'Login to Dashboard')
-                    ),
-                    createElement('div', { class: 'mt-4 text-sm text-gray-600' },
-                        'Demo accounts: admin/password, dev/password, designer/password'
+            const loginModal = createElement('div', { 
+                class: 'bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full text-center animate-scale-up' 
+            },
+                createElement('div', { class: 'flex justify-center items-center gap-3 mb-4' },
+                    createElement('div', { class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' }, 'DH'),
+                    createElement('span', { class: 'text-2xl font-extrabold text-slate-800' }, 'DigiHive')
+                ),
+                createElement('div', { class: 'my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500' },
+                    createElement('p', { class: 'text-blue-700 font-medium text-sm sm:text-base' }, 
+                        'Real-time collaborative dashboard with live team synchronization'
                     )
-                );
-                
-                return modal;
-            };
+                ),
+                createElement('form', { 
+                    class: 'space-y-4',
+                    onsubmit: async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.target);
+                        const username = formData.get('username');
+                        const password = formData.get('password');
+                        
+                        const user = users.find(u => u.username === username && u.password === password);
+                        if (user) {
+                            await liveDB.updateUser(username, { 
+                                isOnline: true, 
+                                lastLogin: new Date().toISOString() 
+                            });
+                            onLogin({ ...user, isOnline: true });
+                        } else {
+                            alert('Invalid username or password.');
+                        }
+                    }
+                },
+                    createElement('div', null,
+                        createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Username'),
+                        createElement('input', { 
+                            type: 'text', 
+                            name: 'username', 
+                            required: true, 
+                            class: 'w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500',
+                            placeholder: 'Enter your username'
+                        })
+                    ),
+                    createElement('div', null,
+                        createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Password'),
+                        createElement('input', { 
+                            type: 'password', 
+                            name: 'password', 
+                            required: true, 
+                            class: 'w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500',
+                            placeholder: 'Enter your password'
+                        })
+                    ),
+                    createElement('button', { 
+                        type: 'submit', 
+                        class: 'w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-lg' 
+                    }, 'Login to Dashboard')
+                ),
+                createElement('div', { class: 'mt-4 text-sm text-gray-600' },
+                    'Demo accounts: admin/password, dev/password, designer/password'
+                )
+            );
             
-            container.appendChild(loginModal());
+            container.appendChild(loginModal);
             
             return container;
         }
 
         // Dashboard Page
         function Dashboard(currentUser, onSyncTrigger) {
-            const container = createElement('div', { class: 'space-y-8' });
+            const container = createElement('div', { class: 'space-y-6' });
             
             let users = [];
             let comments = [];
@@ -789,7 +761,7 @@
                 
                 // Add sync status message
                 container.appendChild(
-                    createElement('div', { class: 'p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800' },
+                    createElement('div', { class: 'p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800 text-sm sm:text-base' },
                         createElement('i', { class: 'fas fa-sync-alt mr-2' }), 
                         ' Live data synchronization active. All changes are shared instantly with team members.'
                     )
@@ -804,41 +776,41 @@
                     return submissionDate >= oneWeekAgo;
                 }).length;
                 
-                const stats = createElement('div', { class: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6' },
-                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' }, 
-                        createElement('div', { class: 'w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-blue-500' }, 
+                const stats = createElement('div', { class: 'grid grid-cols-2 lg:grid-cols-4 gap-4' },
+                    createElement('div', { class: 'bg-white rounded-2xl p-4 shadow-sm' }, 
+                        createElement('div', { class: 'w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl bg-blue-500' }, 
                             createElement('i', { class: 'fas fa-list-check' })
                         ), 
-                        createElement('div', { class: 'mt-4' }, 
-                            createElement('p', { class: 'text-4xl font-bold text-slate-800' }, upcomingTasks.length), 
-                            createElement('p', { class: 'text-md text-gray-500 font-medium' }, 'Upcoming Tasks')
+                        createElement('div', { class: 'mt-3' }, 
+                            createElement('p', { class: 'text-2xl sm:text-4xl font-bold text-slate-800' }, upcomingTasks.length), 
+                            createElement('p', { class: 'text-xs sm:text-md text-gray-500 font-medium' }, 'Upcoming Tasks')
                         )
                     ),
-                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' }, 
-                        createElement('div', { class: 'w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-violet-500' }, 
+                    createElement('div', { class: 'bg-white rounded-2xl p-4 shadow-sm' }, 
+                        createElement('div', { class: 'w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl bg-violet-500' }, 
                             createElement('i', { class: 'fas fa-check-double' })
                         ), 
-                        createElement('div', { class: 'mt-4' }, 
-                            createElement('p', { class: 'text-4xl font-bold text-slate-800' }, completedThisWeek), 
-                            createElement('p', { class: 'text-md text-gray-500 font-medium' }, 'Completed This Week')
+                        createElement('div', { class: 'mt-3' }, 
+                            createElement('p', { class: 'text-2xl sm:text-4xl font-bold text-slate-800' }, completedThisWeek), 
+                            createElement('p', { class: 'text-xs sm:text-md text-gray-500 font-medium' }, 'Completed This Week')
                         )
                     ),
-                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' }, 
-                        createElement('div', { class: 'w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-teal-500' }, 
+                    createElement('div', { class: 'bg-white rounded-2xl p-4 shadow-sm' }, 
+                        createElement('div', { class: 'w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl bg-teal-500' }, 
                             createElement('i', { class: 'fas fa-comments' })
                         ), 
-                        createElement('div', { class: 'mt-4' }, 
-                            createElement('p', { class: 'text-4xl font-bold text-slate-800' }, comments.length), 
-                            createElement('p', { class: 'text-md text-gray-500 font-medium' }, 'Team Comments')
+                        createElement('div', { class: 'mt-3' }, 
+                            createElement('p', { class: 'text-2xl sm:text-4xl font-bold text-slate-800' }, comments.length), 
+                            createElement('p', { class: 'text-xs sm:text-md text-gray-500 font-medium' }, 'Team Comments')
                         )
                     ),
-                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' }, 
-                        createElement('div', { class: 'w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-amber-500' }, 
+                    createElement('div', { class: 'bg-white rounded-2xl p-4 shadow-sm' }, 
+                        createElement('div', { class: 'w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl bg-amber-500' }, 
                             createElement('i', { class: 'fas fa-users' })
                         ), 
-                        createElement('div', { class: 'mt-4' }, 
-                            createElement('p', { class: 'text-4xl font-bold text-slate-800' }, users.filter(u => u.isOnline).length), 
-                            createElement('p', { class: 'text-md text-gray-500 font-medium' }, 'Online Now')
+                        createElement('div', { class: 'mt-3' }, 
+                            createElement('p', { class: 'text-2xl sm:text-4xl font-bold text-slate-800' }, users.filter(u => u.isOnline).length), 
+                            createElement('p', { class: 'text-xs sm:text-md text-gray-500 font-medium' }, 'Online Now')
                         )
                     )
                 );
@@ -846,13 +818,13 @@
                 container.appendChild(stats);
                 
                 // Main content area
-                const mainContent = createElement('div', { class: 'grid grid-cols-1 lg:grid-cols-3 gap-8' },
-                    createElement('div', { class: 'lg:col-span-2 h-[550px]' },
+                const mainContent = createElement('div', { class: 'grid grid-cols-1 xl:grid-cols-3 gap-6' },
+                    createElement('div', { class: 'xl:col-span-2' },
                         CommentsSection(currentUser, onSyncTrigger)
                     ),
-                    createElement('div', { class: 'lg:col-span-1 space-y-8' },
-                        createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
-                            createElement('h3', { class: 'text-xl font-bold text-slate-800 mb-4' }, 'Live Team Activity'),
+                    createElement('div', { class: 'xl:col-span-1 space-y-6' },
+                        createElement('div', { class: 'bg-white rounded-2xl p-4 sm:p-6 shadow-sm' },
+                            createElement('h3', { class: 'text-lg sm:text-xl font-bold text-slate-800 mb-4' }, 'Live Team Activity'),
                             createElement('div', { class: 'space-y-3' },
                                 createElement('div', { class: 'flex items-center justify-between p-3 bg-green-50 rounded-lg' },
                                     createElement('div', { class: 'flex items-center gap-3' },
@@ -872,7 +844,7 @@
                             )
                         ),
                         createElement('div', { 
-                            class: 'bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300',
+                            class: 'bg-white rounded-2xl p-4 sm:p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300',
                             onclick: () => {
                                 isSubmissionModalOpen = true;
                                 submissionSuccess = false;
@@ -880,12 +852,12 @@
                             }
                         },
                             createElement('div', { class: 'flex flex-col items-center text-center gap-4' },
-                                createElement('div', { class: 'w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center' }, 
+                                createElement('div', { class: 'w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-blue-100 text-blue-500 text-xl sm:text-3xl flex items-center justify-center' }, 
                                     createElement('i', { class: 'fas fa-cloud-upload-alt' })
                                 ),
                                 createElement('div', null, 
-                                    createElement('h3', { class: 'font-bold text-slate-800 text-lg' }, 'Submit Weekly Report'), 
-                                    createElement('p', { class: 'text-sm text-gray-500 mt-1' }, 'Share progress with the team')
+                                    createElement('h3', { class: 'font-bold text-slate-800 text-base sm:text-lg' }, 'Submit Weekly Report'), 
+                                    createElement('p', { class: 'text-xs sm:text-sm text-gray-500 mt-1' }, 'Share progress with the team')
                                 )
                             )
                         )
@@ -905,7 +877,7 @@
                         size: 'lg'
                     }, 
                         !submissionSuccess ? [
-                            createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6' }, 'Weekly Report Submission'),
+                            createElement('h2', { class: 'text-xl sm:text-2xl font-bold text-slate-800 mb-6' }, 'Weekly Report Submission'),
                             createElement('form', { 
                                 class: 'space-y-4',
                                 onsubmit: async (e) => {
@@ -934,7 +906,7 @@
                                         name: 'title', 
                                         placeholder: 'e.g., Q1 Week 4 Progress Report', 
                                         required: true, 
-                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                        class: 'w-full border-2 border-gray-200 rounded-lg p-3' 
                                     })
                                 ),
                                 createElement('div', null, 
@@ -944,7 +916,7 @@
                                         placeholder: 'Describe your progress...', 
                                         required: true, 
                                         rows: 4, 
-                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                        class: 'w-full border-2 border-gray-200 rounded-lg p-3' 
                                     })
                                 ),
                                 createElement('div', null, 
@@ -954,28 +926,28 @@
                                         placeholder: 'Outline your plans...', 
                                         required: true, 
                                         rows: 3, 
-                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                                        class: 'w-full border-2 border-gray-200 rounded-lg p-3' 
                                     })
                                 ),
                                 createElement('button', { 
                                     type: 'submit', 
-                                    class: 'w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2' 
+                                    class: 'w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 text-lg' 
                                 }, 
                                     createElement('i', { class: 'fas fa-paper-plane' }),
                                     'Submit Report to Team'
                                 )
                             )
                         ] : [
-                            createElement('div', { class: 'text-center py-10' },
-                                createElement('i', { class: 'fas fa-check-circle text-6xl text-green-500 mb-4' }),
-                                createElement('h2', { class: 'text-2xl font-bold text-slate-800' }, 'Submission Successful!'),
-                                createElement('p', { class: 'text-gray-600 mt-2' }, 'Your report has been shared with all team members in real-time.'),
+                            createElement('div', { class: 'text-center py-8 sm:py-10' },
+                                createElement('i', { class: 'fas fa-check-circle text-4xl sm:text-6xl text-green-500 mb-4' }),
+                                createElement('h2', { class: 'text-xl sm:text-2xl font-bold text-slate-800' }, 'Submission Successful!'),
+                                createElement('p', { class: 'text-gray-600 mt-2 text-sm sm:text-base' }, 'Your report has been shared with all team members in real-time.'),
                                 createElement('button', { 
                                     onclick: () => {
                                         isSubmissionModalOpen = false;
                                         updateUI();
                                     }, 
-                                    class: 'mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg' 
+                                    class: 'mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg text-lg' 
                                 }, 'Close')
                             )
                         ]
@@ -1027,431 +999,6 @@
             return container;
         }
 
-        // Submissions Page
-        function SubmissionsPage() {
-            const container = createElement('div', { class: 'space-y-6' });
-            
-            let submissions = [];
-            let users = [];
-            
-            function updateUI() {
-                container.innerHTML = '';
-                
-                // Add team presence header
-                container.appendChild(TeamPresenceHeader(users));
-                
-                // Add info message
-                container.appendChild(
-                    createElement('div', { class: 'mb-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg' },
-                        createElement('p', { class: 'text-sm text-blue-800' },
-                            createElement('i', { class: 'fas fa-info-circle mr-2' }),
-                            'Live shared archive. All team submissions are synchronized across all users in real-time.'
-                        )
-                    )
-                );
-                
-                // Submissions table
-                const tableContainer = createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm overflow-x-auto' });
-                
-                if (submissions.length === 0) {
-                    tableContainer.appendChild(
-                        createElement('div', { class: 'text-center py-16 text-gray-400' }, 
-                            createElement('i', { class: 'fas fa-folder-open text-5xl mb-4' }), 
-                            createElement('h3', { class: 'text-xl font-bold text-slate-700' }, 'No Submissions Yet'), 
-                            createElement('p', { class: 'text-gray-500 mt-2' }, 'Team submissions will appear here in real-time.')
-                        )
-                    );
-                } else {
-                    const table = createElement('table', { class: 'w-full text-left min-w-[600px]' },
-                        createElement('thead', null,
-                            createElement('tr', { class: 'bg-gray-100' },
-                                createElement('th', { class: 'p-4 font-bold text-slate-600 rounded-tl-lg' }, 'Submission Name'),
-                                createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Submitted by'),
-                                createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Team'),
-                                createElement('th', { class: 'p-4 font-bold text-slate-600' }, 'Date Submitted'),
-                                createElement('th', { class: 'p-4 font-bold text-slate-600 rounded-tr-lg' }, 'Action')
-                            )
-                        ),
-                        createElement('tbody', null,
-                            ...submissions.map(submission => {
-                                const handleDownload = () => {
-                                    const content = `Submission: ${submission.name}\nMember: ${submission.member}\nTeam: ${submission.team}\nDate: ${new Date(submission.timestamp).toLocaleString()}\n\nProgress:\n${submission.progress}\n\nNext Week's Plan:\n${submission.plan}`;
-                                    const blob = new Blob([content], { type: 'text/plain' });
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `${submission.name.replace(/\s+/g, '_')}_${submission.timestamp}.txt`;
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    document.body.removeChild(a);
-                                    URL.revokeObjectURL(url);
-                                };
-                                
-                                return createElement('tr', { class: 'border-b last:border-b-0' },
-                                    createElement('td', { class: 'p-4' }, submission.name),
-                                    createElement('td', { class: 'p-4' }, submission.member),
-                                    createElement('td', { class: 'p-4' }, submission.team),
-                                    createElement('td', { class: 'p-4' }, new Date(submission.timestamp).toLocaleString()),
-                                    createElement('td', { class: 'p-4' },
-                                        createElement('button', { 
-                                            onclick: handleDownload, 
-                                            class: 'bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm flex items-center gap-2' 
-                                        },
-                                            createElement('i', { class: 'fas fa-download' }),
-                                            'Download'
-                                        )
-                                    )
-                                );
-                            })
-                        )
-                    );
-                    
-                    tableContainer.appendChild(table);
-                }
-                
-                container.appendChild(tableContainer);
-            }
-            
-            // Subscribe to data updates
-            const unsubscribers = [
-                liveDB.subscribe('users', (newUsers) => {
-                    users = newUsers;
-                    updateUI();
-                }),
-                liveDB.subscribe('submissions', (newSubmissions) => {
-                    submissions = newSubmissions;
-                    updateUI();
-                })
-            ];
-            
-            // Initial data load
-            Promise.all([
-                liveDB.getUsers(),
-                liveDB.getSubmissions()
-            ]).then(([userData, submissionData]) => {
-                users = userData;
-                submissions = submissionData;
-                updateUI();
-            });
-            
-            // Cleanup on unmount
-            container.cleanup = () => {
-                unsubscribers.forEach(unsub => unsub());
-            };
-            
-            return container;
-        }
-
-        // Team Page
-        function TeamPage(currentUser) {
-            const container = createElement('div', { class: 'space-y-6' });
-            
-            let users = [];
-            let isRegisterModalOpen = false;
-            
-            function updateUI() {
-                container.innerHTML = '';
-                
-                // Add team presence header
-                container.appendChild(TeamPresenceHeader(users));
-                
-                // Add register button
-                container.appendChild(
-                    createElement('div', { class: 'bg-white p-4 rounded-2xl shadow-sm flex justify-end' },
-                        createElement('button', { 
-                            onclick: () => {
-                                isRegisterModalOpen = true;
-                                updateUI();
-                            },
-                            class: 'bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2'
-                        },
-                            createElement('i', { class: 'fas fa-user-plus' }),
-                            'Register New Member'
-                        )
-                    )
-                );
-
-                // User cards
-                users.forEach(user => {
-                    const teamInfo = Object.values(teamMapping).find(t => t.name === user.team) || { name: 'General', color: 'bg-gray-500', avatar: 'G', role: 'Team Member' };
-                    const lastSeen = user.isOnline ? 'Online now' : (user.lastLogout ? `Last seen: ${new Date(user.lastLogout).toLocaleString()}` : 'Never logged in');
-                    
-                    const handleDeregister = async () => {
-                        if (user.username === currentUser.username) {
-                            alert("You cannot deregister yourself.");
-                            return;
-                        }
-                        
-                        const code = prompt("Enter Admin Code to deregister this member:");
-                        if (code !== '212259497') {
-                            if (code !== null) alert("Invalid Admin Code. Action cancelled.");
-                            return;
-                        }
-
-                        if (confirm(`Are you sure you want to deregister ${user.username}? This action cannot be undone.`)) {
-                            await liveDB.removeUser(user.username);
-                            alert(`${user.username} has been deregistered.`);
-                        }
-                    };
-                    
-                    container.appendChild(
-                        createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4' },
-                            createElement('div', { class: 'flex items-center gap-5 mobile-stack mobile-text-center' },
-                                createElement('div', { class: 'relative' },
-                                    createElement('div', { class: `w-16 h-16 ${teamInfo.color} rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl` }, teamInfo.avatar),
-                                    createElement('div', { class: `absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}` })
-                                ),
-                                createElement('div', null,
-                                    createElement('h3', { class: 'text-xl font-bold text-slate-800' }, user.username),
-                                    createElement('p', { class: 'text-gray-500' }, `${teamInfo.role} • ${teamInfo.name}`),
-                                    createElement('p', { class: `text-xs mt-1 ${user.isOnline ? 'text-green-600' : 'text-gray-400'}` }, lastSeen)
-                                )
-                            ),
-                            createElement('button', { 
-                                onclick: handleDeregister, 
-                                disabled: user.username === currentUser.username,
-                                class: `font-bold py-2 px-4 rounded-lg w-full sm:w-auto flex items-center gap-2 ${
-                                    user.username === currentUser.username 
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                        : 'bg-red-100 text-red-600 hover:bg-red-200'
-                                }`
-                            },
-                                createElement('i', { class: 'fas fa-user-minus' }),
-                                'Deregister'
-                            )
-                        )
-                    );
-                });
-                
-                // Registration Modal
-                if (isRegisterModalOpen) {
-                    const modal = Modal({
-                        isOpen: true,
-                        onClose: () => {
-                            isRegisterModalOpen = false;
-                            updateUI();
-                        }
-                    }, 
-                        createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6 text-center' }, 'Register New Member'),
-                        createElement('form', { 
-                            class: 'space-y-4',
-                            onsubmit: async (e) => {
-                                e.preventDefault();
-                                const formData = new FormData(e.target);
-                                if (formData.get('adminCode') !== '212259497') {
-                                    alert('Invalid Admin Code. Registration failed.');
-                                    return;
-                                }
-
-                                const username = formData.get('username');
-                                const password = formData.get('password');
-                                const team = formData.get('team');
-                                
-                                if (users.find(u => u.username === username)) {
-                                    alert('Username already exists.');
-                                    return;
-                                }
-
-                                const newUser = { 
-                                    username, 
-                                    password, 
-                                    team, 
-                                    isOnline: false,
-                                    lastLogin: null,
-                                    lastLogout: null
-                                };
-                                
-                                await liveDB.addUser(newUser);
-                                alert('Registration successful!');
-                                isRegisterModalOpen = false;
-                                updateUI();
-                            }
-                        },
-                            createElement('div', null,
-                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Username'),
-                                createElement('input', { type: 'text', name: 'username', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
-                            ),
-                            createElement('div', null,
-                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Password'),
-                                createElement('input', { type: 'password', name: 'password', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
-                            ),
-                            createElement('div', null,
-                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Team'),
-                                createElement('select', { name: 'team', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2 bg-white' },
-                                    ...Object.values(teamMapping).map(t => 
-                                        createElement('option', { value: t.name }, t.name)
-                                    )
-                                )
-                            ),
-                            createElement('div', null,
-                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Admin Code'),
-                                createElement('input', { type: 'password', name: 'adminCode', placeholder: 'Required for registration', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
-                            ),
-                            createElement('button', { type: 'submit', class: 'w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors' }, 'Register')
-                        )
-                    );
-                    
-                    document.body.appendChild(modal);
-                }
-            }
-            
-            // Subscribe to users updates
-            const unsubscribe = liveDB.subscribe('users', (newUsers) => {
-                users = newUsers;
-                updateUI();
-            });
-            
-            // Initial data load
-            liveDB.getUsers().then(userData => {
-                users = userData;
-                updateUI();
-            });
-            
-            // Cleanup on unmount
-            container.cleanup = unsubscribe;
-            
-            return container;
-        }
-
-        // Settings Page
-        function SettingsPage(currentUser) {
-            const container = createElement('div', { class: 'space-y-6' });
-            
-            let users = [];
-            let activeModal = null;
-            
-            function updateUI() {
-                container.innerHTML = '';
-                
-                // Add team presence header
-                container.appendChild(TeamPresenceHeader(users));
-                
-                // Settings cards
-                const createCard = (title, desc, btnText, icon, modalKey) => 
-                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4' },
-                        createElement('div', { class: 'flex items-center gap-5 mobile-stack mobile-text-center' },
-                            createElement('div', { class: 'w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl' }, 
-                                createElement('i', { class: `fas ${icon}` })
-                            ),
-                            createElement('div', null, 
-                                createElement('h3', { class: 'text-lg font-bold text-slate-800' }, title), 
-                                createElement('p', { class: 'text-gray-500 text-sm' }, desc)
-                            )
-                        ),
-                        createElement('button', { 
-                            onclick: () => {
-                                activeModal = modalKey;
-                                updateUI();
-                            }, 
-                            class: 'bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 w-full md:w-auto' 
-                        }, btnText)
-                    );
-                
-                container.appendChild(
-                    createCard('Profile Information', 'Update your personal information.', 'Edit Profile', 'fa-user-edit', 'profile')
-                );
-                
-                container.appendChild(
-                    createCard('Security Settings', 'Update your password and security.', 'Update Security', 'fa-shield-alt', 'security')
-                );
-                
-                // Modals
-                if (activeModal === 'profile') {
-                    const modal = Modal({
-                        isOpen: true,
-                        onClose: () => {
-                            activeModal = null;
-                            updateUI();
-                        }
-                    }, 
-                        createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6 text-center' }, 'Edit Profile'),
-                        createElement('p', { class: 'text-center text-gray-500' }, 
-                            'This feature is coming soon. For now, your username is ',
-                            createElement('strong', null, currentUser.username),
-                            ' and you are on the ',
-                            createElement('strong', null, currentUser.team),
-                            ' team.'
-                        )
-                    );
-                    
-                    document.body.appendChild(modal);
-                }
-                
-                if (activeModal === 'security') {
-                    const modal = Modal({
-                        isOpen: true,
-                        onClose: () => {
-                            activeModal = null;
-                            updateUI();
-                        }
-                    }, 
-                        createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6 text-center' }, 'Update Password'),
-                        createElement('form', { 
-                            class: 'space-y-4',
-                            onsubmit: async (e) => {
-                                e.preventDefault();
-                                const formData = new FormData(e.target);
-                                const currentPassword = formData.get('currentPassword');
-                                const newPassword = formData.get('newPassword');
-                                const confirmPassword = formData.get('confirmPassword');
-
-                                if (currentPassword !== currentUser.password) {
-                                    alert('Current password does not match.');
-                                    return;
-                                }
-                                if (newPassword !== confirmPassword) {
-                                    alert('New passwords do not match.');
-                                    return;
-                                }
-                                if (newPassword.length < 6) {
-                                    alert('New password must be at least 6 characters long.');
-                                    return;
-                                }
-
-                                await liveDB.updateUser(currentUser.username, { password: newPassword });
-                                alert('Password updated successfully!');
-                                activeModal = null;
-                                updateUI();
-                            }
-                        },
-                            createElement('div', null,
-                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Current Password'),
-                                createElement('input', { type: 'password', name: 'currentPassword', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
-                            ),
-                            createElement('div', null,
-                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'New Password'),
-                                createElement('input', { type: 'password', name: 'newPassword', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
-                            ),
-                            createElement('div', null,
-                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Confirm New Password'),
-                                createElement('input', { type: 'password', name: 'confirmPassword', required: true, class: 'w-full border-2 border-gray-200 rounded-lg p-2' })
-                            ),
-                            createElement('button', { type: 'submit', class: 'w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg' }, 'Update Password')
-                        )
-                    );
-                    
-                    document.body.appendChild(modal);
-                }
-            }
-            
-            // Subscribe to users updates
-            const unsubscribe = liveDB.subscribe('users', (newUsers) => {
-                users = newUsers;
-                updateUI();
-            });
-            
-            // Initial data load
-            liveDB.getUsers().then(userData => {
-                users = userData;
-                updateUI();
-            });
-            
-            // Cleanup on unmount
-            container.cleanup = unsubscribe;
-            
-            return container;
-        }
-
         // Main App
         function App() {
             const root = document.getElementById('root');
@@ -1499,34 +1046,25 @@
                 // Main content area
                 const mainContent = createElement('main', { 
                     class: `flex-1 transition-all duration-300 ease-in-out ${
-                        window.innerWidth >= 1024 ? 'lg:ml-72' : ''
-                    } p-6 sm:p-8 md:p-12` 
+                        window.innerWidth >= 1024 ? 'lg:ml-80' : ''
+                    } p-4 sm:p-6 lg:p-8` 
                 });
                 
                 // Header
                 mainContent.appendChild(Header(currentUser, handleLogout, toggleSidebar, currentPage));
                 
                 // Page content
-                const contentContainer = createElement('div', { class: 'mt-10' });
+                const contentContainer = createElement('div', { class: 'mt-6 sm:mt-8' });
                 
                 switch (currentPage) {
                     case 'dashboard':
                         contentContainer.appendChild(Dashboard(currentUser, triggerSync));
                         break;
-                    case 'submissions':
-                        contentContainer.appendChild(SubmissionsPage());
-                        break;
-                    case 'team':
-                        contentContainer.appendChild(TeamPage(currentUser));
-                        break;
-                    case 'settings':
-                        contentContainer.appendChild(SettingsPage(currentUser));
-                        break;
                     default:
                         contentContainer.appendChild(
                             createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' }, 
-                                createElement('h2', { class: 'text-2xl font-bold' }, currentPage), 
-                                createElement('p', null, 'Page not found.')
+                                createElement('h2', { class: 'text-2xl font-bold' }, 'Coming Soon'), 
+                                createElement('p', null, 'This page is under development.')
                             )
                         );
                 }
@@ -1611,6 +1149,7 @@
                 } else {
                     setSidebarOpen(false);
                 }
+                updateUI();
             });
             
             // Initial render
