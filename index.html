@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DigiHive Team Dashboard</title>
+    <title>DigiHive Team Dashboard - Live Sync</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
       body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         background-color: #F8FAFC;
         color: #1A1A2E;
       }
-       @keyframes fade-in {
+      @keyframes fade-in {
         from { opacity: 0; }
         to { opacity: 1; }
       }
@@ -38,19 +38,7 @@
 <body>
     <div id="root"></div>
 
-<script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
-  }
-}
-</script>
-
 <script type="module">
-import { GoogleGenAI } from "@google/genai";
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
@@ -58,29 +46,6 @@ const { useState, useEffect, useCallback, useMemo, StrictMode } = React;
 
 // --- CONSTANTS ---
 const ADMIN_CODE = '212259497';
-
-const MASTER_USERS = [
-    { username: 'admin', password: 'password', team: 'Administrator', isOnline: false },
-    { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false },
-    { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false },
-    { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false },
-    { username: 'support_agent', password: 'password', team: 'Support', isOnline: false },
-    { username: 'writer', password: 'password', team: 'Content', isOnline: false },
-];
-
-const CSV_DATA = `Subject,Start Date,Start Time,End Date,End Time,Description,Location
-Administrator Q1 Budget Review,2026-01-15,10:00,2026-01-15,12:00,Review and approve Q1 budget submissions from all teams,Remote
-Administrator Security Audit,2026-01-16,14:00,2026-01-16,16:00,Perform annual security audit of the platform,Remote
-Full-stack Server Setup,2026-01-13,09:00,2026-01-13,11:00,Set up cloud server environment and configure database architecture,Remote
-Full-stack Database Design,2026-01-14,09:00,2026-01-14,11:00,Design database schemas and implement data migration scripts,Remote
-UI/UX Design System,2026-01-13,11:00,2026-01-13,13:00,Create brand color palette and build component library,Remote
-UI/UX Wireframes,2026-01-14,11:00,2026-01-14,13:00,Create homepage wireframes and design user onboarding flow,Remote
-Marketing Research,2026-01-13,14:00,2026-01-13,16:00,Research competitor platforms and analyze pricing strategies,Remote
-Marketing Audience Analysis,2026-01-14,14:00,2026-01-14,16:00,Define user personas and create audience segmentation,Remote
-Support Helpdesk,2026-01-13,16:00,2026-01-13,17:30,Set up ticketing system and configure automation rules,Remote
-Support Documentation,2026-01-14,16:00,2026-01-14,17:30,Create documentation structure and develop FAQ templates,Remote
-Content Planning,2026-01-13,13:00,2026-01-13,15:00,Plan 3-month content calendar and research trending topics,Remote
-Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create social media accounts,Remote`;
 
 const teamMapping = {
     'Administrator': { name: 'Administrator', color: 'bg-[#E53E3E]', avatar: 'AD', className: 'Administrator', role: 'System Administration' },
@@ -91,44 +56,252 @@ const teamMapping = {
     'Content': { name: 'Content', color: 'bg-[#FF9800]', avatar: 'CT', className: 'Content', role: 'Content Team' },
 };
 
-const MOTIVATION_QUOTES = [
-    "Every line of code you write brings us closer to empowering creators worldwide.",
-    "Your energy and focus today will build the foundation for tomorrow's achievements.",
-    "Collaboration multiplies our impact - together we achieve extraordinary results.",
-    "Small consistent efforts lead to massive accomplishments over time.",
-    "Your unique perspective adds value that no one else can contribute.",
-    "Challenges are opportunities in disguise - embrace them with enthusiasm."
-];
-
 const pageTitles = {
     dashboard: 'Dashboard',
     tasks: 'My Tasks - Full List',
-    calendar: 'Calendar',
-    progress: 'Progress Analytics',
     submissions: 'Past Submissions Archive',
     team: 'Team Directory',
     settings: 'Settings'
 };
 
-// --- HOOKS ---
-function useLocalStorage(key, initialValue) {
-    const getStorageValue = (key, defaultValue) => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem(key);
-            if (saved) {
-                try {
-                    return JSON.parse(saved);
-                } catch (error) {
-                    console.error('Error parsing JSON from localStorage', error);
-                    return defaultValue;
-                }
-            }
+// --- REAL-TIME DATABASE SIMULATION ---
+class LiveDatabase {
+    constructor() {
+        this.users = this.loadFromStorage('digihive_live_users') || [];
+        this.comments = this.loadFromStorage('digihive_live_comments') || [];
+        this.submissions = this.loadFromStorage('digihive_live_submissions') || [];
+        this.tasks = this.loadFromStorage('digihive_live_tasks') || this.generateInitialTasks();
+        this.listeners = new Map();
+        
+        // Initialize with some demo data if empty
+        if (this.users.length === 0) {
+            this.initializeDemoData();
         }
-        return defaultValue;
+        
+        this.setupStorageSync();
     }
 
+    initializeDemoData() {
+        // Add some initial users
+        const initialUsers = [
+            { username: 'admin', password: 'password', team: 'Administrator', isOnline: false, lastLogin: null, lastLogout: null },
+            { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false, lastLogin: null, lastLogout: null },
+            { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false, lastLogin: null, lastLogout: null },
+            { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false, lastLogin: null, lastLogout: null },
+            { username: 'support', password: 'password', team: 'Support', isOnline: false, lastLogin: null, lastLogout: null },
+            { username: 'writer', password: 'password', team: 'Content', isOnline: false, lastLogin: null, lastLogout: null }
+        ];
+        this.users = initialUsers;
+        this.saveToStorage('digihive_live_users', initialUsers);
+    }
+
+    generateInitialTasks() {
+        const tasks = [
+            {
+                id: 1,
+                subject: "Platform Security Audit",
+                startDate: new Date(Date.now() + 86400000).toISOString(),
+                endDate: new Date(Date.now() + 172800000).toISOString(),
+                description: "Complete security assessment and vulnerability testing",
+                team: "Administrator",
+                status: "pending"
+            },
+            {
+                id: 2,
+                subject: "API Integration Development",
+                startDate: new Date(Date.now() + 432000000).toISOString(),
+                endDate: new Date(Date.now() + 518400000).toISOString(),
+                description: "Develop and test third-party API integrations",
+                team: "Full-Stack",
+                status: "pending"
+            },
+            {
+                id: 3,
+                subject: "User Interface Redesign",
+                startDate: new Date(Date.now() + 259200000).toISOString(),
+                endDate: new Date(Date.now() + 345600000).toISOString(),
+                description: "Redesign dashboard interface for better user experience",
+                team: "UI/UX",
+                status: "in-progress"
+            }
+        ];
+        this.saveToStorage('digihive_live_tasks', tasks);
+        return tasks;
+    }
+
+    setupStorageSync() {
+        window.addEventListener('storage', (e) => {
+            if (e.key && e.key.startsWith('digihive_live_')) {
+                const key = e.key;
+                try {
+                    const newData = JSON.parse(e.newValue || '[]');
+                    const oldData = JSON.parse(e.oldValue || '[]');
+                    
+                    if (JSON.stringify(newData) !== JSON.stringify(oldData)) {
+                        this[key] = newData;
+                        this.notifyListeners(key.replace('digihive_live_', ''), newData);
+                    }
+                } catch (error) {
+                    console.error('Error syncing storage:', error);
+                }
+            }
+        });
+    }
+
+    loadFromStorage(key) {
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error('Error loading from storage:', error);
+            return null;
+        }
+    }
+
+    saveToStorage(key, data) {
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+            // Trigger storage event for other tabs
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: key,
+                newValue: JSON.stringify(data),
+                oldValue: localStorage.getItem(key),
+                storageArea: localStorage
+            }));
+        } catch (error) {
+            console.error('Error saving to storage:', error);
+        }
+    }
+
+    subscribe(key, callback) {
+        if (!this.listeners.has(key)) {
+            this.listeners.set(key, new Set());
+        }
+        this.listeners.get(key).add(callback);
+        
+        return () => {
+            if (this.listeners.has(key)) {
+                this.listeners.get(key).delete(callback);
+            }
+        };
+    }
+
+    notifyListeners(key, data) {
+        if (this.listeners.has(key)) {
+            this.listeners.get(key).forEach(callback => callback(data));
+        }
+    }
+
+    // User methods
+    async getUsers() {
+        return [...this.users];
+    }
+
+    async updateUser(username, updates) {
+        const userIndex = this.users.findIndex(u => u.username === username);
+        if (userIndex !== -1) {
+            this.users[userIndex] = { ...this.users[userIndex], ...updates };
+            this.saveToStorage('digihive_live_users', this.users);
+            this.notifyListeners('users', this.users);
+        }
+    }
+
+    async addUser(user) {
+        this.users.push(user);
+        this.saveToStorage('digihive_live_users', this.users);
+        this.notifyListeners('users', this.users);
+    }
+
+    async removeUser(username) {
+        this.users = this.users.filter(u => u.username !== username);
+        this.saveToStorage('digihive_live_users', this.users);
+        this.notifyListeners('users', this.users);
+    }
+
+    // Comment methods
+    async getComments() {
+        return [...this.comments];
+    }
+
+    async addComment(comment) {
+        const newComment = {
+            ...comment,
+            id: Date.now(),
+            timestamp: new Date().toISOString()
+        };
+        this.comments.unshift(newComment);
+        this.saveToStorage('digihive_live_comments', this.comments);
+        this.notifyListeners('comments', this.comments);
+        return newComment;
+    }
+
+    // Submission methods
+    async getSubmissions() {
+        return [...this.submissions];
+    }
+
+    async addSubmission(submission) {
+        const newSubmission = {
+            ...submission,
+            id: Date.now(),
+            timestamp: new Date().toISOString()
+        };
+        this.submissions.unshift(newSubmission);
+        this.saveToStorage('digihive_live_submissions', this.submissions);
+        this.notifyListeners('submissions', this.submissions);
+        return newSubmission;
+    }
+
+    // Task methods
+    async getTasks() {
+        return [...this.tasks];
+    }
+}
+
+// Create global database instance
+const liveDB = new LiveDatabase();
+
+// --- HOOKS ---
+function useLiveData(key, initialValue = []) {
+    const [data, setData] = useState(initialValue);
+
+    useEffect(() => {
+        // Load initial data
+        const loadInitialData = async () => {
+            switch (key) {
+                case 'users':
+                    setData(await liveDB.getUsers());
+                    break;
+                case 'comments':
+                    setData(await liveDB.getComments());
+                    break;
+                case 'submissions':
+                    setData(await liveDB.getSubmissions());
+                    break;
+                case 'tasks':
+                    setData(await liveDB.getTasks());
+                    break;
+            }
+        };
+        
+        loadInitialData();
+
+        // Subscribe to changes
+        const unsubscribe = liveDB.subscribe(key, setData);
+        return unsubscribe;
+    }, [key]);
+
+    return data;
+}
+
+function useLocalStorage(key, initialValue) {
     const [value, setValue] = useState(() => {
-        return getStorageValue(key, initialValue);
+        try {
+            const item = localStorage.getItem(key);
+            return item ? JSON.parse(item) : initialValue;
+        } catch (error) {
+            return initialValue;
+        }
     });
 
     useEffect(() => {
@@ -138,88 +311,15 @@ function useLocalStorage(key, initialValue) {
     return [value, setValue];
 }
 
-// --- UTILS ---
-const parseTasks = (csv) => {
-    const lines = csv.trim().split('\n');
-    const headers = lines.shift()?.split(',');
-    if (!headers) return [];
-
-    return lines.map(line => {
-        const values = line.split(',');
-        const taskData = headers.reduce((obj, header, index) => {
-            obj[header] = values[index];
-            return obj;
-        }, {});
-
-        const teamKey = Object.keys(teamMapping).find(key => taskData.Subject.startsWith(key));
-        const teamInfo = teamKey ? teamMapping[teamKey] : { name: 'General', color: 'bg-gray-500', avatar: 'G', className: 'General', role: '' };
-
-        return {
-            subject: taskData.Subject,
-            startDate: new Date(`${taskData['Start Date']}T${taskData['Start Time']}`),
-            endDate: new Date(`${taskData['End Date']}T${taskData['End Time']}`),
-            description: taskData.Description,
-            location: taskData.Location,
-            team: teamInfo.name,
-            teamColor: teamInfo.color,
-            teamAvatar: teamInfo.avatar,
-            teamClass: teamInfo.className,
-        };
-    });
-};
-
-// --- SERVICES ---
-const summarizeComments = async (comments) => {
-    if (!process.env.API_KEY) {
-        console.error("API_KEY environment variable not set.");
-        return "API key is not configured. Please contact the administrator.";
-    }
-
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const commentsText = comments.map(c => `- ${c.username} (${c.team}): "${c.text}"`).join('\n');
-        
-        if (commentsText.length === 0) {
-            return "There are no comments to summarize.";
-        }
-
-        const prompt = `
-            You are an assistant for a project management dashboard called DigiHive.
-            Your task is to summarize the following team comments.
-            Focus on key points, challenges, and action items.
-            Provide the summary in a concise, easy-to-read format using bullet points.
-            
-            Comments:
-            ${commentsText}
-        `;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-
-        return response.text;
-    } catch (error) {
-        console.error("Error summarizing comments with Gemini API:", error);
-        return "Failed to generate summary. The AI service may be temporarily unavailable.";
-    }
-};
-
-
 // --- COMPONENTS ---
-
 const Modal = ({ isOpen, onClose, children, size = 'md' }) => {
     useEffect(() => {
         const handleEsc = (event) => {
-            if (event.key === 'Escape') {
-                onClose();
-            }
+            if (event.key === 'Escape') onClose();
         };
-        window.addEventListener('keydown', handleEsc);
-        return () => {
-            window.removeEventListener('keydown', handleEsc);
-        };
-    }, [onClose]);
+        if (isOpen) window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
 
     if (!isOpen) return null;
 
@@ -230,40 +330,34 @@ const Modal = ({ isOpen, onClose, children, size = 'md' }) => {
         xl: 'max-w-4xl',
     };
 
-    return (
+    return React.createElement('div', { 
+        className: "fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in",
+        onClick: onClose 
+    },
         React.createElement('div', { 
-            className: "fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in",
-            onClick: onClose 
+            className: `bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative animate-scale-up`,
+            onClick: (e) => e.stopPropagation() 
         },
-            React.createElement('div', { 
-                className: `bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative animate-scale-up`,
-                onClick: (e) => e.stopPropagation() 
-            },
-                React.createElement('button', { 
-                    className: "absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl",
-                    onClick: onClose 
-                },
-                    React.createElement('i', { className: "fas fa-times" })
-                ),
-                children
-            )
+            React.createElement('button', { 
+                className: "absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl",
+                onClick: onClose 
+            }, React.createElement('i', { className: "fas fa-times" })),
+            children
         )
     );
 };
 
 const SyncStatusIndicator = ({ isSyncing, lastSyncTime }) => {
-    return (
-        React.createElement('div', { 
-            className: `fixed top-4 right-4 z-40 flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-300 ${
-                isSyncing ? 'bg-blue-500 text-white animate-pulse-sync' : 'bg-green-500 text-white'
-            } animate-slide-in-right` 
-        },
-            React.createElement('i', { 
-                className: `fas ${isSyncing ? 'fa-sync-alt fa-spin' : 'fa-check-circle'}` 
-            }),
-            React.createElement('span', { className: "text-sm font-medium" },
-                isSyncing ? 'Syncing...' : `Synced ${lastSyncTime}`
-            )
+    return React.createElement('div', { 
+        className: `fixed top-4 right-4 z-40 flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-300 ${
+            isSyncing ? 'bg-blue-500 text-white animate-pulse-sync' : 'bg-green-500 text-white'
+        } animate-slide-in-right` 
+    },
+        React.createElement('i', { 
+            className: `fas ${isSyncing ? 'fa-sync-alt fa-spin' : 'fa-check-circle'}` 
+        }),
+        React.createElement('span', { className: "text-sm font-medium" },
+            isSyncing ? 'Syncing...' : `Live - ${lastSyncTime}`
         )
     );
 };
@@ -274,211 +368,157 @@ const TeamPresenceHeader = ({ users }) => {
     ).length;
     
     const totalTeams = Object.keys(teamMapping).length;
+    const onlineUsers = users.filter(user => user.isOnline).length;
 
-    return (
-        React.createElement('div', { className: "bg-white rounded-2xl p-4 shadow-sm mb-6" },
-            React.createElement('div', { className: "flex items-center justify-between" },
-                React.createElement('div', { className: "flex items-center gap-3" },
-                    React.createElement('div', { className: "flex items-center gap-2" },
-                        React.createElement('div', { className: "w-3 h-3 rounded-full bg-green-500 animate-pulse" }),
-                        React.createElement('span', { className: "font-bold text-slate-800" }, "Live Team Status")
-                    ),
-                    React.createElement('span', { className: "text-sm text-gray-600" }, 
-                        `${onlineTeams} of ${totalTeams} teams online`
-                    )
+    return React.createElement('div', { className: "bg-white rounded-2xl p-4 shadow-sm mb-6" },
+        React.createElement('div', { className: "flex items-center justify-between" },
+            React.createElement('div', { className: "flex items-center gap-3" },
+                React.createElement('div', { className: "flex items-center gap-2" },
+                    React.createElement('div', { className: "w-3 h-3 rounded-full bg-green-500 animate-pulse" }),
+                    React.createElement('span', { className: "font-bold text-slate-800" }, "Live Team Status")
                 ),
-                React.createElement('div', { className: "hidden md:flex items-center gap-4" },
-                    {Object.values(teamMapping).map(team => {
-                        const isOnline = users.some(user => user.team === team.name && user.isOnline);
-                        return (
-                            React.createElement('div', { 
-                                key: team.name, 
-                                className: "flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50"
-                            },
-                                React.createElement('div', { 
-                                    className: `w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
-                                }),
-                                React.createElement('span', { className: "text-sm font-medium text-slate-700" }, team.avatar),
-                                React.createElement('span', { className: "text-xs text-gray-600 hidden lg:inline" }, team.name)
-                            )
-                        );
-                    })}
+                React.createElement('span', { className: "text-sm text-gray-600" }, 
+                    `${onlineUsers} users online • ${onlineTeams} of ${totalTeams} teams active`
                 )
             ),
-            
-            {/* Mobile team status grid */}
-            React.createElement('div', { className: "mt-3 md:hidden grid grid-cols-3 gap-2" },
+            React.createElement('div', { className: "hidden md:flex items-center gap-2" },
                 {Object.values(teamMapping).map(team => {
                     const isOnline = users.some(user => user.team === team.name && user.isOnline);
-                    return (
+                    const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
+                    return React.createElement('div', { 
+                        key: team.name, 
+                        className: "flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50"
+                    },
                         React.createElement('div', { 
-                            key: team.name, 
-                            className: "flex items-center gap-2 p-2 rounded-lg bg-gray-50 text-sm"
-                        },
-                            React.createElement('div', { 
-                                className: `w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
-                            }),
-                            React.createElement('span', { className: "font-medium text-slate-700" }, team.avatar),
-                            React.createElement('span', { className: "text-gray-600" }, team.name)
-                        )
+                            className: `w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
+                        }),
+                        React.createElement('span', { className: "text-sm font-medium text-slate-700" }, team.avatar),
+                        isOnline && onlineCount > 1 && 
+                            React.createElement('span', { className: "text-xs bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center" }, onlineCount)
                     );
                 })}
             )
+        ),
+        React.createElement('div', { className: "mt-3 md:hidden grid grid-cols-3 gap-2" },
+            {Object.values(teamMapping).map(team => {
+                const isOnline = users.some(user => user.team === team.name && user.isOnline);
+                const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
+                return React.createElement('div', { 
+                    key: team.name, 
+                    className: "flex items-center gap-2 p-2 rounded-lg bg-gray-50 text-sm"
+                },
+                    React.createElement('div', { 
+                        className: `w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}` 
+                    }),
+                    React.createElement('span', { className: "font-medium text-slate-700" }, team.avatar),
+                    isOnline && onlineCount > 1 && 
+                        React.createElement('span', { className: "text-xs bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center" }, onlineCount)
+                );
+            })}
         )
     );
 };
 
-const CommentsSection = ({ comments, setComments, currentUser, onSyncTrigger }) => {
+const CommentsSection = ({ currentUser, onSyncTrigger }) => {
+    const comments = useLiveData('comments', []);
     const [newComment, setNewComment] = useState('');
-    const [isSummarizing, setIsSummarizing] = useState(false);
-    const [summary, setSummary] = useState('');
-    const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
 
-    const handleSubmitComment = (e) => {
+    const handleSubmitComment = async (e) => {
         e.preventDefault();
         if (newComment.trim() === '') return;
 
-        const comment = {
-            id: Date.now(),
+        await liveDB.addComment({
             username: currentUser.username,
             team: currentUser.team,
-            timestamp: new Date().toISOString(),
             text: newComment.trim(),
-        };
+        });
 
-        setComments([comment, ...comments]);
         setNewComment('');
-        
-        // Trigger sync indicator
-        if (onSyncTrigger) {
-            onSyncTrigger();
-        }
+        if (onSyncTrigger) onSyncTrigger();
     };
 
-    const handleSummarize = async () => {
-        setIsSummarizing(true);
-        setSummary('');
-        const result = await summarizeComments(comments);
-        setSummary(result);
-        setIsSummarizing(false);
-        setIsSummaryModalOpen(true);
-    };
-    
-    return (
-        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col" },
-            React.createElement('div', { className: "flex items-center justify-between mb-4" },
-                React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, "Team Comments"),
-                React.createElement('div', { className: "flex items-center gap-2 text-sm text-green-600 bg-green-50 px-2 py-1 rounded" },
-                    React.createElement('i', { className: "fas fa-sync-alt" }),
-                    React.createElement('span', null, "Live Updates")
+    return React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col" },
+        React.createElement('div', { className: "flex items-center justify-between mb-4" },
+            React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, "Team Comments"),
+            React.createElement('div', { className: "flex items-center gap-2 text-sm text-green-600 bg-green-50 px-2 py-1 rounded" },
+                React.createElement('i', { className: "fas fa-sync-alt" }),
+                React.createElement('span', null, "Live Updates")
+            )
+        ),
+        React.createElement('form', { onSubmit: handleSubmitComment, className: "mb-4 flex gap-3" },
+            React.createElement('input', {
+                type: "text",
+                value: newComment,
+                onChange: (e) => setNewComment(e.target.value),
+                placeholder: "Leave a comment about your tasks or challenges...",
+                className: "flex-grow w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500"
+            }),
+            React.createElement('button', { 
+                type: "submit", 
+                className: "bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2" 
+            }, 
+                React.createElement('i', { className: "fas fa-paper-plane" }),
+                "Post"
+            )
+        ),
+        React.createElement('div', { className: "flex-1 overflow-y-auto pr-2 space-y-4" },
+            comments.length === 0 ? (
+                React.createElement('div', { className: "text-center text-gray-400 pt-8" },
+                    React.createElement('i', { className: "fas fa-comments text-4xl mb-2" }),
+                    React.createElement('p', null, "No comments yet. Be the first to post!")
                 )
-            ),
-            React.createElement('form', { onSubmit: handleSubmitComment, className: "mb-4 flex gap-3" },
-                React.createElement('input', {
-                    type: "text",
-                    value: newComment,
-                    onChange: (e) => setNewComment(e.target.value),
-                    placeholder: "Leave a comment about your tasks or challenges...",
-                    className: "flex-grow w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500"
-                }),
-                React.createElement('button', { 
-                    type: "submit", 
-                    className: "bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2" 
-                }, 
-                    React.createElement('i', { className: "fas fa-paper-plane" }),
-                    "Post"
-                )
-            ),
-            React.createElement('div', { className: "flex-1 overflow-y-auto pr-2 space-y-4" },
-                comments.length === 0 ? (
-                    React.createElement('div', { className: "text-center text-gray-400 pt-8" },
-                        React.createElement('i', { className: "fas fa-comments text-4xl mb-2" }),
-                        React.createElement('p', null, "No comments yet. Be the first to post!")
-                    )
-                ) : (
-                    comments.map(comment => {
-                         const commentTeamInfo = teamMapping[comment.team];
-                         return (
-                            React.createElement('div', { key: comment.id, className: "flex items-start gap-3" },
-                                React.createElement('div', { className: `w-10 h-10 ${commentTeamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` },
-                                    comment.username.substring(0, 2).toUpperCase()
+            ) : (
+                comments.map(comment => {
+                    const commentTeamInfo = teamMapping[comment.team];
+                    return React.createElement('div', { key: comment.id, className: "flex items-start gap-3" },
+                        React.createElement('div', { className: `w-10 h-10 ${commentTeamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` },
+                            comment.username.substring(0, 2).toUpperCase()
+                        ),
+                        React.createElement('div', { className: "flex-1 bg-gray-50 rounded-lg p-3" },
+                            React.createElement('div', { className: "flex justify-between items-baseline" },
+                                React.createElement('p', { className: "font-bold text-slate-700" }, 
+                                    comment.username,
+                                    React.createElement('span', { className: "font-normal text-sm text-gray-500 ml-1.5" }, `(${comment.team})`)
                                 ),
-                                React.createElement('div', { className: "flex-1 bg-gray-50 rounded-lg p-3" },
-                                    React.createElement('div', { className: "flex justify-between items-baseline" },
-                                        React.createElement('p', { className: "font-bold text-slate-700" }, 
-                                            comment.username,
-                                            React.createElement('span', { className: "font-normal text-sm text-gray-500 ml-1.5" }, `(${comment.team})`)
-                                        ),
-                                        React.createElement('p', { className: "text-xs text-gray-400" }, new Date(comment.timestamp).toLocaleString())
-                                    ),
-                                    React.createElement('p', { className: "text-sm text-gray-800 mt-1" }, comment.text)
-                                )
-                            )
+                                React.createElement('p', { className: "text-xs text-gray-400" }, new Date(comment.timestamp).toLocaleString())
+                            ),
+                            React.createElement('p', { className: "text-sm text-gray-800 mt-1" }, comment.text)
                         )
-                    })
-                )
-            ),
-            React.createElement('button', {
-                onClick: handleSummarize,
-                disabled: isSummarizing || comments.length === 0,
-                className: "w-full mt-4 bg-violet-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-violet-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            },
-                isSummarizing ? (
-                    React.createElement(React.Fragment, null,
-                        React.createElement('i', { className: "fas fa-spinner fa-spin" }),
-                        React.createElement('span', null, "Generating Summary...")
-                    )
-                ) : (
-                    React.createElement(React.Fragment, null,
-                       React.createElement('i', { className: "fas fa-wand-magic-sparkles" }),
-                       React.createElement('span', null, "Summarize with AI")
-                    )
-                )
-            ),
-            React.createElement(Modal, { isOpen: isSummaryModalOpen, onClose: () => setIsSummaryModalOpen(false), size: "lg" },
-                 React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-4" }, "AI-Generated Summary"),
-                 React.createElement('div', { className: "prose prose-sm max-w-none whitespace-pre-wrap bg-gray-50 p-4 rounded-lg" },
-                    summary.split('\n').map((line, i) => React.createElement('p', { key: i }, line))
-                 ),
-                 React.createElement('button', { onClick: () => setIsSummaryModalOpen(false), className: "mt-6 w-full bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg" }, "Close")
+                    );
+                })
             )
         )
     );
 };
 
 const Header = ({ user, onLogout, toggleSidebar, pageTitle }) => {
-    return (
-        React.createElement('header', { className: "flex justify-between items-center" },
-            React.createElement('div', null,
-                React.createElement('h1', { className: "text-2xl md:text-4xl font-bold text-[#1A1A2E]" },
-                    pageTitles[pageTitle] || 'Dashboard'
-                )
+    return React.createElement('header', { className: "flex justify-between items-center" },
+        React.createElement('div', null,
+            React.createElement('h1', { className: "text-2xl md:text-4xl font-bold text-[#1A1A2E]" },
+                pageTitles[pageTitle] || 'Dashboard'
+            )
+        ),
+        React.createElement('div', { className: "flex items-center gap-4" },
+            React.createElement('button', { onClick: toggleSidebar, className: "lg:hidden text-2xl text-gray-600" },
+                React.createElement('i', { className: "fas fa-bars" })
             ),
-            React.createElement('div', { className: "flex items-center gap-4" },
-                React.createElement('button', { onClick: toggleSidebar, className: "lg:hidden text-2xl text-gray-600" },
-                    React.createElement('i', { className: "fas fa-bars" })
+            React.createElement('div', { className: "flex items-center gap-3 bg-white p-2 rounded-full shadow-sm" },
+                React.createElement('div', { className: "w-10 h-10 rounded-full bg-[#2A5CAA] text-white flex items-center justify-center font-bold" },
+                    user.username.substring(0, 2).toUpperCase()
                 ),
-                React.createElement('div', { className: "flex items-center gap-3 bg-white p-2 rounded-full shadow-sm" },
-                    React.createElement('div', { className: "w-10 h-10 rounded-full bg-[#2A5CAA] text-white flex items-center justify-center font-bold" },
-                        user.username.substring(0, 2).toUpperCase()
-                    ),
-                    React.createElement('span', { className: "font-semibold text-sm hidden sm:block pr-2" }, user.username)
-                ),
-                 React.createElement('button', { onClick: onLogout, className: "text-gray-500 hover:text-red-500", title: "Logout" },
-                    React.createElement('i', { className: "fas fa-sign-out-alt text-xl" })
-                )
+                React.createElement('span', { className: "font-semibold text-sm hidden sm:block pr-2" }, user.username)
+            ),
+            React.createElement('button', { onClick: onLogout, className: "text-gray-500 hover:text-red-500", title: "Logout" },
+                React.createElement('i', { className: "fas fa-sign-out-alt text-xl" })
             )
         )
     );
 };
 
 const Sidebar = ({ currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen, users }) => {
-    
     const handleNavClick = (page) => {
         setCurrentPage(page);
-        if (window.innerWidth < 1024) {
-            setSidebarOpen(false);
-        }
+        if (window.innerWidth < 1024) setSidebarOpen(false);
     };
 
     const navLinks = Object.keys(pageTitles).map(page => {
@@ -487,51 +527,52 @@ const Sidebar = ({ currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen, u
         };
         const isActive = currentPage === page;
         if (!icons[page]) return null;
-        return (
-            React.createElement('li', { key: page },
-              React.createElement('a', { href: "#", onClick: (e) => { e.preventDefault(); handleNavClick(page); }, className: `nav-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-slate-200 opacity-80 hover:bg-white/10 hover:opacity-100 ${isActive ? 'bg-[#2A5CAA] opacity-100 shadow-lg' : ''}` },
+        return React.createElement('li', { key: page },
+            React.createElement('a', { href: "#", onClick: (e) => { e.preventDefault(); handleNavClick(page); }, className: `nav-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-slate-200 opacity-80 hover:bg-white/10 hover:opacity-100 ${isActive ? 'bg-[#2A5CAA] opacity-100 shadow-lg' : ''}` },
                 React.createElement('i', { className: `w-5 text-center text-lg fas ${icons[page]}` }),
                 React.createElement('span', null, pageTitles[page])
-              )
             )
         );
     }).filter(Boolean);
 
     const teamMembers = Object.values(teamMapping).map(team => {
         const isAnyMemberOnline = users.some(user => user.team === team.name && user.isOnline);
+        const onlineCount = users.filter(user => user.team === team.name && user.isOnline).length;
         return React.createElement('li', { key: team.name, className: "flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200" },
             React.createElement('div', { className: `w-9 h-9 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-sm` }, team.avatar),
             React.createElement('div', { className: "flex-1" },
-              React.createElement('p', { className: "text-sm font-semibold text-slate-200 leading-tight" }, team.name),
-              React.createElement('p', { className: "text-xs text-slate-200 opacity-70 leading-tight" }, team.role)
+                React.createElement('p', { className: "text-sm font-semibold text-slate-200 leading-tight" }, team.name),
+                React.createElement('p', { className: "text-xs text-slate-200 opacity-70 leading-tight" }, team.role)
             ),
-            React.createElement('div', { className: `w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors ${isAnyMemberOnline ? 'bg-green-400' : 'bg-gray-400'}` })
+            React.createElement('div', { className: "flex items-center gap-1" },
+                React.createElement('div', { className: `w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors ${isAnyMemberOnline ? 'bg-green-400' : 'bg-gray-400'}` }),
+                {isAnyMemberOnline && onlineCount > 0 && 
+                    React.createElement('span', { className: "text-xs text-green-400" }, onlineCount)
+                }
+            )
         );
     });
 
-    return (
-        React.createElement('aside', { className: `fixed top-0 left-0 h-full w-72 bg-[#1E293B] text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0` },
-            React.createElement('div', { className: "flex items-center gap-3 mb-12 px-2" },
-                React.createElement('div', { className: "w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg" }, "DH"),
-                React.createElement('span', { className: "text-2xl font-extrabold text-slate-200" }, "DigiHive")
-            ),
-            React.createElement('nav', null, React.createElement('ul', { className: "space-y-2" }, navLinks)),
-            React.createElement('div', { className: "mt-12" },
-                React.createElement('h3', { className: "text-sm font-semibold text-slate-200 opacity-70 mb-4 px-2" }, "TEAMS"),
-                React.createElement('ul', { className: "space-y-2" }, teamMembers)
-            )
+    return React.createElement('aside', { className: `fixed top-0 left-0 h-full w-72 bg-[#1E293B] text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0` },
+        React.createElement('div', { className: "flex items-center gap-3 mb-12 px-2" },
+            React.createElement('div', { className: "w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg" }, "DH"),
+            React.createElement('span', { className: "text-2xl font-extrabold text-slate-200" }, "DigiHive")
+        ),
+        React.createElement('nav', null, React.createElement('ul', { className: "space-y-2" }, navLinks)),
+        React.createElement('div', { className: "mt-12" },
+            React.createElement('h3', { className: "text-sm font-semibold text-slate-200 opacity-70 mb-4 px-2" }, "TEAMS"),
+            React.createElement('ul', { className: "space-y-2" }, teamMembers)
         )
     );
 };
 
 // --- PAGES ---
-const LoginScreen = ({ users, setUsers, onLogin }) => {
+const LoginScreen = ({ onLogin }) => {
+    const users = useLiveData('users', []);
     const [isLoginModalOpen, setLoginModalOpen] = useState(false);
     const [isRegisterModalOpen, setRegisterModalOpen] = useState(false);
-    
-    const [quote] = useState(MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]);
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const username = formData.get('username');
@@ -539,13 +580,17 @@ const LoginScreen = ({ users, setUsers, onLogin }) => {
         
         const user = users.find(u => u.username === username && u.password === password);
         if (user) {
-            onLogin(user);
+            await liveDB.updateUser(username, { 
+                isOnline: true, 
+                lastLogin: new Date().toISOString() 
+            });
+            onLogin({ ...user, isOnline: true });
         } else {
             alert('Invalid username or password.');
         }
     };
     
-    const handleRegister = (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         if (formData.get('adminCode') !== ADMIN_CODE) {
@@ -562,194 +607,112 @@ const LoginScreen = ({ users, setUsers, onLogin }) => {
             return;
         }
 
-        const newUser = { username, password, team, isOnline: false };
-        setUsers([...users, newUser]);
-        alert('Registration successful! Please log in.');
+        const newUser = { 
+            username, 
+            password, 
+            team, 
+            isOnline: true,
+            lastLogin: new Date().toISOString()
+        };
+        
+        await liveDB.addUser(newUser);
+        alert('Registration successful! You are now logged in.');
         setRegisterModalOpen(false);
-        setLoginModalOpen(true);
+        onLogin(newUser);
     };
 
-    const teamOptions = Object.values(teamMapping).map(t => React.createElement('option', { key: t.name, value: t.name }, t.name));
+    const teamOptions = Object.values(teamMapping).map(t => 
+        React.createElement('option', { key: t.name, value: t.name }, t.name)
+    );
 
-    return (
-        React.createElement('div', { className: "fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4" },
-            React.createElement('div', { className: "bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center" },
-                React.createElement('div', { className: "flex justify-center items-center gap-3 mb-4" },
-                  React.createElement('div', { className: "w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg" }, "DH"),
-                  React.createElement('span', { className: "text-2xl font-extrabold text-slate-800" }, "Welcome to DigiHive")
-                ),
-                React.createElement('div', { className: "my-6 p-4 bg-gray-100 rounded-lg border-l-4 border-blue-500" },
-                    React.createElement('p', { className: "text-gray-700 italic" }, `"${quote}"`)
-                ),
-                React.createElement('div', { className: "flex flex-col sm:flex-row gap-4" },
-                    React.createElement('button', { onClick: () => setLoginModalOpen(true), className: "flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300" }, "Login"),
-                    React.createElement('button', { onClick: () => setRegisterModalOpen(true), className: "flex-1 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-300" }, "Register a Team Member")
+    return React.createElement('div', { className: "fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4" },
+        React.createElement('div', { className: "bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center" },
+            React.createElement('div', { className: "flex justify-center items-center gap-3 mb-4" },
+                React.createElement('div', { className: "w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg" }, "DH"),
+                React.createElement('span', { className: "text-2xl font-extrabold text-slate-800" }, "Welcome to DigiHive")
+            ),
+            React.createElement('div', { className: "my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500" },
+                React.createElement('p', { className: "text-blue-700 font-medium" }, 
+                    "Real-time collaborative dashboard with live team synchronization"
                 )
             ),
-            React.createElement(Modal, { isOpen: isLoginModalOpen, onClose: () => setLoginModalOpen(false) },
-                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Login to DigiHive"),
-                React.createElement('form', { onSubmit: handleLogin },
-                    React.createElement('div', { className: "mb-4" },
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
-                        React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500" })
-                    ),
-                    React.createElement('div', { className: "mb-6" },
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
-                        React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500" })
-                    ),
-                    React.createElement('button', { type: "submit", className: "w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors" }, "Login")
-                )
-            ),
-            React.createElement(Modal, { isOpen: isRegisterModalOpen, onClose: () => setRegisterModalOpen(false) },
-                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Register New Member"),
-                React.createElement('form', { onSubmit: handleRegister },
-                    React.createElement('div', { className: "mb-4" },
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
-                        React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                    ),
-                    React.createElement('div', { className: "mb-4" },
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
-                        React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                    ),
-                     React.createElement('div', { className: "mb-4" },
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Team"),
-                        React.createElement('select', { name: "team", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 bg-white" }, teamOptions)
-                    ),
-                     React.createElement('div', { className: "mb-6" },
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Admin Code"),
-                        React.createElement('input', { type: "password", name: "adminCode", placeholder: "Required for registration", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                    ),
-                    React.createElement('button', { type: "submit", className: "w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors" }, "Register")
-                )
+            React.createElement('div', { className: "flex flex-col sm:flex-row gap-4" },
+                React.createElement('button', { onClick: () => setLoginModalOpen(true), className: "flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300" }, "Login"),
+                React.createElement('button', { onClick: () => setRegisterModalOpen(true), className: "flex-1 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-300" }, "Register a Team Member")
+            )
+        ),
+        React.createElement(Modal, { isOpen: isLoginModalOpen, onClose: () => setLoginModalOpen(false) },
+            React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Login to DigiHive"),
+            React.createElement('form', { onSubmit: handleLogin },
+                React.createElement('div', { className: "mb-4" },
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
+                    React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500" })
+                ),
+                React.createElement('div', { className: "mb-6" },
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
+                    React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500" })
+                ),
+                React.createElement('button', { type: "submit", className: "w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors" }, "Login")
+            )
+        ),
+        React.createElement(Modal, { isOpen: isRegisterModalOpen, onClose: () => setRegisterModalOpen(false) },
+            React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Register New Member"),
+            React.createElement('form', { onSubmit: handleRegister },
+                React.createElement('div', { className: "mb-4" },
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
+                    React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                ),
+                React.createElement('div', { className: "mb-4" },
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
+                    React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                ),
+                React.createElement('div', { className: "mb-4" },
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Team"),
+                    React.createElement('select', { name: "team", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 bg-white" }, teamOptions)
+                ),
+                React.createElement('div', { className: "mb-6" },
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Admin Code"),
+                    React.createElement('input', { type: "password", name: "adminCode", placeholder: "Required for registration", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                ),
+                React.createElement('button', { type: "submit", className: "w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors" }, "Register")
             )
         )
     );
 };
 
-const UpcomingTask = ({ tasks }) => {
-    const [currentIndex, setCurrentIndex] = useState(0);
-
-    if (tasks.length === 0) {
-        return (
-            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center text-center h-full" },
-                React.createElement('i', { className: "fas fa-calendar-check text-4xl text-gray-300 mb-4" }),
-                React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, "All Tasks Completed!"),
-                React.createElement('p', { className: "text-gray-500 mt-2" }, "No upcoming tasks found.")
-            )
-        );
-    }
+const Dashboard = ({ currentUser, onSyncTrigger }) => {
+    const users = useLiveData('users', []);
+    const comments = useLiveData('comments', []);
+    const submissions = useLiveData('submissions', []);
+    const tasks = useLiveData('tasks', []);
     
-    const task = tasks[currentIndex];
-    const teamColorValue = task.teamColor.replace(/bg-\\[|\\]/g, '');
-
-    return (
-        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm flex flex-col h-full" },
-            React.createElement('div', { className: "flex justify-between items-center mb-4" },
-                 React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, "Upcoming Tasks"),
-                 React.createElement('div', { className: "flex items-center gap-2" },
-                    React.createElement('button', { onClick: () => setCurrentIndex((currentIndex - 1 + tasks.length) % tasks.length), className: "w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600" }, React.createElement('i', { className: "fas fa-chevron-left" })),
-                    React.createElement('span', { className: "text-sm font-medium text-gray-500" }, `${currentIndex + 1} / ${tasks.length}`),
-                    React.createElement('button', { onClick: () => setCurrentIndex((currentIndex + 1) % tasks.length), className: "w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600" }, React.createElement('i', { className: "fas fa-chevron-right" }))
-                )
-            ),
-            React.createElement('div', { className: "flex-1 flex flex-col gap-4 mt-2" },
-                 React.createElement('div', { className: "flex items-center gap-3 p-4 rounded-lg bg-gray-50 border-l-4", style: { borderColor: teamColorValue } },
-                     React.createElement('div', { className: `w-10 h-10 ${task.teamColor} rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-base` }, task.teamAvatar),
-                     React.createElement('div', null,
-                         React.createElement('p', { className: "font-bold text-slate-700" }, task.team),
-                         React.createElement('p', { className: "text-sm font-medium" }, task.subject)
-                     )
-                 ),
-                 React.createElement('div', { className: "text-sm text-gray-600 bg-gray-50 p-4 rounded-lg flex-1" },
-                     React.createElement('p', { className: "font-semibold mb-2 text-gray-700" }, "Description:"),
-                     React.createElement('p', null, task.description)
-                 ),
-                 React.createElement('div', { className: "text-sm text-gray-500 flex items-center gap-4 bg-gray-50 p-3 rounded-lg" },
-                    React.createElement('div', { className: "flex items-center gap-2" }, React.createElement('i', { className: "far fa-calendar-alt" }), React.createElement('span', { className: "font-medium" }, task.startDate.toLocaleDateString())),
-                    React.createElement('div', { className: "flex items-center gap-2" }, React.createElement('i', { className: "far fa-clock" }), React.createElement('span', { className: "font-medium" }, task.startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })))
-                 )
-            )
-        )
-    );
-};
-
-const LiveStatusWidget = ({ users }) => {
-    return (
-        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" },
-            React.createElement('h3', { className: "text-xl font-bold text-slate-800 mb-4" }, "Live Sync Status"),
-            React.createElement('div', { className: "space-y-4" },
-                React.createElement('div', { className: "flex items-center justify-between p-3 bg-green-50 rounded-lg" },
-                    React.createElement('div', { className: "flex items-center gap-3" },
-                        React.createElement('i', { className: "fas fa-sync-alt text-green-600" }),
-                        React.createElement('span', { className: "font-semibold text-sm text-green-800" }, "Real-Time Data Sync")
-                    ),
-                    React.createElement('span', { className: "font-bold text-sm text-green-600" }, "Active")
-                ),
-                React.createElement('div', null,
-                    React.createElement('h4', { className: "text-sm font-semibold text-slate-600 mb-2 px-1" }, "Live Team Status"),
-                    React.createElement('ul', { className: "space-y-2" },
-                        Object.values(teamMapping).map(team => {
-                            const isAnyMemberOnline = users.some(user => user.team === team.name && user.isOnline);
-                            return (
-                                React.createElement('li', { key: team.name, className: "flex items-center justify-between p-2 bg-gray-50 rounded-lg" },
-                                    React.createElement('div', { className: "flex items-center gap-2" },
-                                        React.createElement('div', { className: `w-5 h-5 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` }, team.avatar),
-                                        React.createElement('span', { className: "text-sm font-medium text-slate-700" }, team.name)
-                                    ),
-                                    React.createElement('div', { className: "flex items-center gap-2" },
-                                        React.createElement('div', { className: `w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors ${isAnyMemberOnline ? 'bg-green-400' : 'bg-gray-400'}` }),
-                                        React.createElement('span', { className: `text-xs font-semibold ${isAnyMemberOnline ? 'text-green-600' : 'text-gray-500'}` }, isAnyMemberOnline ? 'Online' : 'Offline')
-                                    )
-                                )
-                            );
-                        })
-                    )
-                )
-            )
-        )
-    );
-};
-
-const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, setSubmissions, users, onSyncTrigger }) => {
-    const [quote, setQuote] = useState(MOTIVATION_QUOTES[0]);
     const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
     const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
-    useEffect(() => {
-        const quoteInterval = setInterval(() => {
-            setQuote(MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]);
-        }, 10000);
-        return () => clearInterval(quoteInterval);
-    }, []);
-
-    const upcomingTasks = allTasks.filter(task => task.startDate > new Date());
+    const upcomingTasks = tasks.filter(task => new Date(task.startDate) > new Date());
     const completedThisWeek = submissions.filter(s => {
-        const submissionDate = new Date(s.date);
+        const submissionDate = new Date(s.timestamp);
         const today = new Date();
         const oneWeekAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
         return submissionDate >= oneWeekAgo;
     }).length;
 
-    const handleSubmission = (e) => {
+    const handleSubmission = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const fileInput = e.currentTarget.querySelector('#report-file');
         
         const newSubmission = {
             name: formData.get('title'),
-            member: formData.get('team'),
-            date: new Date().toLocaleDateString('en-CA'),
-            fileType: fileInput.files && fileInput.files.length > 0 ? fileInput.files[0].type : 'N/A',
-            fileContent: `Report Title: ${formData.get('title')}\nProgress: ${formData.get('progress')}\nNext Week's Plan: ${formData.get('plan')}`
+            member: currentUser.username,
+            team: currentUser.team,
+            progress: formData.get('progress'),
+            plan: formData.get('plan'),
+            fileType: 'Report'
         };
 
-        setSubmissions(prev => [newSubmission, ...prev]);
+        await liveDB.addSubmission(newSubmission);
         setSubmissionSuccess(true);
-        
-        // Trigger sync indicator
-        if (onSyncTrigger) {
-            onSyncTrigger();
-        }
+        if (onSyncTrigger) onSyncTrigger();
     };
     
     const closeSubmissionModal = () => {
@@ -757,161 +720,145 @@ const Dashboard = ({ allTasks, comments, setComments, currentUser, submissions, 
         setSubmissionSuccess(false);
     };
 
-    return (
-        React.createElement('div', { className: "space-y-8" },
-            React.createElement(TeamPresenceHeader, { users: users }),
-            
-            React.createElement('div', { className: "p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800" },
-                React.createElement('i', { className: "fas fa-quote-left mr-2" }), ` ${quote}`
-            ),
-            React.createElement('div', { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" },
-                React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-blue-500" }, React.createElement('i', { className: "fas fa-list-check" })), React.createElement('div', { className: "mt-4" }, React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, upcomingTasks.length), React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Upcoming Tasks"))),
-                React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-violet-500" }, React.createElement('i', { className: "fas fa-check-double" })), React.createElement('div', { className: "mt-4" }, React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, completedThisWeek), React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Completed This Week"))),
-                React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-teal-500" }, React.createElement('i', { className: "fas fa-percent" })), React.createElement('div', { className: "mt-4" }, React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, "75%"), React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Overall Progress"))),
-                React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-amber-500" }, React.createElement('i', { className: "fas fa-users" })), React.createElement('div', { className: "mt-4" }, React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, Object.keys(teamMapping).length), React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Active Teams")))
-            ),
-            React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-3 gap-8" },
-                React.createElement('div', { className: "lg:col-span-2 h-[550px]" },
-                   React.createElement(CommentsSection, { 
-                       comments: comments, 
-                       setComments: setComments, 
-                       currentUser: currentUser,
-                       onSyncTrigger: onSyncTrigger 
-                   })
-                ),
-                React.createElement('div', { className: "lg:col-span-1 space-y-8" },
-                    React.createElement(LiveStatusWidget, { users: users }),
-                    React.createElement('div', { className: "h-[450px]" },
-                        React.createElement(UpcomingTask, { tasks: upcomingTasks })
-                    ),
-                    React.createElement('div', { 
-                        onClick: () => setIsSubmissionModalOpen(true), 
-                        className: "bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300" 
-                    },
-                        React.createElement('div', { className: "flex flex-col items-center text-center gap-4" },
-                            React.createElement('div', { className: "w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center" }, React.createElement('i', { className: "fas fa-cloud-upload-alt" })),
-                            React.createElement('div', null, 
-                                React.createElement('h3', { className: "font-bold text-slate-800 text-lg" }, "Submit Weekly Report"), 
-                                React.createElement('p', { className: "text-sm text-gray-500 mt-1" }, "Tap here to upload progress.")
-                            )
-                        )
-                    )
+    return React.createElement('div', { className: "space-y-8" },
+        React.createElement(TeamPresenceHeader, { users: users }),
+        
+        React.createElement('div', { className: "p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800" },
+            React.createElement('i', { className: "fas fa-sync-alt mr-2" }), 
+            " Live data synchronization active. All changes are shared instantly with team members."
+        ),
+        
+        React.createElement('div', { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" },
+            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, 
+                React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-blue-500" }, 
+                    React.createElement('i', { className: "fas fa-list-check" })
+                ), 
+                React.createElement('div', { className: "mt-4" }, 
+                    React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, upcomingTasks.length), 
+                    React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Upcoming Tasks")
                 )
             ),
-            React.createElement(Modal, { isOpen: isSubmissionModalOpen, onClose: closeSubmissionModal, size: "lg" },
-                !submissionSuccess ? (
-                    React.createElement(React.Fragment, null,
-                        React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6" }, "Weekly Report Submission"),
-                        React.createElement('form', { onSubmit: handleSubmission, className: "space-y-4" },
-                            React.createElement('div', null, React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Report Title"), React.createElement('input', { type: "text", name: "title", placeholder: "e.g., Q1 Week 4 Progress Report", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })),
-                            React.createElement('div', null, React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Team"), React.createElement('select', { name: "team", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 bg-white" }, React.createElement('option', { value: "" }, "Select Team"), Object.values(teamMapping).map(t => React.createElement('option', { key: t.name, value: t.name }, t.name)))),
-                            React.createElement('div', null, React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Progress Report"), React.createElement('textarea', { name: "progress", placeholder: "Describe your progress...", required: true, rows: 4, className: "w-full border-2 border-gray-200 rounded-lg p-2" })),
-                            React.createElement('div', null, React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Next Week's Plan"), React.createElement('textarea', { name: "plan", placeholder: "Outline your plans...", required: true, rows: 3, className: "w-full border-2 border-gray-200 rounded-lg p-2" })),
-                            React.createElement('div', null,
-                                React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Upload File (Optional)"),
-                                React.createElement('input', { type: "file", id: "report-file", className: "w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" })
+            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, 
+                React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-violet-500" }, 
+                    React.createElement('i', { className: "fas fa-check-double" })
+                ), 
+                React.createElement('div', { className: "mt-4" }, 
+                    React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, completedThisWeek), 
+                    React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Completed This Week")
+                )
+            ),
+            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, 
+                React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-teal-500" }, 
+                    React.createElement('i', { className: "fas fa-comments" })
+                ), 
+                React.createElement('div', { className: "mt-4" }, 
+                    React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, comments.length), 
+                    React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Team Comments")
+                )
+            ),
+            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, 
+                React.createElement('div', { className: "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-amber-500" }, 
+                    React.createElement('i', { className: "fas fa-users" })
+                ), 
+                React.createElement('div', { className: "mt-4" }, 
+                    React.createElement('p', { className: "text-4xl font-bold text-slate-800" }, users.filter(u => u.isOnline).length), 
+                    React.createElement('p', { className: "text-md text-gray-500 font-medium" }, "Online Now")
+                )
+            )
+        ),
+        
+        React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-3 gap-8" },
+            React.createElement('div', { className: "lg:col-span-2 h-[550px]" },
+                React.createElement(CommentsSection, { 
+                    currentUser: currentUser,
+                    onSyncTrigger: onSyncTrigger 
+                })
+            ),
+            React.createElement('div', { className: "lg:col-span-1 space-y-8" },
+                React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" },
+                    React.createElement('h3', { className: "text-xl font-bold text-slate-800 mb-4" }, "Live Team Activity"),
+                    React.createElement('div', { className: "space-y-3" },
+                        React.createElement('div', { className: "flex items-center justify-between p-3 bg-green-50 rounded-lg" },
+                            React.createElement('div', { className: "flex items-center gap-3" },
+                                React.createElement('i', { className: "fas fa-sync-alt text-green-600" }),
+                                React.createElement('span', { className: "font-semibold text-sm text-green-800" }, "Real-Time Sync")
                             ),
-                            React.createElement('button', { type: "submit", className: "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2" }, 
-                                React.createElement('i', { className: "fas fa-paper-plane" }),
-                                "Submit Report"
-                            )
+                            React.createElement('span', { className: "font-bold text-sm text-green-600" }, "Active")
+                        ),
+                        React.createElement('div', { className: "text-sm text-gray-600" },
+                            React.createElement('p', { className: "font-semibold mb-2" }, "Recent Activity:"),
+                            {comments.slice(0, 3).map(comment => 
+                                React.createElement('p', { key: comment.id, className: "truncate" },
+                                    `${comment.username}: ${comment.text}`
+                                )
+                            )}
                         )
                     )
-                ) : (
-                    React.createElement('div', { className: "text-center py-10" },
-                        React.createElement('i', { className: "fas fa-check-circle text-6xl text-green-500 mb-4" }),
-                        React.createElement('h2', { className: "text-2xl font-bold text-slate-800" }, "Submission Successful!"),
-                        React.createElement('p', { className: "text-gray-600 mt-2" }, "Your report has been archived and synced with all team members."),
-                        React.createElement('button', { onClick: closeSubmissionModal, className: "mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg" }, "Close")
+                ),
+                
+                React.createElement('div', { 
+                    onClick: () => setIsSubmissionModalOpen(true), 
+                    className: "bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300" 
+                },
+                    React.createElement('div', { className: "flex flex-col items-center text-center gap-4" },
+                        React.createElement('div', { className: "w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center" }, 
+                            React.createElement('i', { className: "fas fa-cloud-upload-alt" })
+                        ),
+                        React.createElement('div', null, 
+                            React.createElement('h3', { className: "font-bold text-slate-800 text-lg" }, "Submit Weekly Report"), 
+                            React.createElement('p', { className: "text-sm text-gray-500 mt-1" }, "Share progress with the team")
+                        )
                     )
                 )
             )
-        )
-    );
-};
-
-
-const Tasks = ({ allTasks }) => {
-    const [teamFilter, setTeamFilter] = useState('All');
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const filteredTasks = useMemo(() => {
-        return allTasks.filter(task => {
-            const teamMatch = teamFilter === 'All' || task.teamClass === teamFilter;
-            const searchMatch = searchQuery === '' || 
-                                task.subject.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                task.description.toLowerCase().includes(searchQuery.toLowerCase());
-            return teamMatch && searchMatch;
-        });
-    }, [allTasks, teamFilter, searchQuery]);
-
-    const renderList = (tasks) => {
-        if (tasks.length === 0) {
-            return (
-                React.createElement('div', { className: "md:col-span-2 xl:col-span-3 text-center py-16 bg-white rounded-2xl shadow-sm" },
-                    React.createElement('i', { className: "fas fa-box-open text-5xl text-gray-300 mb-4" }),
-                    React.createElement('h3', { className: "text-xl font-bold text-slate-700" }, "No Tasks Found"),
-                    React.createElement('p', { className: "text-gray-500 mt-2" }, "Try adjusting your filters.")
+        ),
+        
+        React.createElement(Modal, { isOpen: isSubmissionModalOpen, onClose: closeSubmissionModal, size: "lg" },
+            !submissionSuccess ? (
+                React.createElement(React.Fragment, null,
+                    React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6" }, "Weekly Report Submission"),
+                    React.createElement('form', { onSubmit: handleSubmission, className: "space-y-4" },
+                        React.createElement('div', null, 
+                            React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Report Title"), 
+                            React.createElement('input', { type: "text", name: "title", placeholder: "e.g., Q1 Week 4 Progress Report", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                        ),
+                        React.createElement('div', null, 
+                            React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Progress Report"), 
+                            React.createElement('textarea', { name: "progress", placeholder: "Describe your progress...", required: true, rows: 4, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                        ),
+                        React.createElement('div', null, 
+                            React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Next Week's Plan"), 
+                            React.createElement('textarea', { name: "plan", placeholder: "Outline your plans...", required: true, rows: 3, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                        ),
+                        React.createElement('button', { type: "submit", className: "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2" }, 
+                            React.createElement('i', { className: "fas fa-paper-plane" }),
+                            "Submit Report to Team"
+                        )
+                    )
                 )
-            );
-        }
-        return tasks.map(task => {
-            const teamColorValue = task.teamColor.replace(/bg-\\[|\\]/g, '');
-            return (
-                React.createElement('div', { key: task.subject, className: "bg-white rounded-2xl p-5 shadow-sm", style: { borderLeft: `5px solid ${teamColorValue}` } },
-                    React.createElement('h4', { className: "font-bold text-slate-800 mb-2" }, task.subject),
-                    React.createElement('div', { className: "flex justify-between items-center text-sm mb-3" },
-                        React.createElement('span', { className: "font-semibold text-gray-600" }, `Team: ${task.team}`),
-                        React.createElement('span', { className: "font-semibold text-gray-400" }, `Due: ${task.startDate.toLocaleDateString()}`)
-                    ),
-                    React.createElement('p', { className: "text-sm text-gray-500 leading-relaxed" }, task.description)
+            ) : (
+                React.createElement('div', { className: "text-center py-10" },
+                    React.createElement('i', { className: "fas fa-check-circle text-6xl text-green-500 mb-4" }),
+                    React.createElement('h2', { className: "text-2xl font-bold text-slate-800" }, "Submission Successful!"),
+                    React.createElement('p', { className: "text-gray-600 mt-2" }, "Your report has been shared with all team members in real-time."),
+                    React.createElement('button', { onClick: closeSubmissionModal, className: "mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg" }, "Close")
                 )
-            );
-        });
-    };
-
-    return (
-        React.createElement('div', { className: "space-y-6" },
-            React.createElement(TeamPresenceHeader, { users: [] }),
-            
-            React.createElement('div', { className: "bg-white p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 items-center" },
-                React.createElement('select', { 
-                    id: "team-filter", 
-                    value: teamFilter,
-                    onChange: (e) => setTeamFilter(e.target.value),
-                    className: "w-full md:w-auto bg-gray-100 border-none rounded-lg px-4 py-2"
-                },
-                    React.createElement('option', { value: "All" }, "Filter by Team (All)"),
-                    Object.values(teamMapping).map(team => React.createElement('option', { key: team.className, value: team.className }, team.name))
-                ),
-                React.createElement('div', { className: "relative flex-grow w-full" },
-                    React.createElement('i', { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" }),
-                    React.createElement('input', { 
-                        type: "text", 
-                        id: "search-tasks", 
-                        placeholder: "Search task name...",
-                        value: searchQuery,
-                        onChange: (e) => setSearchQuery(e.target.value),
-                        className: "w-full bg-gray-100 border-none rounded-lg pl-10 pr-4 py-2"
-                    })
-                )
-            ),
-            React.createElement('div', { id: "tasks-list", className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" },
-                renderList(filteredTasks)
             )
         )
     );
 };
 
-const Submissions = ({ submissions, users }) => {
+const Submissions = () => {
+    const submissions = useLiveData('submissions', []);
+    const users = useLiveData('users', []);
 
     const handleDownload = (submission) => {
-        const content = submission.fileContent || `Submission Details:\nName: ${submission.name}\nMember: ${submission.member}\nDate: ${submission.date}`;
+        const content = `Submission: ${submission.name}\nMember: ${submission.member}\nTeam: ${submission.team}\nDate: ${new Date(submission.timestamp).toLocaleString()}\n\nProgress:\n${submission.progress}\n\nNext Week's Plan:\n${submission.plan}`;
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${submission.name.replace(/\s+/g, '_')}_${submission.date}.txt`;
+        a.download = `${submission.name.replace(/\s+/g, '_')}_${submission.timestamp}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -919,16 +866,24 @@ const Submissions = ({ submissions, users }) => {
     };
 
     const rows = submissions.length === 0 ? (
-        React.createElement('tr', null, React.createElement('td', { colSpan: 5 }, React.createElement('div', { className: "text-center py-16 text-gray-400" }, React.createElement('i', { className: "fas fa-folder-open text-5xl mb-4" }), React.createElement('h3', { className: "text-xl font-bold text-slate-700" }, "No Submissions Yet"), React.createElement('p', { className: "text-gray-500 mt-2" }, "Your team's submissions will appear here."))))
+        React.createElement('tr', null, 
+            React.createElement('td', { colSpan: 5 }, 
+                React.createElement('div', { className: "text-center py-16 text-gray-400" }, 
+                    React.createElement('i', { className: "fas fa-folder-open text-5xl mb-4" }), 
+                    React.createElement('h3', { className: "text-xl font-bold text-slate-700" }, "No Submissions Yet"), 
+                    React.createElement('p', { className: "text-gray-500 mt-2" }, "Team submissions will appear here in real-time.")
+                )
+            )
+        )
     ) : (
-        submissions.map((s, index) => (
-            React.createElement('tr', { key: index, className: "border-b last:border-b-0" },
-                React.createElement('td', { className: "p-4" }, s.name),
-                React.createElement('td', { className: "p-4" }, s.member),
-                React.createElement('td', { className: "p-4" }, s.date),
-                React.createElement('td', { className: "p-4" }, s.fileType),
+        submissions.map((submission) => (
+            React.createElement('tr', { key: submission.id, className: "border-b last:border-b-0" },
+                React.createElement('td', { className: "p-4" }, submission.name),
+                React.createElement('td', { className: "p-4" }, submission.member),
+                React.createElement('td', { className: "p-4" }, submission.team),
+                React.createElement('td', { className: "p-4" }, new Date(submission.timestamp).toLocaleString()),
                 React.createElement('td', { className: "p-4" },
-                    React.createElement('button', { onClick: () => handleDownload(s), className: "bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm" },
+                    React.createElement('button', { onClick: () => handleDownload(submission), className: "bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm" },
                         React.createElement('i', { className: "fas fa-download mr-2" }), " Download"
                     )
                 )
@@ -936,38 +891,38 @@ const Submissions = ({ submissions, users }) => {
         ))
     );
             
-    return (
-         React.createElement(React.Fragment, null,
-            React.createElement(TeamPresenceHeader, { users: users }),
-            
-            React.createElement('div', { className: 'mb-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg' },
-                React.createElement('p', { className: 'text-sm text-blue-800' },
-                    React.createElement('i', { className: 'fas fa-info-circle mr-2' }),
-                    'This is a shared archive. All submissions from every team are visible here and updated in real-time.'
-                )
-            ),
-            React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm overflow-x-auto" },
-                React.createElement('table', { className: "w-full text-left min-w-[600px]" },
-                    React.createElement('thead', null,
-                        React.createElement('tr', { className: "bg-gray-100" },
-                            React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tl-lg" }, "Submission Name"),
-                            React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Submitted by Team"),
-                            React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Date Submitted"),
-                            React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "File Type"),
-                            React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tr-lg" }, "Action")
-                        )
-                    ),
-                    React.createElement('tbody', null, rows)
-                )
+    return React.createElement(React.Fragment, null,
+        React.createElement(TeamPresenceHeader, { users: users }),
+        
+        React.createElement('div', { className: 'mb-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg' },
+            React.createElement('p', { className: 'text-sm text-blue-800' },
+                React.createElement('i', { className: 'fas fa-info-circle mr-2' }),
+                'Live shared archive. All team submissions are synchronized across all users in real-time.'
+            )
+        ),
+        
+        React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm overflow-x-auto" },
+            React.createElement('table', { className: "w-full text-left min-w-[600px]" },
+                React.createElement('thead', null,
+                    React.createElement('tr', { className: "bg-gray-100" },
+                        React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tl-lg" }, "Submission Name"),
+                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Submitted by"),
+                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Team"),
+                        React.createElement('th', { className: "p-4 font-bold text-slate-600" }, "Date Submitted"),
+                        React.createElement('th', { className: "p-4 font-bold text-slate-600 rounded-tr-lg" }, "Action")
+                    )
+                ),
+                React.createElement('tbody', null, rows)
             )
         )
     );
 };
 
-const Team = ({ users, setUsers, currentUser }) => {
+const Team = ({ currentUser }) => {
+    const users = useLiveData('users', []);
     const [isRegisterModalOpen, setRegisterModalOpen] = useState(false);
     
-    const handleRegister = (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         if (formData.get('adminCode') !== ADMIN_CODE) {
@@ -984,13 +939,21 @@ const Team = ({ users, setUsers, currentUser }) => {
             return;
         }
 
-        const newUser = { username, password, team, isOnline: false };
-        setUsers([...users, newUser]);
+        const newUser = { 
+            username, 
+            password, 
+            team, 
+            isOnline: false,
+            lastLogin: null,
+            lastLogout: null
+        };
+        
+        await liveDB.addUser(newUser);
         alert('Registration successful!');
         setRegisterModalOpen(false);
     };
 
-    const handleDeregister = (username) => {
+    const handleDeregister = async (username) => {
         if (username === currentUser.username) {
             alert("You cannot deregister yourself.");
             return;
@@ -1003,81 +966,83 @@ const Team = ({ users, setUsers, currentUser }) => {
         }
 
         if (confirm(`Are you sure you want to deregister ${username}? This action cannot be undone.`)) {
-            setUsers(users.filter(u => u.username !== username));
+            await liveDB.removeUser(username);
             alert(`${username} has been deregistered.`);
         }
     };
 
-    return (
-        React.createElement('div', { className: "space-y-6" },
-            React.createElement(TeamPresenceHeader, { users: users }),
-            
-            React.createElement('div', { className: "bg-white p-4 rounded-2xl shadow-sm flex justify-end" },
-                React.createElement('button', { 
-                    onClick: () => setRegisterModalOpen(true),
-                    className: "bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-                },
-                    React.createElement('i', { className: "fas fa-user-plus mr-2" }), " Register New Member"
-                )
-            ),
+    const teamOptions = Object.values(teamMapping).map(t => 
+        React.createElement('option', { key: t.name, value: t.name }, t.name)
+    );
 
-            users.map(user => {
-                const teamInfo = Object.values(teamMapping).find(t => t.name === user.team) || { name: 'General', color: 'bg-gray-500', avatar: 'G', role: 'Team Member' };
-                const lastSeen = user.isOnline ? null : (user.lastLogout ? new Date(user.lastLogout).toLocaleString() : 'N/A');
+    return React.createElement('div', { className: "space-y-6" },
+        React.createElement(TeamPresenceHeader, { users: users }),
+        
+        React.createElement('div', { className: "bg-white p-4 rounded-2xl shadow-sm flex justify-end" },
+            React.createElement('button', { 
+                onClick: () => setRegisterModalOpen(true),
+                className: "bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+            },
+                React.createElement('i', { className: "fas fa-user-plus mr-2" }), " Register New Member"
+            )
+        ),
 
-                return (
-                    React.createElement('div', { key: user.username, className: "bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" },
-                        React.createElement('div', { className: "flex items-center gap-5" },
-                            React.createElement('div', { className: "relative" },
-                                React.createElement('div', { className: `w-16 h-16 ${teamInfo.color} rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl` }, teamInfo.avatar),
-                                React.createElement('div', { className: `absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}` })
-                            ),
-                            React.createElement('div', null,
-                                React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, user.username),
-                                React.createElement('p', { className: "text-gray-500" }, teamInfo.role),
-                                !user.isOnline && React.createElement('p', { className: "text-xs text-gray-400 mt-1" }, `Last seen: ${lastSeen}`)
-                            )
-                        ),
-                        React.createElement('button', { onClick: () => handleDeregister(user.username), className: "deregister-btn bg-red-100 text-red-600 hover:bg-red-200 font-bold py-2 px-4 rounded-lg w-full sm:w-auto" },
-                           React.createElement('i', { className: "fas fa-user-minus mr-2" }), " Deregister"
-                        )
+        users.map(user => {
+            const teamInfo = Object.values(teamMapping).find(t => t.name === user.team) || { name: 'General', color: 'bg-gray-500', avatar: 'G', role: 'Team Member' };
+            const lastSeen = user.isOnline ? 'Online now' : (user.lastLogout ? `Last seen: ${new Date(user.lastLogout).toLocaleString()}` : 'Never logged in');
+
+            return React.createElement('div', { key: user.username, className: "bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" },
+                React.createElement('div', { className: "flex items-center gap-5" },
+                    React.createElement('div', { className: "relative" },
+                        React.createElement('div', { className: `w-16 h-16 ${teamInfo.color} rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl` }, teamInfo.avatar),
+                        React.createElement('div', { className: `absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}` })
+                    ),
+                    React.createElement('div', null,
+                        React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, user.username),
+                        React.createElement('p', { className: "text-gray-500" }, `${teamInfo.role} • ${teamInfo.name}`),
+                        React.createElement('p', { className: `text-xs mt-1 ${user.isOnline ? 'text-green-600' : 'text-gray-400'}` }, lastSeen)
                     )
-                );
-            }),
-            
-            React.createElement(Modal, { isOpen: isRegisterModalOpen, onClose: () => setRegisterModalOpen(false) },
-                 React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Register New Member"),
-                React.createElement('form', { onSubmit: handleRegister },
-                    React.createElement('div', { className: "mb-4" },
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
-                        React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                    ),
-                    React.createElement('div', { className: "mb-4" },
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
-                        React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                    ),
-                     React.createElement('div', { className: "mb-4" },
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Team"),
-                        React.createElement('select', { name: "team", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 bg-white" },
-                            Object.values(teamMapping).map(t => React.createElement('option', { key: t.name, value: t.name }, t.name))
-                        )
-                    ),
-                     React.createElement('div', { className: "mb-6" },
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Admin Code"),
-                        React.createElement('input', { type: "password", name: "adminCode", placeholder: "Required for registration", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                    ),
-                    React.createElement('button', { type: "submit", className: "w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors" }, "Register")
+                ),
+                React.createElement('button', { 
+                    onClick: () => handleDeregister(user.username), 
+                    disabled: user.username === currentUser.username,
+                    className: "deregister-btn bg-red-100 text-red-600 hover:bg-red-200 font-bold py-2 px-4 rounded-lg w-full sm:w-auto disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                },
+                   React.createElement('i', { className: "fas fa-user-minus mr-2" }), " Deregister"
                 )
+            );
+        }),
+        
+        React.createElement(Modal, { isOpen: isRegisterModalOpen, onClose: () => setRegisterModalOpen(false) },
+            React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Register New Member"),
+            React.createElement('form', { onSubmit: handleRegister },
+                React.createElement('div', { className: "mb-4" },
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Username"),
+                    React.createElement('input', { type: "text", name: "username", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                ),
+                React.createElement('div', { className: "mb-4" },
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Password"),
+                    React.createElement('input', { type: "password", name: "password", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                ),
+                React.createElement('div', { className: "mb-4" },
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Team"),
+                    React.createElement('select', { name: "team", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2 bg-white" }, teamOptions)
+                ),
+                React.createElement('div', { className: "mb-6" },
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Admin Code"),
+                    React.createElement('input', { type: "password", name: "adminCode", placeholder: "Required for registration", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                ),
+                React.createElement('button', { type: "submit", className: "w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors" }, "Register")
             )
         )
     );
 };
 
-
-const Settings = ({ currentUser, updateUser, users }) => {
+const Settings = ({ currentUser }) => {
+    const users = useLiveData('users', []);
     const [activeModal, setActiveModal] = useState(null);
 
-    const handleUpdatePassword = (e) => {
+    const handleUpdatePassword = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const currentPassword = formData.get('currentPassword');
@@ -1097,23 +1062,8 @@ const Settings = ({ currentUser, updateUser, users }) => {
             return;
         }
 
-        updateUser({ ...currentUser, password: newPassword });
+        await liveDB.updateUser(currentUser.username, { password: newPassword });
         alert('Password updated successfully!');
-        setActiveModal(null);
-    };
-
-    const handleUpdateNotifications = (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const updatedUser = {
-            ...currentUser,
-            notifications: {
-                email: formData.get('email') === 'on',
-                push: formData.get('push') === 'on'
-            }
-        };
-        updateUser(updatedUser);
-        alert('Notification preferences updated!');
         setActiveModal(null);
     };
 
@@ -1127,268 +1077,144 @@ const Settings = ({ currentUser, updateUser, users }) => {
         )
     );
 
-    return (
-        React.createElement('div', { className: "space-y-6" },
-            React.createElement(TeamPresenceHeader, { users: users }),
-            
-            createCard('Profile Information', 'Update your personal information.', 'Edit Profile', 'fa-user-edit', 'profile'),
-            createCard('Notification Preferences', 'Manage how you receive notifications.', 'Configure', 'fa-bell', 'notifications'),
-            createCard('Security Settings', 'Update your password and security.', 'Update Security', 'fa-shield-alt', 'security'),
-            createCard('Team Preferences', 'Customize how you interact with your team.', 'Manage', 'fa-users-cog', 'team'),
-            React.createElement(Modal, { isOpen: activeModal === 'profile', onClose: () => setActiveModal(null) },
-                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Edit Profile"),
-                React.createElement('p', { className: "text-center text-gray-500" }, "This feature is coming soon. For now, your username is ", React.createElement('strong', null, currentUser.username), " and you are on the ", React.createElement('strong', null, currentUser.team), " team.")
-            ),
-            React.createElement(Modal, { isOpen: activeModal === 'notifications', onClose: () => setActiveModal(null) },
-                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Notification Preferences"),
-                React.createElement('form', { onSubmit: handleUpdateNotifications, className: "space-y-4" },
-                    React.createElement('label', { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg" },
-                        React.createElement('span', { className: "font-medium text-gray-700" }, "Email Notifications"),
-                        React.createElement('input', { type: "checkbox", name: "email", defaultChecked: currentUser.notifications?.email, className: "h-6 w-6 rounded text-blue-600 focus:ring-blue-500" })
-                    ),
-                    React.createElement('label', { className: "flex items-center justify-between p-4 bg-gray-50 rounded-lg" },
-                        React.createElement('span', { className: "font-medium text-gray-700" }, "Push Notifications"),
-                        React.createElement('input', { type: "checkbox", name: "push", defaultChecked: currentUser.notifications?.push, className: "h-6 w-6 rounded text-blue-600 focus:ring-blue-500" })
-                    ),
-                    React.createElement('button', { type: "submit", className: "w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg" }, "Save Preferences")
-                )
-            ),
-            React.createElement(Modal, { isOpen: activeModal === 'security', onClose: () => setActiveModal(null) },
-                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Update Password"),
-                React.createElement('form', { onSubmit: handleUpdatePassword, className: "space-y-4" },
-                    React.createElement('div', null,
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Current Password"),
-                        React.createElement('input', { type: "password", name: "currentPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                    ),
-                     React.createElement('div', null,
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "New Password"),
-                        React.createElement('input', { type: "password", name: "newPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                    ),
-                     React.createElement('div', null,
-                        React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Confirm New Password"),
-                        React.createElement('input', { type: "password", name: "confirmPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
-                    ),
-                    React.createElement('button', { type: "submit", className: "w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg" }, "Update Password")
-                )
-            ),
-            React.createElement(Modal, { isOpen: activeModal === 'team', onClose: () => setActiveModal(null) },
-                React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Team Preferences"),
-                 React.createElement('p', { className: "text-center text-gray-500" }, "Team preference settings will be available in a future update.")
+    return React.createElement('div', { className: "space-y-6" },
+        React.createElement(TeamPresenceHeader, { users: users }),
+        
+        createCard('Profile Information', 'Update your personal information.', 'Edit Profile', 'fa-user-edit', 'profile'),
+        createCard('Security Settings', 'Update your password and security.', 'Update Security', 'fa-shield-alt', 'security'),
+        
+        React.createElement(Modal, { isOpen: activeModal === 'profile', onClose: () => setActiveModal(null) },
+            React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Edit Profile"),
+            React.createElement('p', { className: "text-center text-gray-500" }, "This feature is coming soon. For now, your username is ", React.createElement('strong', null, currentUser.username), " and you are on the ", React.createElement('strong', null, currentUser.team), " team.")
+        ),
+        
+        React.createElement(Modal, { isOpen: activeModal === 'security', onClose: () => setActiveModal(null) },
+            React.createElement('h2', { className: "text-2xl font-bold text-slate-800 mb-6 text-center" }, "Update Password"),
+            React.createElement('form', { onSubmit: handleUpdatePassword, className: "space-y-4" },
+                React.createElement('div', null,
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Current Password"),
+                    React.createElement('input', { type: "password", name: "currentPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                ),
+                React.createElement('div', null,
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "New Password"),
+                    React.createElement('input', { type: "password", name: "newPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                ),
+                React.createElement('div', null,
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Confirm New Password"),
+                    React.createElement('input', { type: "password", name: "confirmPassword", required: true, className: "w-full border-2 border-gray-200 rounded-lg p-2" })
+                ),
+                React.createElement('button', { type: "submit", className: "w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg" }, "Update Password")
             )
         )
     );
 };
 
-// --- APP ---
+// --- MAIN APP ---
 const App = () => {
-    const [users, setUsers] = useLocalStorage('digihive_users', []);
     const [currentUser, setCurrentUser] = useLocalStorage('digihive_currentUser', null);
     const [currentPage, setCurrentPage] = useState('dashboard');
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [lastSyncTime, setLastSyncTime] = useState('just now');
 
-    const [allTasks, setAllTasks] = useState([]);
-    const [submissions, setSubmissions] = useLocalStorage('digihive_submissions', []);
-    const [comments, setComments] = useLocalStorage('digihive_comments', []);
+    const users = useLiveData('users', []);
 
-    useEffect(() => {
-        setAllTasks(parseTasks(CSV_DATA));
-        
-        const storedUsers = JSON.parse(localStorage.getItem('digihive_users') || '[]');
-        const masterUsernames = MASTER_USERS.map(u => u.username);
-        const hasMasterUsers = storedUsers.some(u => masterUsernames.includes(u.username));
-
-        if (!hasMasterUsers) {
-            const localOnlyUsers = storedUsers.filter(u => !masterUsernames.includes(u.username));
-            setUsers([...MASTER_USERS, ...localOnlyUsers]);
-        }
-    }, [setUsers]);
-
-    const updateUser = useCallback((updatedUser) => {
-        setUsers(prevUsers => {
-            const userExists = prevUsers.some(u => u.username === updatedUser.username);
-            if (userExists) {
-                return prevUsers.map(u => u.username === updatedUser.username ? updatedUser : u);
-            }
-            return [...prevUsers, updatedUser];
-        });
-    }, [setUsers]);
-    
     const handleLogin = (user) => {
-        const sessionToken = Date.now().toString() + Math.random().toString();
-        const updatedUser = {
-            ...user,
-            sessionToken,
-            isOnline: true,
-            lastLogin: new Date().toISOString()
-        };
-        updateUser(updatedUser);
-        setCurrentUser(updatedUser);
+        setCurrentUser(user);
     };
 
-    const handleLogout = useCallback(() => {
+    const handleLogout = useCallback(async () => {
         if (currentUser) {
-            const userToUpdate = users.find(u => u.username === currentUser.username);
-            if(userToUpdate) {
-                const updatedUser = {
-                    ...userToUpdate,
-                    isOnline: false,
-                    lastLogout: new Date().toISOString(),
-                    sessionToken: undefined
-                };
-                updateUser(updatedUser);
-            }
+            await liveDB.updateUser(currentUser.username, { 
+                isOnline: false, 
+                lastLogout: new Date().toISOString() 
+            });
         }
         setCurrentUser(null);
-    }, [currentUser, users, setCurrentUser, updateUser]);
+    }, [currentUser]);
 
     const triggerSync = useCallback(() => {
         setIsSyncing(true);
-        
-        // Simulate sync process
         setTimeout(() => {
             setIsSyncing(false);
             const now = new Date();
             setLastSyncTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-        }, 1500);
+        }, 1000);
     }, []);
 
+    // Auto-sync every 30 seconds
     useEffect(() => {
-        const handleStorageChange = (event) => {
-            if (!event.key || event.newValue === event.oldValue) return;
+        const interval = setInterval(triggerSync, 30000);
+        return () => clearInterval(interval);
+    }, [triggerSync]);
 
-            const updateState = (setter) => {
-                try {
-                    if (event.newValue) {
-                        setter(JSON.parse(event.newValue));
-                    } else {
-                        setter([]); 
-                    }
-                } catch (e) {
-                    console.error("Failed to parse storage update for key:", event.key, e);
-                }
-            };
-
-            switch (event.key) {
-                case 'digihive_comments':
-                    updateState(setComments);
-                    triggerSync();
-                    break;
-                case 'digihive_submissions':
-                    updateState(setSubmissions);
-                    triggerSync();
-                    break;
-                case 'digihive_users':
-                    updateState(setUsers);
-                    triggerSync();
-                    break;
-                case 'digihive_currentUser':
-                    if (event.newValue === 'null' && event.oldValue) {
-                        try {
-                            const loggedOutUser = JSON.parse(event.oldValue);
-                            if (loggedOutUser && loggedOutUser.username) {
-                                setUsers(prevUsers => prevUsers.map(u => 
-                                    u.username === loggedOutUser.username 
-                                    ? { ...u, isOnline: false, lastLogout: new Date().toISOString() } 
-                                    : u
-                                ));
-                            }
-                        } catch(e) { console.error('Error handling user logout sync:', e); }
-                    }
-                    updateState(setCurrentUser);
-                    break;
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, [setComments, setSubmissions, setUsers, setCurrentUser, triggerSync]);
-
-    useEffect(() => {
-        const handleBeforeUnload = () => {
-            if (currentUser) {
-                const latestUsers = JSON.parse(localStorage.getItem('digihive_users') || '[]');
-                const userIndex = latestUsers.findIndex(u => u.username === currentUser.username);
-                if (userIndex !== -1) {
-                    latestUsers[userIndex].isOnline = false;
-                    latestUsers[userIndex].lastLogout = new Date().toISOString();
-                    localStorage.setItem('digihive_users', JSON.stringify(latestUsers));
-                }
-            }
-        };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [currentUser]);
-
+    // Update user online status
     useEffect(() => {
         if (currentUser) {
-            const userInDb = users.find(u => u.username === currentUser.username);
-            if (!userInDb) {
-                handleLogout();
-                alert('Your user account could not be found. Please log in again.');
-            } else if (!currentUser.isOnline) {
-                const updatedUser = { ...currentUser, isOnline: true };
-                updateUser(updatedUser);
-                setCurrentUser(updatedUser);
-            }
+            const updateOnlineStatus = async () => {
+                await liveDB.updateUser(currentUser.username, { 
+                    isOnline: true,
+                    lastLogin: new Date().toISOString()
+                });
+            };
+            updateOnlineStatus();
         }
-    }, [currentUser, users, handleLogout, updateUser, setCurrentUser]);
+    }, [currentUser]);
 
     const renderPage = () => {
+        if (!currentUser) return null;
+
         switch (currentPage) {
             case 'dashboard':
                 return React.createElement(Dashboard, { 
-                    allTasks, 
-                    comments, 
-                    setComments, 
                     currentUser, 
-                    submissions, 
-                    setSubmissions, 
-                    users,
                     onSyncTrigger: triggerSync 
                 });
-            case 'tasks':
-                return React.createElement(Tasks, { allTasks });
             case 'submissions':
-                return React.createElement(Submissions, { submissions, users });
+                return React.createElement(Submissions);
             case 'team':
-                return React.createElement(Team, { users, setUsers, currentUser });
+                return React.createElement(Team, { currentUser });
             case 'settings':
-                return React.createElement(Settings, { currentUser, updateUser, users });
+                return React.createElement(Settings, { currentUser });
             default:
-                return React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, React.createElement('h2', { className: "text-2xl font-bold" }, currentPage), React.createElement('p', null, "Page not found."));
+                return React.createElement('div', { className: "bg-white rounded-2xl p-6 shadow-sm" }, 
+                    React.createElement('h2', { className: "text-2xl font-bold" }, currentPage), 
+                    React.createElement('p', null, "Page not found.")
+                );
         }
     };
 
     if (!currentUser) {
-        return React.createElement(LoginScreen, { users, setUsers, onLogin: handleLogin });
+        return React.createElement(LoginScreen, { onLogin: handleLogin });
     }
 
-    return (
-        React.createElement('div', { className: "flex min-h-screen bg-[#F8FAFC] text-[#1A1A2E]" },
-            React.createElement(Sidebar, { currentPage, setCurrentPage, isSidebarOpen, setSidebarOpen, users: users }),
-             React.createElement('div', {
-                className: `fixed inset-0 bg-black/50 z-30 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`,
-                onClick: () => setSidebarOpen(false)
+    return React.createElement('div', { className: "flex min-h-screen bg-[#F8FAFC] text-[#1A1A2E]" },
+        React.createElement(Sidebar, { 
+            currentPage, 
+            setCurrentPage, 
+            isSidebarOpen, 
+            setSidebarOpen, 
+            users: users 
+        }),
+        React.createElement('div', {
+            className: `fixed inset-0 bg-black/50 z-30 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`,
+            onClick: () => setSidebarOpen(false)
+        }),
+        React.createElement('main', { className: "flex-1 transition-all duration-300 ease-in-out lg:ml-72 p-6 sm:p-8 md:p-12" },
+            React.createElement(Header, { 
+                user: currentUser, 
+                onLogout: handleLogout, 
+                toggleSidebar: () => setSidebarOpen(!isSidebarOpen),
+                pageTitle: currentPage
             }),
-            React.createElement('main', { className: "flex-1 transition-all duration-300 ease-in-out lg:ml-72 p-6 sm:p-8 md:p-12" },
-                React.createElement(Header, { 
-                    user: currentUser, 
-                    onLogout: handleLogout, 
-                    toggleSidebar: () => setSidebarOpen(!isSidebarOpen),
-                    pageTitle: currentPage
-                }),
-                React.createElement('div', { className: "mt-10" },
-                    renderPage()
-                )
-            ),
-            React.createElement(SyncStatusIndicator, { 
-                isSyncing: isSyncing, 
-                lastSyncTime: lastSyncTime 
-            })
-        )
+            React.createElement('div', { className: "mt-10" },
+                renderPage()
+            )
+        ),
+        React.createElement(SyncStatusIndicator, { 
+            isSyncing: isSyncing, 
+            lastSyncTime: lastSyncTime 
+        })
     );
 };
 
