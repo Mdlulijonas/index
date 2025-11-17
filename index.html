@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,25 +13,21 @@
         background-color: #F8FAFC;
         color: #1A1A2E;
       }
-      .hidden {
-        display: none;
+      .hidden { display: none; }
+      #sidebar { transition: transform 0.3s ease-in-out; }
+      .modal-content { transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
+      .modal.open .modal-content { transform: scale(1) translateY(0); opacity: 1; }
+      .modal .modal-content { transform: scale(0.95) translateY(10px); opacity: 0; }
+       @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
       }
-      /* Sidebar transition */
-      #sidebar {
-        transition: transform 0.3s ease-in-out;
+      @keyframes scale-up {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
       }
-       /* Modal transition */
-      .modal-content {
-        transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-      }
-      .modal.open .modal-content {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-      }
-      .modal .modal-content {
-        transform: scale(0.95) translateY(10px);
-        opacity: 0;
-      }
+      .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+      .animate-scale-up { animation: scale-up 0.3s ease-out forwards; }
     </style>
 </head>
 <body>
@@ -44,24 +41,8 @@
 
         <!-- Main Content -->
         <main id="main-content-area" class="flex-1 transition-all duration-300 ease-in-out lg:ml-72 p-6 sm:p-8 md:p-12">
-            <header class="flex justify-between items-center mb-10">
-                <div>
-                    <h1 id="page-title" class="text-2xl md:text-4xl font-bold text-[#1A1A2E]">Dashboard</h1>
-                </div>
-                <div class="flex items-center gap-4">
-                    <button id="menu-toggle" class="lg:hidden text-2xl text-gray-600">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div class="flex items-center gap-3 bg-white p-2 rounded-full shadow-sm">
-                        <div id="user-avatar" class="w-10 h-10 rounded-full bg-[#2A5CAA] text-white flex items-center justify-center font-bold">
-                            AD
-                        </div>
-                        <span id="user-name" class="font-semibold text-sm hidden sm:block pr-2">Admin User</span>
-                    </div>
-                     <button id="logout-button" class="text-gray-500 hover:text-red-500" title="Logout">
-                        <i class="fas fa-sign-out-alt text-xl"></i>
-                    </button>
-                </div>
+            <header id="header-container" class="flex justify-between items-center mb-10">
+                <!-- Header will be injected here -->
             </header>
             <div id="page-content">
                 <!-- Page content will be dynamically rendered here -->
@@ -96,12 +77,27 @@
     
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 lg:hidden hidden"></div>
 
-<script>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+
+<script type="module">
+import { GoogleGenAI } from "@google/genai";
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- DATA STORE & CONSTANTS ---
     const ADMIN_CODE = '212259497';
     const CSV_DATA = `Subject,Start Date,Start Time,End Date,End Time,Description,Location
+Administrator Q1 Budget Review,2026-01-15,10:00,2026-01-15,12:00,Review and approve Q1 budget submissions from all teams,Remote
+Administrator Security Audit,2026-01-16,14:00,2026-01-16,16:00,Perform annual security audit of the platform,Remote
 Full-stack Server Setup,2026-01-13,09:00,2026-01-13,11:00,Set up cloud server environment and configure database architecture,Remote
 Full-stack Database Design,2026-01-14,09:00,2026-01-14,11:00,Design database schemas and implement data migration scripts,Remote
 UI/UX Design System,2026-01-13,11:00,2026-01-13,13:00,Create brand color palette and build component library,Remote
@@ -114,28 +110,38 @@ Content Planning,2026-01-13,13:00,2026-01-13,15:00,Plan 3-month content calendar
 Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create social media accounts,Remote`;
 
     const teamMapping = {
-      'Full-stack': { name: 'Full-Stack', color: 'bg-[#2A5CAA]', avatar: 'FS', className: 'FullStack', role: 'Development Team' },
+      'Administrator': { name: 'Administrator', color: 'bg-[#E53E3E]', avatar: 'AD', className: 'Administrator', role: 'System Administration' },
+      'Full-Stack': { name: 'Full-Stack', color: 'bg-[#2A5CAA]', avatar: 'FS', className: 'FullStack', role: 'Development Team' },
       'UI/UX': { name: 'UI/UX', color: 'bg-[#673AB7]', avatar: 'UX', className: 'UIUX', role: 'Design Team' },
       'Marketing': { name: 'Marketing', color: 'bg-[#4CAF50]', avatar: 'MK', className: 'Marketing', role: 'Marketing Team' },
       'Support': { name: 'Support', color: 'bg-[#009688]', avatar: 'ST', className: 'Support', role: 'Support Team' },
       'Content': { name: 'Content', color: 'bg-[#FF9800]', avatar: 'CT', className: 'Content', role: 'Content Team' },
     };
-
+    
     const MOTIVATION_QUOTES = [
         "Every line of code you write brings us closer to empowering creators worldwide.",
         "Your energy and focus today will build the foundation for tomorrow's achievements.",
         "Collaboration multiplies our impact - together we achieve extraordinary results.",
-        "Small consistent efforts lead to massive accomplishments over time.",
-        "Your unique perspective adds value that no one else can contribute.",
-        "Challenges are opportunities in disguise - embrace them with enthusiasm."
+        "Great things in business are never done by one person. They're done by a team of people.",
+        "The strength of the team is each individual member. The strength of each member is the team.",
+        "Coming together is a beginning, staying together is progress, and working together is success."
     ];
+
+    const pageTitles = {
+        dashboard: 'Dashboard',
+        tasks: 'My Tasks - Full List',
+        submissions: 'Past Submissions Archive',
+        team: 'Team Directory',
+        settings: 'Settings'
+    };
     
     // --- STATE MANAGEMENT ---
     let appState = {
         currentPage: 'dashboard',
         allTasks: [],
-        upcomingTasks: [],
+        users: [],
         submissions: [],
+        comments: [],
         currentUser: null,
         isSidebarOpen: false
     };
@@ -144,55 +150,62 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
     const appWrapper = document.getElementById('app-wrapper');
     const loginPopup = document.getElementById('login-popup');
     const pageContentEl = document.getElementById('page-content');
-    const pageTitleEl = document.getElementById('page-title');
+    const headerContainer = document.getElementById('header-container');
     const sidebarEl = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const menuToggle = document.getElementById('menu-toggle');
     const modalContainer = document.getElementById('modal-container');
     const modalContent = document.getElementById('modal-content');
     
-    // --- UTILITY & PARSING FUNCTIONS ---
+    // --- UTILITY & STORAGE FUNCTIONS ---
+    const getFromStorage = (key, defaultValue = []) => JSON.parse(localStorage.getItem(key)) || defaultValue;
+    const saveToStorage = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+
     const parseTasks = (csv) => {
         const lines = csv.trim().split('\n');
         const headers = lines.shift()?.split(',');
         if (!headers) return [];
-
         return lines.map(line => {
             const values = line.split(',');
-            const taskData = headers.reduce((obj, header, index) => {
-                obj[header] = values[index];
-                return obj;
-            }, {});
-
-            const teamKey = Object.keys(teamMapping).find(key => taskData.Subject.startsWith(key));
-            const teamInfo = teamKey ? teamMapping[teamKey] : { name: 'General', color: 'bg-gray-500', avatar: 'G', className: 'General' };
-
+            const taskData = headers.reduce((obj, header, index) => ({...obj, [header]: values[index]}), {});
+            const teamKey = Object.keys(teamMapping).find(key => taskData.Subject.startsWith(key)) || 'Full-Stack';
+            const teamInfo = teamMapping[teamKey];
             return {
                 subject: taskData.Subject,
                 startDate: new Date(`${taskData['Start Date']}T${taskData['Start Time']}`),
                 endDate: new Date(`${taskData['End Date']}T${taskData['End Time']}`),
-                description: taskData.Description,
-                location: taskData.Location,
-                team: teamInfo.name,
-                teamColor: teamInfo.color,
-                teamAvatar: teamInfo.avatar,
-                teamClass: teamInfo.className,
+                description: taskData.Description, location: taskData.Location,
+                ...teamInfo,
             };
         });
     };
 
-    const getFromStorage = (key) => JSON.parse(localStorage.getItem(key) || '[]');
-    const saveToStorage = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-    const getCurrentUser = () => JSON.parse(localStorage.getItem('digihive_currentUser'));
-    const setCurrentUser = (user) => localStorage.setItem('digihive_currentUser', JSON.stringify(user));
-    const clearCurrentUser = () => localStorage.removeItem('digihive_currentUser');
+    // --- GEMINI API SERVICE ---
+    const summarizeComments = async (comments) => {
+        if (!process.env.API_KEY) {
+            console.error("API_KEY environment variable not set.");
+            return "API key is not configured. Please contact the administrator.";
+        }
+        try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const commentsText = comments.map(c => `- ${c.username} (${c.team}): "${c.text}"`).join('\n');
+            if (comments.length === 0) return "There are no comments to summarize.";
+            const prompt = `You are a helpful project management assistant for a dashboard called DigiHive. Summarize the following team comments, focusing on key points, challenges, and action items. Use a concise, easy-to-read format with bullet points.\n\nComments:\n${commentsText}`;
+            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+            return response.text;
+        } catch (error) {
+            console.error("Error summarizing comments:", error);
+            return "Failed to generate summary. The AI service may be unavailable.";
+        }
+    };
 
     // --- MODAL HANDLING ---
-    const openModal = (htmlContent) => {
+    const openModal = (htmlContent, size = 'max-w-2xl') => {
+        modalContent.className = `bg-white rounded-2xl shadow-xl w-full ${size} max-h-[90vh] overflow-y-auto p-8 relative`;
         modalContent.innerHTML = htmlContent;
         modalContainer.classList.remove('hidden');
-        setTimeout(() => modalContainer.classList.add('open'), 10); // For transition
-        modalContainer.addEventListener('click', closeModal, { once: true });
+        setTimeout(() => modalContainer.classList.add('open'), 10);
+        const closeModalHandler = () => closeModal();
+        modalContainer.addEventListener('click', closeModalHandler, { once: true });
         modalContent.addEventListener('click', (e) => e.stopPropagation());
     };
 
@@ -204,7 +217,8 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
     // --- AUTHENTICATION & INITIALIZATION ---
     function init() {
         document.getElementById('popup-quote').textContent = `"${MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]}"`;
-        appState.currentUser = getCurrentUser();
+        appState.currentUser = getFromStorage('digihive_currentUser', null);
+        appState.users = getFromStorage('digihive_users');
 
         if (appState.currentUser) {
             validateSessionAndInit();
@@ -217,13 +231,10 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
     }
 
     function validateSessionAndInit() {
-        const users = getFromStorage('digihive_users');
-        const userInDb = users.find(u => u.username === appState.currentUser.username);
-
+        const userInDb = appState.users.find(u => u.username === appState.currentUser.username);
         if (!userInDb || userInDb.sessionToken !== appState.currentUser.sessionToken) {
-            clearCurrentUser();
-            appState.currentUser = null;
-            alert('Your session has expired or another session was started. Please log in again.');
+            handleLogout(false); // Silent logout
+            alert('Your session has expired or another was started. Please log in again.');
             showLoginScreen();
         } else {
             initializeApp();
@@ -240,35 +251,27 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
         appWrapper.classList.remove('hidden');
 
         appState.allTasks = parseTasks(CSV_DATA);
-        appState.upcomingTasks = appState.allTasks.filter(task => task.startDate > new Date());
         appState.submissions = getFromStorage('digihive_submissions');
+        appState.comments = getFromStorage('digihive_comments');
         
-        const user = appState.currentUser;
-        document.getElementById('user-name').textContent = user.username;
-        document.getElementById('user-avatar').textContent = user.username.substring(0,2).toUpperCase();
-        
-        renderSidebar();
-        renderPage('dashboard');
+        renderPage(appState.currentPage);
         setupGlobalEventListeners();
     }
 
     function setupGlobalEventListeners() {
-        menuToggle.addEventListener('click', () => {
-            appState.isSidebarOpen = !appState.isSidebarOpen;
-            updateSidebarVisibility();
-        });
         sidebarOverlay.addEventListener('click', () => {
             appState.isSidebarOpen = false;
             updateSidebarVisibility();
         });
-        document.getElementById('logout-button').addEventListener('click', handleLogout);
         
-        // Event delegation for deregister buttons
         pageContentEl.addEventListener('click', (e) => {
             const deregisterButton = e.target.closest('.deregister-btn');
-            if (deregisterButton) {
-                const username = deregisterButton.dataset.username;
-                handleDeregister(username);
+            if (deregisterButton) handleDeregister(deregisterButton.dataset.username);
+
+            const downloadButton = e.target.closest('.download-btn');
+            if (downloadButton) {
+                const submission = appState.submissions[parseInt(downloadButton.dataset.index, 10)];
+                handleDownload(submission);
             }
         });
     }
@@ -279,18 +282,11 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
             <button class="absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl" onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))"><i class="fas fa-times"></i></button>
             <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Login to DigiHive</h2>
             <form id="login-form">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input type="text" name="username" required class="w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500">
-                </div>
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" name="password" required class="w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500">
-                </div>
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Username</label><input type="text" name="username" required class="w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500"></div>
+                <div class="mb-6"><label class="block text-sm font-medium text-gray-700 mb-1">Password</label><input type="password" name="password" required class="w-full border-2 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-blue-500"></div>
                 <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">Login</button>
-            </form>
-        `;
-        openModal(loginFormHTML);
+            </form>`;
+        openModal(loginFormHTML, 'max-w-md');
         document.getElementById('login-form').addEventListener('submit', handleLogin);
     }
 
@@ -300,51 +296,54 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
             <button class="absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl" onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))"><i class="fas fa-times"></i></button>
             <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Register New Member</h2>
             <form id="register-form">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input type="text" name="username" required class="w-full border-2 border-gray-200 rounded-lg p-2">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" name="password" required class="w-full border-2 border-gray-200 rounded-lg p-2">
-                </div>
-                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Team</label>
-                    <select name="team" required class="w-full border-2 border-gray-200 rounded-lg p-2 bg-white">${teamOptions}</select>
-                </div>
-                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Admin Code</label>
-                    <input type="password" name="adminCode" placeholder="Required for registration" required class="w-full border-2 border-gray-200 rounded-lg p-2">
-                </div>
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Username</label><input type="text" name="username" required class="w-full border-2 border-gray-200 rounded-lg p-2"></div>
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Password</label><input type="password" name="password" required class="w-full border-2 border-gray-200 rounded-lg p-2"></div>
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Team</label><select name="team" required class="w-full border-2 border-gray-200 rounded-lg p-2 bg-white">${teamOptions}</select></div>
+                <div class="mb-6"><label class="block text-sm font-medium text-gray-700 mb-1">Admin Code</label><input type="password" name="adminCode" placeholder="Required for registration" required class="w-full border-2 border-gray-200 rounded-lg p-2"></div>
                 <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">Register</button>
-            </form>
-        `;
-        openModal(registerFormHTML);
+            </form>`;
+        openModal(registerFormHTML, 'max-w-md');
         document.getElementById('register-form').addEventListener('submit', handleRegister);
     }
+    
+    const updateUserRecord = (updatedUser) => {
+        const userIndex = appState.users.findIndex(u => u.username === updatedUser.username);
+        if (userIndex > -1) {
+            appState.users[userIndex] = updatedUser;
+        } else {
+            appState.users.push(updatedUser);
+        }
+        saveToStorage('digihive_users', appState.users);
+
+        if (appState.currentUser && appState.currentUser.username === updatedUser.username) {
+            appState.currentUser = updatedUser;
+            saveToStorage('digihive_currentUser', appState.currentUser);
+        }
+    };
 
     function handleLogin(e) {
         e.preventDefault();
-        const users = getFromStorage('digihive_users');
         const username = e.target.username.value;
         const password = e.target.password.value;
+        const user = appState.users.find(u => u.username === username && u.password === password);
         
-        const userIndex = users.findIndex(u => u.username === username && u.password === password);
-        if (userIndex > -1) {
-            const user = users[userIndex];
+        if (user) {
             const sessionToken = Date.now().toString() + Math.random().toString();
+            const loggedInUser = { ...user, sessionToken, isOnline: true, lastLogin: new Date().toISOString() };
             
-            // Update user record in DB with new token
-            users[userIndex].sessionToken = sessionToken;
-            saveToStorage('digihive_users', users);
+            // Set current user in state and local storage to fix login freeze.
+            appState.currentUser = loggedInUser;
+            saveToStorage('digihive_currentUser', loggedInUser);
             
-            // Set current user session
-            const currentUser = { ...user, sessionToken };
-            setCurrentUser(currentUser);
-            appState.currentUser = currentUser;
-            
-            closeModal();
+            // Also update the user's status in the main users array.
+            const userIndex = appState.users.findIndex(u => u.username === loggedInUser.username);
+            if (userIndex > -1) {
+                appState.users[userIndex] = loggedInUser;
+            }
+            saveToStorage('digihive_users', appState.users);
+
             initializeApp();
+            closeModal();
         } else {
             alert('Invalid username or password.');
         }
@@ -352,132 +351,103 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
     
     function handleRegister(e) {
         e.preventDefault();
-        if (e.target.adminCode.value !== ADMIN_CODE) {
-            alert('Invalid Admin Code. Registration failed.');
-            return;
-        }
+        if (e.target.adminCode.value !== ADMIN_CODE) return alert('Invalid Admin Code.');
 
-        const users = getFromStorage('digihive_users');
-        const username = e.target.username.value;
-        const password = e.target.password.value;
-        const team = e.target.team.value;
+        const newUser = {
+            username: e.target.username.value,
+            password: e.target.password.value,
+            team: e.target.team.value,
+            isOnline: false
+        };
         
-        if (users.find(u => u.username === username)) {
-            alert('Username already exists.');
-            return;
-        }
+        if (appState.users.find(u => u.username === newUser.username)) return alert('Username already exists.');
 
-        const newUser = { username, password, team };
-        users.push(newUser);
-        saveToStorage('digihive_users', users);
+        updateUserRecord(newUser);
         alert('Registration successful! Please log in.');
         closeModal();
-        showLoginModal();
+        if (loginPopup.classList.contains('hidden')) { // If admin is logged in and registering
+             renderPage('team'); // Re-render team page
+        } else {
+            showLoginModal();
+        }
     }
     
-    function handleLogout() {
-        if (confirm('Are you sure you want to log out?')) {
-            clearCurrentUser();
-            appState.currentUser = null;
-            window.location.reload(); // Easiest way to reset state and listeners
+    function handleLogout(confirmLogout = true) {
+        if (confirmLogout && !confirm('Are you sure you want to log out?')) return;
+        
+        if(appState.currentUser) {
+            const userToUpdate = appState.users.find(u => u.username === appState.currentUser.username);
+            if (userToUpdate) {
+                updateUserRecord({ ...userToUpdate, isOnline: false, sessionToken: null, lastLogout: new Date().toISOString() });
+            }
         }
+        
+        appState.currentUser = null;
+        saveToStorage('digihive_currentUser', null);
+        window.location.reload();
     }
     
     function handleDeregister(username) {
-        if (username === appState.currentUser.username) {
-            alert("You cannot deregister yourself.");
-            return;
-        }
-        
+        if (username === appState.currentUser.username) return alert("You cannot deregister yourself.");
         const code = prompt("Enter Admin Code to deregister this member:");
-        if (code !== ADMIN_CODE) {
-            if (code !== null) alert("Invalid Admin Code. Action cancelled.");
-            return;
-        }
-
-        if (confirm(`Are you sure you want to deregister ${username}? This action cannot be undone.`)) {
-            let users = getFromStorage('digihive_users');
-            users = users.filter(u => u.username !== username);
-            saveToStorage('digihive_users', users);
+        if (code !== ADMIN_CODE) { if (code !== null) alert("Invalid Admin Code."); return; }
+        if (confirm(`Are you sure you want to deregister ${username}?`)) {
+            appState.users = appState.users.filter(u => u.username !== username);
+            saveToStorage('digihive_users', appState.users);
             alert(`${username} has been deregistered.`);
-            renderTeamView(); // Re-render the view
+            renderPage('team');
         }
     }
 
-    // --- SIDEBAR & NAVIGATION ---
-    const pageTitles = {
-        dashboard: 'Dashboard',
-        tasks: 'My Tasks - Full List',
-        calendar: 'Calendar',
-        progress: 'Progress Analytics',
-        submissions: 'Past Submissions Archive',
-        team: 'Team',
-        settings: 'Settings'
-    };
-
-    function renderSidebar() {
-        const teams = Object.values(teamMapping);
-        const navLinks = Object.keys(pageTitles).map(page => {
-            const icons = {dashboard: 'fa-chart-line', tasks: 'fa-tasks', calendar: 'fa-calendar-alt', progress: 'fa-chart-pie', submissions: 'fa-file-archive', team: 'fa-users', settings: 'fa-cog'};
-            const isActive = appState.currentPage === page;
-            return `
-                <li>
-                  <a href="#" data-page="${page}" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-slate-200 opacity-80 hover:bg-white/10 hover:opacity-100 ${isActive ? 'bg-[#2A5CAA] opacity-100 shadow-lg' : ''}">
-                    <i class="w-5 text-center text-lg fas ${icons[page]}"></i>
-                    <span>${pageTitles[page]}</span>
-                  </a>
-                </li>`;
-        }).join('');
-
-        const teamMembers = teams.map(team => `
-            <li class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200">
-                <div class="w-9 h-9 ${team.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-sm">${team.avatar}</div>
-                <div class="flex-1">
-                  <p class="text-sm font-semibold text-slate-200 leading-tight">${team.name}</p>
-                  <p class="text-xs text-slate-200 opacity-70 leading-tight">${team.role}</p>
+    // --- RENDERING LOGIC ---
+    function renderHeader() {
+        headerContainer.innerHTML = `
+            <div><h1 class="text-2xl md:text-4xl font-bold text-[#1A1A2E]">${pageTitles[appState.currentPage]}</h1></div>
+            <div class="flex items-center gap-4">
+                <button id="menu-toggle" class="lg:hidden text-2xl text-gray-600"><i class="fas fa-bars"></i></button>
+                <div class="flex items-center gap-3 bg-white p-2 rounded-full shadow-sm">
+                    <div class="w-10 h-10 rounded-full bg-[#2A5CAA] text-white flex items-center justify-center font-bold">${appState.currentUser.username.substring(0,2).toUpperCase()}</div>
+                    <span class="font-semibold text-sm hidden sm:block pr-2">${appState.currentUser.username}</span>
                 </div>
-                <div class="w-2.5 h-2.5 rounded-full bg-green-400 flex-shrink-0"></div>
-            </li>`
-        ).join('');
-
-        sidebarEl.innerHTML = `
-            <div class="flex items-center gap-3 mb-12 px-2">
-                <div class="w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg">DH</div>
-                <span class="text-2xl font-extrabold text-slate-200">DigiHive</span>
-            </div>
-            <nav><ul class="space-y-2">${navLinks}</ul></nav>
-            <div class="mt-12">
-                <h3 class="text-sm font-semibold text-slate-200 opacity-70 mb-4 px-2">TEAM MEMBERS</h3>
-                <ul class="space-y-2">${teamMembers}</ul>
+                <button id="logout-button" class="text-gray-500 hover:text-red-500" title="Logout"><i class="fas fa-sign-out-alt text-xl"></i></button>
             </div>`;
-        
+        document.getElementById('menu-toggle').addEventListener('click', () => {
+            appState.isSidebarOpen = !appState.isSidebarOpen;
+            updateSidebarVisibility();
+        });
+        document.getElementById('logout-button').addEventListener('click', handleLogout);
+    }
+    
+    function renderSidebar() {
+        const navLinks = Object.keys(pageTitles).map(page => `
+            <li><a href="#" data-page="${page}" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${appState.currentPage === page ? 'bg-[#2A5CAA] opacity-100' : 'opacity-80 hover:bg-white/10'}"><i class="w-5 text-center fas ${ {dashboard: 'fa-chart-line', tasks: 'fa-tasks', submissions: 'fa-file-archive', team: 'fa-users', settings: 'fa-cog'}[page] }"></i><span>${pageTitles[page]}</span></a></li>`
+        ).join('');
+        const teamMembers = Object.values(teamMapping).map(team => `
+            <li class="flex items-center gap-3 px-2 py-2"><div class="w-9 h-9 ${team.color} rounded-md shrink-0 flex items-center justify-center text-white font-bold text-sm">${team.avatar}</div><div><p class="text-sm font-semibold">${team.name}</p><p class="text-xs opacity-70">${team.role}</p></div></li>`
+        ).join('');
+        sidebarEl.innerHTML = `
+            <div class="flex items-center gap-3 mb-12 px-2"><div class="w-11 h-11 bg-gradient-to-br from-[#3A7BDA] to-[#673AB7] rounded-lg flex items-center justify-center text-white font-bold text-lg">DH</div><span class="text-2xl font-extrabold">DigiHive</span></div>
+            <nav><ul class="space-y-2">${navLinks}</ul></nav>
+            <div class="mt-12"><h3 class="text-sm font-semibold opacity-70 mb-4 px-2">TEAMS</h3><ul class="space-y-2">${teamMembers}</ul></div>`;
         sidebarEl.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const page = e.currentTarget.dataset.page;
-                appState.currentPage = page;
                 appState.isSidebarOpen = false;
                 updateSidebarVisibility();
-                renderPage(page);
+                renderPage(e.currentTarget.dataset.page);
             });
         });
     }
 
     function updateSidebarVisibility() {
-        if (appState.isSidebarOpen) {
-            sidebarEl.classList.remove('-translate-x-full');
-            sidebarOverlay.classList.remove('hidden');
-        } else {
-            sidebarEl.classList.add('-translate-x-full');
-            sidebarOverlay.classList.add('hidden');
-        }
+        sidebarEl.classList.toggle('-translate-x-full', !appState.isSidebarOpen);
+        sidebarOverlay.classList.toggle('hidden', !appState.isSidebarOpen);
     }
 
-    // --- PAGE RENDERING LOGIC ---
     function renderPage(page) {
         appState.currentPage = page;
-        pageTitleEl.textContent = pageTitles[page];
-        renderSidebar(); // Re-render sidebar to update active link
+        renderHeader();
+        renderSidebar();
         
         switch(page) {
             case 'dashboard': renderDashboardView(); break;
@@ -485,88 +455,110 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
             case 'submissions': renderSubmissionsView(); break;
             case 'team': renderTeamView(); break;
             case 'settings': renderSettingsView(); break;
-            default: renderPlaceholderView(page); break;
+            default: pageContentEl.innerHTML = `<div class="text-center p-8 bg-white rounded-lg"><h2>Page not found</h2></div>`; break;
         }
     }
 
     function renderDashboardView() {
+        const upcomingTasks = appState.allTasks.filter(task => task.startDate > new Date());
         let currentTaskIndex = 0;
+        
         const upcomingTasksHTML = () => {
-            if (appState.upcomingTasks.length === 0) return `
-                <div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center text-center h-full">
-                    <i class="fas fa-calendar-check text-4xl text-gray-300 mb-4"></i>
-                    <h3 class="text-xl font-bold text-slate-800">All Tasks Completed!</h3>
-                    <p class="text-gray-500 mt-2">No upcoming tasks found.</p>
-                </div>`;
-            const task = appState.upcomingTasks[currentTaskIndex];
+            if (upcomingTasks.length === 0) return `<div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center h-full"><i class="fas fa-calendar-check text-4xl text-gray-300 mb-4"></i><h3 class="text-xl font-bold">All Tasks Completed!</h3></div>`;
+            const task = upcomingTasks[currentTaskIndex];
+            const teamColorValue = task.color.replace(/bg-\[|\]/g, '');
             return `
                 <div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col h-full">
                     <div class="flex justify-between items-center mb-4">
                          <h3 class="text-xl font-bold text-slate-800">Upcoming Tasks</h3>
                          <div class="flex items-center gap-2">
-                            <button id="prev-task" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600"><i class="fas fa-chevron-left"></i></button>
-                            <span class="text-sm font-medium text-gray-500">${currentTaskIndex + 1} / ${appState.upcomingTasks.length}</span>
-                            <button id="next-task" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600"><i class="fas fa-chevron-right"></i></button>
+                            <button id="prev-task" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200"><i class="fas fa-chevron-left"></i></button>
+                            <span class="text-sm font-medium text-gray-500">${currentTaskIndex + 1} / ${upcomingTasks.length}</span>
+                            <button id="next-task" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200"><i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
                     <div class="flex-1 flex flex-col gap-4 mt-2">
-                         <div class="flex items-center gap-3 p-4 rounded-lg bg-gray-50 border-l-4" style="border-color: ${task.teamColor.replace(/bg-\[|\]/g, '')}">
-                             <div class="w-10 h-10 ${task.teamColor} rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-base">${task.teamAvatar}</div>
-                             <div>
-                                 <p class="font-bold text-slate-700">${task.team}</p>
-                                 <p class="text-sm font-medium">${task.subject}</p>
-                             </div>
+                         <div class="flex items-center gap-3 p-4 rounded-lg bg-gray-50 border-l-4" style="border-color: ${teamColorValue}">
+                             <div class="w-10 h-10 ${task.color} rounded-lg shrink-0 flex items-center justify-center text-white font-bold">${task.avatar}</div>
+                             <div><p class="font-bold">${task.team}</p><p class="text-sm">${task.subject}</p></div>
                          </div>
-                         <div class="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg flex-1">
-                             <p class="font-semibold mb-2 text-gray-700">Description:</p>
-                             <p>${task.description}</p>
-                         </div>
-                         <div class="text-sm text-gray-500 flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
-                            <div class="flex items-center gap-2"><i class="far fa-calendar-alt"></i><span class="font-medium">${task.startDate.toLocaleDateString()}</span></div>
-                            <div class="flex items-center gap-2"><i class="far fa-clock"></i><span class="font-medium">${task.startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
-                         </div>
+                         <div class="text-sm bg-gray-50 p-4 rounded-lg flex-1"><p class="font-semibold mb-2">Description:</p><p>${task.description}</p></div>
+                         <div class="text-sm flex items-center gap-4 bg-gray-50 p-3 rounded-lg"><div class="flex items-center gap-2"><i class="far fa-calendar-alt"></i><span>${task.startDate.toLocaleDateString()}</span></div><div class="flex items-center gap-2"><i class="far fa-clock"></i><span>${task.startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div></div>
                     </div>
                 </div>`;
         };
         
+        const commentsHTML = () => {
+            const commentsList = appState.comments.length === 0 ? `<div class="text-center text-gray-400 pt-8"><i class="fas fa-comments text-4xl mb-2"></i><p>No comments yet.</p></div>` : appState.comments.map(comment => {
+                const commentTeamInfo = teamMapping[comment.team];
+                return `<div class="flex items-start gap-3"><div class="w-10 h-10 ${commentTeamInfo.color} rounded-full shrink-0 flex items-center justify-center text-white font-bold text-sm">${comment.username.substring(0,2).toUpperCase()}</div><div class="flex-1 bg-gray-50 rounded-lg p-3"><div class="flex justify-between items-baseline"><p class="font-bold text-slate-700">${comment.username}</p><p class="text-xs text-gray-400">${new Date(comment.timestamp).toLocaleString()}</p></div><p class="text-sm text-gray-800 mt-1">${comment.text}</p></div></div>`
+            }).join('');
+            
+            return `
+                <div class="bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">Team Comments</h3>
+                    <form id="comment-form" class="mb-4 flex gap-3"><input type="text" name="comment" placeholder="Leave a comment..." class="flex-grow w-full border-2 rounded-lg p-2 focus:border-blue-500"><button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Post</button></form>
+                    <div id="comments-list" class="flex-1 overflow-y-auto pr-2 space-y-4">${commentsList}</div>
+                    <button id="summarize-btn" class="w-full mt-4 bg-violet-600 text-white font-bold py-3 rounded-lg hover:bg-violet-700 disabled:bg-gray-300 flex items-center justify-center gap-2"><i class="fas fa-wand-magic-sparkles"></i><span>Summarize with AI</span></button>
+                </div>`;
+        };
+
         const render = () => {
             pageContentEl.innerHTML = `
                 <div class="space-y-8">
                   <div class="p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800" id="dashboard-motivation"></div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-blue-500"><i class="fas fa-list-check"></i></div><div class="mt-4"><p class="text-4xl font-bold text-slate-800">${appState.upcomingTasks.length}</p><p class="text-md text-gray-500 font-medium">Upcoming Tasks</p></div></div>
-                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-violet-500"><i class="fas fa-check-double"></i></div><div class="mt-4"><p class="text-4xl font-bold text-slate-800">10</p><p class="text-md text-gray-500 font-medium">Completed This Week</p></div></div>
-                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-teal-500"><i class="fas fa-percent"></i></div><div class="mt-4"><p class="text-4xl font-bold text-slate-800">75%</p><p class="text-md text-gray-500 font-medium">Overall Progress</p></div></div>
-                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl bg-amber-500"><i class="fas fa-users"></i></div><div class="mt-4"><p class="text-4xl font-bold text-slate-800">5</p><p class="text-md text-gray-500 font-medium">Active Members</p></div></div>
+                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white bg-blue-500"><i class="fas fa-list-check"></i></div><div class="mt-4"><p class="text-4xl font-bold">${upcomingTasks.length}</p><p class="text-gray-500">Upcoming Tasks</p></div></div>
+                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white bg-violet-500"><i class="fas fa-check-double"></i></div><div class="mt-4"><p class="text-4xl font-bold">10</p><p class="text-gray-500">Completed This Week</p></div></div>
+                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white bg-teal-500"><i class="fas fa-percent"></i></div><div class="mt-4"><p class="text-4xl font-bold">75%</p><p class="text-gray-500">Overall Progress</p></div></div>
+                      <div class="bg-white rounded-2xl p-6 shadow-sm"><div class="w-12 h-12 rounded-xl flex items-center justify-center text-white bg-amber-500"><i class="fas fa-users"></i></div><div class="mt-4"><p class="text-4xl font-bold">${Object.keys(teamMapping).length}</p><p class="text-gray-500">Active Teams</p></div></div>
                   </div>
                   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm">
-                        <h3 class="text-xl font-bold text-slate-800 mb-4">Monthly Task Completion</h3>
-                        <div class="h-80 flex flex-col items-center justify-center text-center text-gray-400"><i class="fas fa-chart-line text-5xl mb-4"></i><h4 class="font-semibold text-lg text-gray-600">Chart Loading...</h4><p class="text-sm">Task completion data will be displayed here.</p></div>
-                    </div>
+                    <div class="lg:col-span-2 h-[550px]">${commentsHTML()}</div>
                     <div class="lg:col-span-1 space-y-8">
-                        <div id="upcoming-task-container" class="h-full">${upcomingTasksHTML()}</div>
-                        <div id="upload-card" class="bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                           <div class="flex flex-col items-center text-center gap-4"><div class="w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center"><i class="fas fa-cloud-upload-alt"></i></div><div><h3 class="font-bold text-slate-800 text-lg">Submit Weekly Report</h3><p class="text-sm text-gray-500 mt-1">Tap here to upload progress.</p></div></div>
-                        </div>
+                        <div id="upcoming-task-container" class="h-[450px]">${upcomingTasksHTML()}</div>
+                        <div id="upload-card" class="bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all"><div class="flex flex-col items-center text-center gap-4"><div class="w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center"><i class="fas fa-cloud-upload-alt"></i></div><div><h3 class="font-bold text-lg">Submit Weekly Report</h3><p class="text-sm text-gray-500 mt-1">Tap here to upload.</p></div></div></div>
                     </div>
                   </div>
                 </div>`;
-            
-            if (appState.upcomingTasks.length > 0) {
+
+            // Add event listeners for dynamic content
+            if (upcomingTasks.length > 0) {
                 document.getElementById('prev-task').addEventListener('click', () => {
-                    currentTaskIndex = (currentTaskIndex - 1 + appState.upcomingTasks.length) % appState.upcomingTasks.length;
-                    render();
+                    currentTaskIndex = (currentTaskIndex - 1 + upcomingTasks.length) % upcomingTasks.length;
+                    document.getElementById('upcoming-task-container').innerHTML = upcomingTasksHTML();
                 });
                 document.getElementById('next-task').addEventListener('click', () => {
-                    currentTaskIndex = (currentTaskIndex + 1) % appState.upcomingTasks.length;
-                    render();
+                    currentTaskIndex = (currentTaskIndex + 1) % upcomingTasks.length;
+                    document.getElementById('upcoming-task-container').innerHTML = upcomingTasksHTML();
                 });
             }
             document.getElementById('upload-card').addEventListener('click', showSubmissionModal);
-            
+
+            document.getElementById('comment-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const text = e.target.comment.value.trim();
+                if (!text) return;
+                const newComment = { id: Date.now(), username: appState.currentUser.username, team: appState.currentUser.team, timestamp: new Date().toISOString(), text };
+                appState.comments.unshift(newComment);
+                saveToStorage('digihive_comments', appState.comments);
+                renderDashboardView(); // Re-render to show new comment
+            });
+
+            const summarizeBtn = document.getElementById('summarize-btn');
+            summarizeBtn.disabled = appState.comments.length === 0;
+            summarizeBtn.addEventListener('click', async () => {
+                summarizeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i><span>Generating...</span>`;
+                summarizeBtn.disabled = true;
+                const summary = await summarizeComments(appState.comments);
+                const summaryHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-4">AI-Generated Summary</h2><div class="prose prose-sm max-w-none whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">${summary.replace(/\n/g, '<br>')}</div><button onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))" class="mt-6 w-full bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg">Close</button>`;
+                openModal(summaryHTML, 'max-w-2xl');
+                summarizeBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i><span>Summarize with AI</span>`;
+                summarizeBtn.disabled = false;
+            });
+
             const quoteEl = document.getElementById('dashboard-motivation');
-            let quoteIndex = Math.floor(Math.random() * MOTIVATION_QUOTES.length);
+            let quoteIndex = 0;
             const updateQuote = () => {
                 quoteEl.innerHTML = `<i class="fas fa-quote-left mr-2"></i> ${MOTIVATION_QUOTES[quoteIndex]}`;
                 quoteIndex = (quoteIndex + 1) % MOTIVATION_QUOTES.length;
@@ -579,195 +571,169 @@ Content Setup,2026-01-14,13:00,2026-01-14,15:00,Set up blog platform and create 
     
     function renderMyTasksView() {
         const renderList = (tasks) => {
-            if (tasks.length === 0) {
-                return `<div class="md:col-span-2 xl:col-span-3 text-center py-16 bg-white rounded-2xl shadow-sm"><i class="fas fa-box-open text-5xl text-gray-300 mb-4"></i><h3 class="text-xl font-bold text-slate-700">No Tasks Found</h3><p class="text-gray-500 mt-2">Try adjusting your filters.</p></div>`;
-            }
-            return tasks.map(task => `
-              <div class="bg-white rounded-2xl p-5 shadow-sm" style="border-left: 5px solid ${task.teamColor.replace(/bg-\[|\]/g, '')}">
-                <h4 class="font-bold text-slate-800 mb-2">${task.subject}</h4>
-                <div class="flex justify-between items-center text-sm mb-3">
-                  <span class="font-semibold text-gray-600">Team: ${task.team}</span>
-                  <span class="font-semibold text-gray-400">Due: ${task.startDate.toLocaleDateString()}</span>
-                </div>
-                <p class="text-sm text-gray-500 leading-relaxed">${task.description}</p>
-              </div>`).join('');
+            if (tasks.length === 0) return `<div class="md:col-span-2 xl:col-span-3 text-center py-16 bg-white rounded-2xl shadow-sm"><i class="fas fa-box-open text-5xl text-gray-300 mb-4"></i><h3 class="text-xl font-bold">No Tasks Found</h3><p class="text-gray-500 mt-2">Try adjusting filters.</p></div>`;
+            return tasks.map(task => {
+                const teamColorValue = task.color.replace(/bg-\[|\]/g, '');
+                return `<div class="bg-white rounded-2xl p-5 shadow-sm" style="border-left: 5px solid ${teamColorValue}">
+                    <h4 class="font-bold text-slate-800 mb-2">${task.subject}</h4>
+                    <div class="flex justify-between items-center text-sm mb-3"><span class="font-semibold text-gray-600">Team: ${task.name}</span><span class="font-semibold text-gray-400">Due: ${task.startDate.toLocaleDateString()}</span></div>
+                    <p class="text-sm text-gray-500">${task.description}</p>
+                </div>`
+            }).join('');
         };
         
         pageContentEl.innerHTML = `
-             <div class="space-y-6">
+            <div class="space-y-6">
               <div class="bg-white p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 items-center">
-                <select id="team-filter" class="w-full md:w-auto bg-gray-100 border-none rounded-lg px-4 py-2">
-                  <option value="All">Filter by Team (All)</option>
-                  ${Object.values(teamMapping).map(team => `<option value="${team.className}">${team.name}</option>`).join('')}
-                </select>
-                <div class="relative flex-grow w-full">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    <input type="text" id="search-tasks" placeholder="Search task name..." class="w-full bg-gray-100 border-none rounded-lg pl-10 pr-4 py-2">
-                </div>
+                <select id="team-filter" class="w-full md:w-auto bg-gray-100 border-none rounded-lg px-4 py-2"><option value="All">Filter by Team (All)</option>${Object.values(teamMapping).map(team => `<option value="${team.className}">${team.name}</option>`).join('')}</select>
+                <div class="relative flex-grow w-full"><i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i><input type="text" id="search-tasks" placeholder="Search tasks..." class="w-full bg-gray-100 border-none rounded-lg pl-10 pr-4 py-2"></div>
               </div>
-              <div id="tasks-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                ${renderList(appState.allTasks)}
-              </div>
+              <div id="tasks-list" class="grid grid-cols-1 md:grid-cols-2 xl:col-cols-3 gap-6">${renderList(appState.allTasks)}</div>
             </div>`;
             
-        const teamFilterEl = document.getElementById('team-filter');
-        const searchInputEl = document.getElementById('search-tasks');
-        const tasksListEl = document.getElementById('tasks-list');
-        
         const applyFilters = () => {
-            const team = teamFilterEl.value;
-            const search = searchInputEl.value.toLowerCase();
-            const filtered = appState.allTasks.filter(task => {
-                const teamMatch = team === 'All' || task.teamClass === team;
-                const searchMatch = task.subject.toLowerCase().includes(search) || task.description.toLowerCase().includes(search);
-                return teamMatch && searchMatch;
-            });
-            tasksListEl.innerHTML = renderList(filtered);
+            const team = document.getElementById('team-filter').value;
+            const search = document.getElementById('search-tasks').value.toLowerCase();
+            const filtered = appState.allTasks.filter(task => (team === 'All' || task.className === team) && (task.subject.toLowerCase().includes(search) || task.description.toLowerCase().includes(search)));
+            document.getElementById('tasks-list').innerHTML = renderList(filtered);
         };
         
-        teamFilterEl.addEventListener('change', applyFilters);
-        searchInputEl.addEventListener('input', applyFilters);
+        document.getElementById('team-filter').addEventListener('change', applyFilters);
+        document.getElementById('search-tasks').addEventListener('input', applyFilters);
     }
     
     function renderSubmissionsView() {
-        const rows = appState.submissions.length === 0 ? `
-             <tr><td colspan="5"><div class="text-center py-16 text-gray-400"><i class="fas fa-folder-open text-5xl mb-4"></i><h3 class="text-xl font-bold text-slate-700">No Submissions Yet</h3><p class="text-gray-500 mt-2">Your team's submissions will appear here.</p></div></td></tr>` : 
-             appState.submissions.map(s => `
-                <tr class="border-b last:border-b-0">
-                    <td class="p-4">${s.name}</td>
-                    <td class="p-4">${s.member}</td>
-                    <td class="p-4">${s.date}</td>
-                    <td class="p-4">${s.fileType}</td>
-                    <td class="p-4"><button class="bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm"><i class="fas fa-download mr-2"></i> Download</button></td>
-                </tr>`).join('');
-                
-        pageContentEl.innerHTML = `
-            <div class="bg-white rounded-2xl p-6 shadow-sm overflow-x-auto">
-              <table class="w-full text-left min-w-[600px]">
-                <thead><tr class="bg-gray-100"><th class="p-4 font-bold text-slate-600 rounded-tl-lg">Submission Name</th><th class="p-4 font-bold text-slate-600">Team Member</th><th class="p-4 font-bold text-slate-600">Date Submitted</th><th class="p-4 font-bold text-slate-600">File Type</th><th class="p-4 font-bold text-slate-600 rounded-tr-lg">Action</th></tr></thead>
-                <tbody>${rows}</tbody>
-              </table>
-            </div>`;
+        const rows = appState.submissions.length === 0 ? `<tr><td colspan="5"><div class="text-center py-16 text-gray-400"><i class="fas fa-folder-open text-5xl mb-4"></i><h3 class="text-xl font-bold">No Submissions Yet</h3></div></td></tr>` : appState.submissions.map((s, i) => `
+            <tr class="border-b last:border-b-0">
+                <td class="p-4">${s.name}</td><td class="p-4">${s.member}</td><td class="p-4">${s.date}</td><td class="p-4">${s.fileType}</td>
+                <td class="p-4"><button class="download-btn bg-blue-500 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-blue-600 text-sm" data-index="${i}"><i class="fas fa-download mr-2"></i> Download</button></td>
+            </tr>`).join('');
+        pageContentEl.innerHTML = `<div class="bg-white rounded-2xl p-6 shadow-sm overflow-x-auto"><table class="w-full text-left min-w-[600px]"><thead><tr class="bg-gray-100"><th class="p-4 font-bold rounded-tl-lg">Submission Name</th><th class="p-4 font-bold">Team Member</th><th class="p-4 font-bold">Date</th><th class="p-4 font-bold">File Type</th><th class="p-4 font-bold rounded-tr-lg">Action</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }
+
+    const handleDownload = (submission) => {
+        const content = submission.fileContent || `Submission Details:\nName: ${submission.name}\nMember: ${submission.member}\nDate: ${submission.date}`;
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${submission.name.replace(/\s+/g, '_')}_${submission.date}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
     
      function renderTeamView() {
-        const users = getFromStorage('digihive_users');
-        const teamMemberCards = users.map(user => {
-            const teamInfo = Object.values(teamMapping).find(t => t.name === user.team) || { name: 'General', color: 'bg-gray-500', avatar: 'G', role: 'Team Member' };
+        const teamMemberCards = appState.users.map(user => {
+            const teamInfo = teamMapping[user.team] || { name: 'General', color: 'bg-gray-500', avatar: 'G', role: 'Team Member' };
+            const lastSeen = user.isOnline ? '' : `<p class="text-xs text-gray-400 mt-1">Last seen: ${user.lastLogout ? new Date(user.lastLogout).toLocaleString() : 'N/A'}</p>`;
             return `
-                <div class="bg-white rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                <div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div class="flex items-center gap-5">
-                        <div class="w-16 h-16 ${teamInfo.color} rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl">${teamInfo.avatar}</div>
-                        <div>
-                            <h3 class="text-xl font-bold text-slate-800">${user.username}</h3>
-                            <p class="text-gray-500">${teamInfo.role}</p>
-                        </div>
+                        <div class="relative"><div class="w-16 h-16 ${teamInfo.color} rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-2xl">${teamInfo.avatar}</div><div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}"></div></div>
+                        <div><h3 class="text-xl font-bold">${user.username}</h3><p class="text-gray-500">${teamInfo.role}</p>${lastSeen}</div>
                     </div>
-                    <button class="deregister-btn bg-red-100 text-red-600 hover:bg-red-200 font-bold py-2 px-4 rounded-lg" data-username="${user.username}">Deregister</button>
+                    <button class="deregister-btn bg-red-100 text-red-600 hover:bg-red-200 font-bold py-2 px-4 rounded-lg w-full sm:w-auto" data-username="${user.username}"><i class="fas fa-user-minus mr-2"></i>Deregister</button>
                 </div>`;
         }).join('');
-
-        pageContentEl.innerHTML = `
-            <div class="space-y-6">
-              ${teamMemberCards}
-            </div>`;
+        pageContentEl.innerHTML = `<div class="space-y-6"><div class="bg-white p-4 rounded-2xl shadow-sm flex justify-end"><button id="show-register-modal-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700"><i class="fas fa-user-plus mr-2"></i> Register New Member</button></div>${teamMemberCards}</div>`;
+        document.getElementById('show-register-modal-btn').addEventListener('click', showRegisterModal);
     }
 
     function renderSettingsView() {
-        const createCard = (title, desc, btnText, icon) => `
-            <div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div class="flex items-center gap-5">
-                    <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl"><i class="fas ${icon}"></i></div>
-                    <div><h3 class="text-lg font-bold text-slate-800">${title}</h3><p class="text-gray-500 text-sm">${desc}</p></div>
-                </div>
-                <button class="bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 w-full md:w-auto">${btnText}</button>
-            </div>`;
+        const createCard = (title, desc, btnText, icon, modalKey) => `<div class="bg-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"><div class="flex items-center gap-5"><div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl"><i class="fas ${icon}"></i></div><div><h3 class="text-lg font-bold">${title}</h3><p class="text-gray-500 text-sm">${desc}</p></div></div><button data-modal="${modalKey}" class="settings-btn bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 w-full md:w-auto">${btnText}</button></div>`;
+        pageContentEl.innerHTML = `<div class="space-y-6">
+            ${createCard('Profile Information', 'Update your personal information.', 'Edit Profile', 'fa-user-edit', 'profile')}
+            ${createCard('Notification Preferences', 'Manage how you receive notifications.', 'Configure', 'fa-bell', 'notifications')}
+            ${createCard('Security Settings', 'Update your password and security.', 'Update Security', 'fa-shield-alt', 'security')}
+            ${createCard('Team Preferences', 'Customize how you interact with your team.', 'Manage', 'fa-users-cog', 'team')}
+        </div>`;
         
-        pageContentEl.innerHTML = `
-            <div class="space-y-6">
-                ${createCard('Profile Information', 'Update your personal information.', 'Edit Profile', 'fa-user-edit')}
-                ${createCard('Notification Preferences', 'Manage how you receive notifications.', 'Configure', 'fa-bell')}
-                ${createCard('Security Settings', 'Update your password and security.', 'Update Security', 'fa-shield-alt')}
-                ${createCard('Team Preferences', 'Customize how you interact with your team.', 'Manage', 'fa-users-cog')}
-            </div>`;
+        pageContentEl.querySelectorAll('.settings-btn').forEach(btn => btn.addEventListener('click', () => showSettingsModal(btn.dataset.modal)));
     }
     
-    function renderPlaceholderView(page) {
-        pageContentEl.innerHTML = `
-            <div class="bg-white rounded-2xl p-6 shadow-sm">
-                <div class="h-[600px] flex flex-col items-center justify-center text-center text-gray-400 border-2 border-dashed rounded-lg">
-                    <i class="far fa-calendar-alt text-6xl mb-4"></i>
-                    <h3 class="text-2xl font-semibold text-gray-600 capitalize">${page} View</h3>
-                    <p class="mt-2">This feature is under construction.</p>
-                </div>
-            </div>`;
-    }
-
-    // --- Submission Modal Logic ---
+    // --- MODAL CONTENT & HANDLERS ---
     function showSubmissionModal() {
-        const teamOptions = Object.values(teamMapping).map(t => `<option value="${t.name}">${t.name}</option>`).join('');
         const modalHTML = `
             <div id="submission-form-content">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">Weekly Report Submission</h2>
-                    <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl"><i class="fas fa-times"></i></button>
-                </div>
+                <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold">Weekly Report Submission</h2><button onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))" class="text-gray-400 hover:text-gray-600 text-2xl"><i class="fas fa-times"></i></button></div>
                 <form id="submission-form" class="space-y-4">
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Report Title</label><input type="text" name="title" placeholder="e.g., Q1 Week 4 Progress Report" required class="w-full border-2 border-gray-200 rounded-lg p-2"></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Team Member</label><select name="team" required class="w-full border-2 border-gray-200 rounded-lg p-2 bg-white"><option value="">Select Team</option>${teamOptions}</select></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Progress Report</label><textarea name="progress" placeholder="Describe your progress..." required rows="4" class="w-full border-2 border-gray-200 rounded-lg p-2"></textarea></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Next Week's Plan</label><textarea name="plan" placeholder="Outline your plans..." required rows="3" class="w-full border-2 border-gray-200 rounded-lg p-2"></textarea></div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Upload File (Optional - PDF, max 2MB)</label>
-                        <div id="file-upload-area" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500"><div class="text-blue-500 text-3xl mb-2"><i class="fas fa-cloud-upload-alt"></i></div><p class="font-semibold text-gray-700">Upload PDF File</p><p class="text-xs text-gray-500">Click to select</p><input type="file" id="report-file" accept=".pdf" class="hidden"></div>
-                        <div id="file-name-display" class="text-sm text-gray-500 mt-2">No file selected.</div>
-                    </div>
-                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg"><i class="fas fa-paper-plane mr-2"></i>Submit Report</button>
+                    <div><label class="block text-sm font-medium mb-1">Report Title</label><input type="text" name="title" required class="w-full border-2 rounded-lg p-2"></div>
+                    <div><label class="block text-sm font-medium mb-1">Team</label><select name="team" required class="w-full border-2 rounded-lg p-2 bg-white"><option value="">Select Team</option>${Object.values(teamMapping).map(t => `<option value="${t.name}">${t.name}</option>`).join('')}</select></div>
+                    <div><label class="block text-sm font-medium mb-1">Progress Report</label><textarea name="progress" required rows="4" class="w-full border-2 rounded-lg p-2"></textarea></div>
+                    <div><label class="block text-sm font-medium mb-1">Next Week's Plan</label><textarea name="plan" required rows="3" class="w-full border-2 rounded-lg p-2"></textarea></div>
+                    <div><label class="block text-sm font-medium mb-1">Upload File (Optional)</label><input type="file" id="report-file" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/></div>
+                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg"><i class="fas fa-paper-plane mr-2"></i>Submit</button>
                 </form>
             </div>
-            <div id="submission-success" class="hidden text-center py-10">
-                <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i><h2 class="text-2xl font-bold text-slate-800">Submission Successful!</h2><p class="text-gray-600 mt-2">Your report has been archived.</p><button id="close-success-btn" class="mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg">Close</button>
-            </div>
-        `;
+            <div id="submission-success" class="hidden text-center py-10"><i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i><h2 class="text-2xl font-bold">Submission Successful!</h2><p class="mt-2">Your report has been archived.</p><button onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))" class="mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg">Close</button></div>`;
         openModal(modalHTML);
-
-        document.getElementById('close-modal-btn').addEventListener('click', closeModal);
-        document.getElementById('submission-form').addEventListener('submit', handleSubmission);
-        document.getElementById('file-upload-area').addEventListener('click', () => document.getElementById('report-file').click());
-        document.getElementById('report-file').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                 if (file.size > 2 * 1024 * 1024) {
-                    alert('File size exceeds 2MB limit.');
-                    e.target.value = '';
-                    return;
-                }
-                document.getElementById('file-name-display').textContent = file.name;
-            } else {
-                 document.getElementById('file-name-display').textContent = 'No file selected.';
-            }
+        document.getElementById('submission-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('report-file');
+            const newSubmission = {
+                name: e.target.title.value, member: e.target.team.value, date: new Date().toLocaleDateString('en-CA'),
+                fileType: fileInput.files.length > 0 ? fileInput.files[0].type || 'file' : 'N/A',
+                fileContent: `Report Title: ${e.target.title.value}\nProgress: ${e.target.progress.value}\nNext Week's Plan: ${e.target.plan.value}`
+            };
+            appState.submissions.unshift(newSubmission);
+            saveToStorage('digihive_submissions', appState.submissions);
+            document.getElementById('submission-form-content').classList.add('hidden');
+            document.getElementById('submission-success').classList.remove('hidden');
+            if (appState.currentPage === 'submissions') renderSubmissionsView();
         });
     }
 
-    function handleSubmission(e) {
+    function showSettingsModal(type) {
+        let modalContentHTML = '';
+        switch (type) {
+            case 'profile':
+                modalContentHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Profile Information</h2><p class="text-center text-gray-500">Username: <strong>${appState.currentUser.username}</strong><br>Team: <strong>${appState.currentUser.team}</strong></p><p class="text-center text-gray-400 mt-4 text-sm">(Profile editing coming soon)</p>`;
+                break;
+            case 'notifications':
+                modalContentHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Notification Preferences</h2>
+                <form id="notifications-form" class="space-y-4">
+                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"><span class="font-medium">Email Notifications</span><input type="checkbox" name="email" ${appState.currentUser.notifications?.email ? 'checked' : ''} class="h-6 w-6 rounded text-blue-600"/></label>
+                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"><span class="font-medium">Push Notifications</span><input type="checkbox" name="push" ${appState.currentUser.notifications?.push ? 'checked' : ''} class="h-6 w-6 rounded text-blue-600"/></label>
+                    <button type="submit" class="w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg">Save Preferences</button>
+                </form>`;
+                break;
+            case 'security':
+                modalContentHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Update Password</h2>
+                <form id="security-form" class="space-y-4">
+                    <div><label class="block text-sm font-medium mb-1">Current Password</label><input type="password" name="currentPassword" required class="w-full border-2 rounded-lg p-2"/></div>
+                    <div><label class="block text-sm font-medium mb-1">New Password</label><input type="password" name="newPassword" required class="w-full border-2 rounded-lg p-2"/></div>
+                    <div><label class="block text-sm font-medium mb-1">Confirm New Password</label><input type="password" name="confirmPassword" required class="w-full border-2 rounded-lg p-2"/></div>
+                    <button type="submit" class="w-full mt-4 bg-green-500 text-white font-bold py-3 rounded-lg">Update Password</button>
+                </form>`;
+                break;
+            case 'team':
+                modalContentHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Team Preferences</h2><p class="text-center text-gray-500">Team preference settings will be available in a future update.</p>`;
+                break;
+        }
+        openModal(`<button class="absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl" onclick="document.getElementById('modal-container').dispatchEvent(new Event('click'))"><i class="fas fa-times"></i></button>${modalContentHTML}`, 'max-w-md');
+        
+        if (type === 'notifications') document.getElementById('notifications-form').addEventListener('submit', handleUpdateNotifications);
+        if (type === 'security') document.getElementById('security-form').addEventListener('submit', handleUpdatePassword);
+    }
+    
+    function handleUpdatePassword(e) {
         e.preventDefault();
-        const newSubmission = {
-            name: e.target.title.value,
-            member: e.target.team.value,
-            date: new Date().toLocaleDateString('en-CA'),
-            fileType: e.target.querySelector('#report-file').files.length > 0 ? 'PDF' : 'N/A'
-        };
+        const { currentPassword, newPassword, confirmPassword } = e.target;
+        if (currentPassword.value !== appState.currentUser.password) return alert('Current password does not match.');
+        if (newPassword.value !== confirmPassword.value) return alert('New passwords do not match.');
+        if (newPassword.value.length < 6) return alert('Password must be at least 6 characters.');
+        
+        updateUserRecord({ ...appState.currentUser, password: newPassword.value });
+        alert('Password updated successfully!');
+        closeModal();
+    }
 
-        appState.submissions.unshift(newSubmission);
-        saveToStorage('digihive_submissions', appState.submissions);
-
-        document.getElementById('submission-form-content').classList.add('hidden');
-        const successEl = document.getElementById('submission-success');
-        successEl.classList.remove('hidden');
-        successEl.querySelector('#close-success-btn').addEventListener('click', () => {
-             closeModal();
-             if (appState.currentPage === 'submissions') renderSubmissionsView();
-        });
+    function handleUpdateNotifications(e) {
+        e.preventDefault();
+        const updatedUser = { ...appState.currentUser, notifications: { email: e.target.email.checked, push: e.target.push.checked }};
+        updateUserRecord(updatedUser);
+        alert('Notification preferences updated!');
+        closeModal();
     }
 
     // --- START THE APP ---
