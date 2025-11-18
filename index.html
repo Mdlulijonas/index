@@ -61,14 +61,6 @@
         };
 
         const ADMIN_CODE = '212259497';
-        const MOTIVATION_QUOTES = [
-            "Every line of code you write brings us closer to empowering creators worldwide.",
-            "Your energy and focus today will build the foundation for tomorrow's achievements.",
-            "Collaboration multiplies our impact - together we achieve extraordinary results.",
-            "Great things in business are never done by one person. They're done by a team of people.",
-            "The strength of the team is each individual member. The strength of each member is the team.",
-            "Coming together is a beginning, staying together is progress, and working together is success."
-        ];
 
         // --- BACKEND SERVICE WITH /api ENDPOINTS ---
         class BackendService {
@@ -141,14 +133,15 @@
                         body: JSON.stringify({ 
                             action: 'login', 
                             username: username, 
-                            updates: { password: password } 
+                            password: password 
                         })
                     });
                     
                     if (response.ok) {
                         return await response.json();
                     } else {
-                        throw new Error('Invalid credentials');
+                        const error = await response.json();
+                        throw new Error(error.error || 'Invalid credentials');
                     }
                 } catch (error) {
                     console.error('Login error:', error);
@@ -160,8 +153,7 @@
                 try {
                     const response = await fetch(`${this.baseURL}/comments`);
                     if (!response.ok) throw new Error('Failed to fetch comments');
-                    const comments = await response.json();
-                    return comments;
+                    return await response.json();
                 } catch (error) {
                     console.error('Error fetching comments:', error);
                     return [];
@@ -189,8 +181,7 @@
                 try {
                     const response = await fetch(`${this.baseURL}/submissions`);
                     if (!response.ok) throw new Error('Failed to fetch submissions');
-                    const submissions = await response.json();
-                    return submissions;
+                    return await response.json();
                 } catch (error) {
                     console.error('Error fetching submissions:', error);
                     return [];
@@ -241,8 +232,7 @@
                 try {
                     const response = await fetch(`${this.baseURL}/tasks`);
                     if (!response.ok) throw new Error('Failed to fetch tasks');
-                    const tasks = await response.json();
-                    return tasks;
+                    return await response.json();
                 } catch (error) {
                     console.error('Error fetching tasks:', error);
                     return [];
@@ -255,7 +245,7 @@
                 
                 // Set up polling for real-time updates (every 3 seconds for most data, 1 hour for comments)
                 if (!this.pollingIntervals.has(key)) {
-                    const intervalTime = key === 'comments' ? 3600000 : 3000; // 1 hour for comments, 3 seconds for others
+                    const intervalTime = key === 'comments' ? 3600000 : 3000;
                     
                     const interval = setInterval(async () => {
                         try {
@@ -500,7 +490,7 @@
                 return commentsList;
             };
 
-            // Subscribe to comments updates (now only updates hourly)
+            // Subscribe to comments updates
             const unsubscribe = backendService.subscribe('comments', (data) => {
                 comments = data;
                 updateUI();
@@ -556,7 +546,6 @@
             };
             
             const triggerSync = () => {
-                // Simply reload data without showing sync indicator
                 updateUI();
             };
 
@@ -639,7 +628,7 @@
                     alert('User registered successfully!');
                     // Refresh users list
                     users = await backendService.getUsers();
-                    if (currentPage === 'team') renderPage(currentPage);
+                    if (currentPage === 'team') updateUI();
                     // Close modal
                     document.querySelectorAll('.fixed.inset-0.bg-black').forEach(modal => modal.remove());
                 } catch (error) {
@@ -926,9 +915,9 @@
                                     createElement('div', { class: 'flex items-center justify-between p-3 bg-blue-50 rounded-lg' },
                                         createElement('div', { class: 'flex items-center gap-3' },
                                             createElement('i', { class: 'fas fa-clock text-blue-600' }),
-                                            <span class="font-semibold text-sm text-blue-800">Hourly Updates</span>
+                                            createElement('span', { class: 'font-semibold text-sm text-blue-800' }, 'Hourly Updates')
                                         ),
-                                        <span class="font-bold text-sm text-blue-600">Stable</span>
+                                        createElement('span', { class: 'font-bold text-sm text-blue-600' }, 'Stable')
                                     ),
                                     createElement('div', { class: 'text-sm text-gray-600' },
                                         createElement('p', { class: 'font-semibold mb-2' }, 'Recent Activity:'),
@@ -1034,15 +1023,6 @@
             const handleSubmitReport = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                const fileInput = formData.get('attachment');
-                
-                // File validation
-                if (fileInput && fileInput.size > 0) {
-                    if (fileInput.size > 2 * 1024 * 1024) {
-                        alert('File size must be less than 2MB');
-                        return;
-                    }
-                }
                 
                 try {
                     await backendService.addSubmission({ 
@@ -1051,8 +1031,7 @@
                         team: formData.get('targetTeam') || currentUser.team, 
                         progress: formData.get('progress'), 
                         plan: formData.get('plan'), 
-                        fileType: 'Report',
-                        attachment: fileInput && fileInput.size > 0 ? fileInput.name : null
+                        fileType: 'Report'
                     });
                     
                     triggerSync();
@@ -1131,12 +1110,7 @@
                         createElement('h2', { class: 'text-2xl font-bold text-slate-800' }, 'Past Submissions Archive'),
                         createElement('button', { 
                             class: 'bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2',
-                            onclick: () => {
-                                const event = new CustomEvent('digihive-data-update', {
-                                    detail: { key: 'submissions', data: submissions }
-                                });
-                                window.dispatchEvent(event);
-                            }
+                            onclick: triggerSync
                         },
                             createElement('i', { class: 'fas fa-sync-alt' }),
                             'Refresh Data'
@@ -1330,7 +1304,7 @@
                     // Refresh users list
                     backendService.getUsers().then(data => {
                         users = data;
-                        if (currentPage === 'team') renderPage(currentPage);
+                        if (currentPage === 'team') updateUI();
                     });
                 }
             };
