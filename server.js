@@ -43,6 +43,8 @@ let users = [
     { username: 'writer', password: 'password', team: 'Content', isOnline: false, lastLogin: null, lastLogout: null }
 ];
 
+const ADMIN_CODE = '212259497';
+
 // Comments API
 app.get('/api/comments', (req, res) => {
     res.json(comments);
@@ -73,6 +75,22 @@ app.post('/api/submissions', (req, res) => {
     res.status(201).json(newSubmission);
 });
 
+app.delete('/api/submissions', (req, res) => {
+    const { submissionId, adminCode } = req.body;
+    
+    if (adminCode !== ADMIN_CODE) {
+        return res.status(401).json({ error: 'Invalid admin code' });
+    }
+    
+    const submissionIndex = submissions.findIndex(s => s.id == submissionId);
+    if (submissionIndex === -1) {
+        return res.status(404).json({ error: 'Submission not found' });
+    }
+    
+    submissions.splice(submissionIndex, 1);
+    res.json({ message: 'Submission deleted successfully' });
+});
+
 // Tasks API
 app.get('/api/tasks', (req, res) => {
     res.json(tasks);
@@ -84,7 +102,7 @@ app.get('/api/users', (req, res) => {
 });
 
 app.post('/api/users', (req, res) => {
-    const { username, updates, action } = req.body;
+    const { username, updates, action, userData, adminCode } = req.body;
     
     if (action === 'update') {
         const userIndex = users.findIndex(u => u.username === username);
@@ -101,6 +119,25 @@ app.post('/api/users', (req, res) => {
             return res.json(user);
         }
         return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    if (action === 'register') {
+        if (adminCode !== ADMIN_CODE) {
+            return res.status(401).json({ error: 'Invalid admin code' });
+        }
+        
+        if (users.find(u => u.username === userData.username)) {
+            return res.status(400).json({ error: 'Username already exists' });
+        }
+        
+        const newUser = {
+            ...userData,
+            isOnline: false,
+            lastLogin: null,
+            lastLogout: null
+        };
+        users.push(newUser);
+        return res.status(201).json(newUser);
     }
 
     res.status(400).json({ error: 'Invalid action' });
