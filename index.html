@@ -52,10 +52,10 @@
             settings: 'fa-cog'
         };
 
-        // --- REAL BACKEND SERVICE WITH LIVE DATA ---
+        // --- REAL BACKEND SERVICE WITH /api ENDPOINTS ---
         class BackendService {
             constructor() {
-                this.baseURL = '/.netlify/functions';
+                this.baseURL = '/api'; // CHANGED FROM '/.netlify/functions' to '/api'
                 this.listeners = new Map();
                 this.pollingIntervals = new Map();
                 this.currentUser = null;
@@ -981,7 +981,7 @@
                             }, 'Login to Dashboard')
                         ),
                         createElement('div', { class: 'mt-4 text-sm text-gray-600' },
-                            
+                            'Demo accounts: admin/password, dev/password, designer/password'
                         )
                     )
                 );
@@ -998,4 +998,3 @@
     </script>
 </body>
 </html>
-
