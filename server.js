@@ -162,10 +162,13 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+// Get port from environment variable (Render provides this) or default to 10000
+const PORT = process.env.PORT || 10000;
+
+// Listen on 0.0.0.0 to accept external connections
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 DigiHive server running on port ${PORT}`);
     console.log(`📊 API endpoints available at /api/comments, /api/submissions, /api/tasks, /api/users`);
-    console.log(`🌐 Frontend served from: http://localhost:${PORT}`);
+    console.log(`🌐 Frontend served from: http://0.0.0.0:${PORT}`);
     console.log(`💬 Comments update frequency: Hourly (stable)`);
 });
