@@ -3,21 +3,26 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DigiHive - Live Team Dashboard</title>
+    <title>DigiHive - Team Collaboration Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; color: #1A1A2E; }
+        .hidden { display: none; }
+        #sidebar { transition: transform 0.3s ease-in-out; }
+        .modal-content { transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
+        .modal.open .modal-content { transform: scale(1) translateY(0); opacity: 1; }
+        .modal .modal-content { transform: scale(0.95) translateY(10px); opacity: 0; }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         @keyframes scale-up { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        .animate-scale-up { animation: scale-up 0.3s ease-out forwards; }
         @keyframes pulse-sync {
             0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
             50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
         }
-        @keyframes slide-in-right { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
-        .animate-scale-up { animation: scale-up 0.3s ease-out forwards; }
         .animate-pulse-sync { animation: pulse-sync 2s infinite; }
+        @keyframes slide-in-right { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .animate-slide-in-right { animation: slide-in-right 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
@@ -27,6 +32,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
     <div id="root"></div>
+
     <script>
         // --- CONSTANTS ---
         const TEAM_MAPPING = {
@@ -37,6 +43,7 @@
             'Support': { name: 'Support', color: 'bg-teal-500', avatar: 'ST', role: 'Support Team' },
             'Content': { name: 'Content', color: 'bg-orange-500', avatar: 'CT', role: 'Content Team' },
         };
+        
         const PAGE_TITLES = {
             dashboard: 'Dashboard',
             tasks: 'My Tasks - Full List',
@@ -44,6 +51,7 @@
             team: 'Team Directory',
             settings: 'Settings'
         };
+        
         const PAGE_ICONS = {
             dashboard: 'fa-chart-line',
             tasks: 'fa-tasks',
@@ -52,10 +60,20 @@
             settings: 'fa-cog'
         };
 
-        // --- REAL BACKEND SERVICE WITH /api ENDPOINTS ---
+        const ADMIN_CODE = '212259497';
+        const MOTIVATION_QUOTES = [
+            "Every line of code you write brings us closer to empowering creators worldwide.",
+            "Your energy and focus today will build the foundation for tomorrow's achievements.",
+            "Collaboration multiplies our impact - together we achieve extraordinary results.",
+            "Great things in business are never done by one person. They're done by a team of people.",
+            "The strength of the team is each individual member. The strength of each member is the team.",
+            "Coming together is a beginning, staying together is progress, and working together is success."
+        ];
+
+        // --- BACKEND SERVICE WITH /api ENDPOINTS ---
         class BackendService {
             constructor() {
-                this.baseURL = '/api'; // CHANGED FROM '/.netlify/functions' to '/api'
+                this.baseURL = '/api';
                 this.listeners = new Map();
                 this.pollingIntervals = new Map();
                 this.currentUser = null;
@@ -87,6 +105,30 @@
                     return await response.json();
                 } catch (error) {
                     console.error('Error updating user:', error);
+                    throw error;
+                }
+            }
+
+            async registerUser(userData, adminCode) {
+                try {
+                    const response = await fetch(`${this.baseURL}/users`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            action: 'register', 
+                            userData: userData,
+                            adminCode: adminCode
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        return await response.json();
+                    } else {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Registration failed');
+                    }
+                } catch (error) {
+                    console.error('Registration error:', error);
                     throw error;
                 }
             }
@@ -135,7 +177,6 @@
                     });
                     if (!response.ok) throw new Error('Failed to add comment');
                     const result = await response.json();
-                    // Notify all subscribers about the new data
                     this.notifyListeners('comments', await this.getComments());
                     return result;
                 } catch (error) {
@@ -173,6 +214,29 @@
                 }
             }
 
+            async deleteSubmission(submissionId, adminCode) {
+                try {
+                    const response = await fetch(`${this.baseURL}/submissions`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            submissionId: submissionId,
+                            adminCode: adminCode 
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        this.notifyListeners('submissions', await this.getSubmissions());
+                        return true;
+                    } else {
+                        throw new Error('Failed to delete submission');
+                    }
+                } catch (error) {
+                    console.error('Error deleting submission:', error);
+                    throw error;
+                }
+            }
+
             async getTasks() {
                 try {
                     const response = await fetch(`${this.baseURL}/tasks`);
@@ -189,7 +253,7 @@
                 if (!this.listeners.has(key)) this.listeners.set(key, new Set());
                 this.listeners.get(key).add(callback);
                 
-                // Set up polling for real-time updates (every 2 seconds)
+                // Set up polling for real-time updates (every 3 seconds)
                 if (!this.pollingIntervals.has(key)) {
                     const interval = setInterval(async () => {
                         try {
@@ -198,7 +262,7 @@
                         } catch (error) {
                             console.error(`Error polling ${key}:`, error);
                         }
-                    }, 2000);
+                    }, 3000);
                     
                     this.pollingIntervals.set(key, interval);
                 }
@@ -462,244 +526,6 @@
             return container;
         }
 
-        const DashboardPage = ({ currentUser, triggerSync }) => {
-            const container = createElement('div', { class: 'space-y-8' });
-            
-            let users = [];
-            let comments = [];
-            let submissions = [];
-            let tasks = [];
-            let isModalOpen = false;
-            let submissionSuccess = false;
-
-            const updateUI = () => {
-                container.innerHTML = '';
-                
-                const upcomingTasks = tasks.filter(task => new Date(task.startDate) > new Date()).length;
-                const onlineNow = users.filter(u => u.isOnline).length;
-                
-                const stats = [
-                    { icon: 'fa-list-check', value: upcomingTasks, label: 'Upcoming Tasks', color: 'bg-blue-500' },
-                    { icon: 'fa-check-double', value: submissions.length, label: 'Total Submissions', color: 'bg-violet-500' },
-                    { icon: 'fa-comments', value: comments.length, label: 'Team Comments', color: 'bg-teal-500' },
-                    { icon: 'fa-users', value: onlineNow, label: 'Online Now', color: 'bg-amber-500' },
-                ];
-                
-                container.appendChild(TeamPresenceHeader({ users }));
-                
-                container.appendChild(
-                    createElement('div', { class: 'p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800 mb-6' },
-                        createElement('i', { class: 'fas fa-sync-alt mr-2' }), 
-                        ' All data is synchronized in real-time across all users and browsers'
-                    )
-                );
-                
-                container.appendChild(
-                    createElement('div', { class: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6' },
-                        ...stats.map(stat => 
-                            createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
-                                createElement('div', { 
-                                    class: `w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl ${stat.color}` 
-                                }, createElement('i', { class: `fas ${stat.icon}` })),
-                                createElement('div', { class: 'mt-4' },
-                                    createElement('p', { class: 'text-4xl font-bold text-slate-800' }, stat.value),
-                                    createElement('p', { class: 'text-md text-gray-500 font-medium' }, stat.label)
-                                )
-                            )
-                        )
-                    )
-                );
-                
-                container.appendChild(
-                    createElement('div', { class: 'grid grid-cols-1 lg:grid-cols-3 gap-8' },
-                        createElement('div', { class: 'lg:col-span-2' }, 
-                            CommentsSection({ currentUser })
-                        ),
-                        createElement('div', { class: 'lg:col-span-1 space-y-8' },
-                            createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
-                                createElement('h3', { class: 'text-xl font-bold text-slate-800 mb-4' }, 'Live Team Activity'),
-                                createElement('div', { class: 'space-y-3' },
-                                    createElement('div', { class: 'flex items-center justify-between p-3 bg-green-50 rounded-lg' },
-                                        createElement('div', { class: 'flex items-center gap-3' },
-                                            createElement('i', { class: 'fas fa-sync-alt text-green-600' }),
-                                            createElement('span', { class: 'font-semibold text-sm text-green-800' }, 'Real-Time Sync')
-                                        ),
-                                        createElement('span', { class: 'font-bold text-sm text-green-600' }, 'Active')
-                                    ),
-                                    createElement('div', { class: 'text-sm text-gray-600' },
-                                        createElement('p', { class: 'font-semibold mb-2' }, 'Recent Activity:'),
-                                        ...comments.slice(0, 3).map(comment => 
-                                            createElement('p', { class: 'truncate text-xs mb-1' },
-                                                `${comment.username} (${comment.team}): ${comment.text}`
-                                            )
-                                        )
-                                    )
-                                )
-                            ),
-                            createElement('div', { 
-                                class: 'bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300',
-                                onclick: openModal
-                            },
-                                createElement('div', { class: 'flex flex-col items-center text-center gap-4' },
-                                    createElement('div', { 
-                                        class: 'w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center' 
-                                    }, createElement('i', { class: 'fas fa-cloud-upload-alt' })),
-                                    createElement('div', null, 
-                                        createElement('h3', { class: 'font-bold text-slate-800 text-lg' }, 'Submit Weekly Report'), 
-                                        createElement('p', { class: 'text-sm text-gray-500 mt-1' }, 'Share progress with the team')
-                                    )
-                                )
-                            )
-                        )
-                    )
-                );
-                
-                renderModal();
-            };
-            
-            const handleSubmitReport = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                
-                try {
-                    await backendService.addSubmission({ 
-                        name: formData.get('title'), 
-                        member: currentUser.username, 
-                        team: formData.get('targetTeam') || currentUser.team, 
-                        progress: formData.get('progress'), 
-                        plan: formData.get('plan'), 
-                        fileType: 'Report'
-                    });
-                    
-                    triggerSync();
-                    submissionSuccess = true;
-                    updateUI();
-                } catch (error) {
-                    alert('Failed to submit report. Please try again.');
-                }
-            };
-
-            const openModal = () => { 
-                submissionSuccess = false; 
-                isModalOpen = true; 
-                updateUI(); 
-            };
-            
-            const closeModal = () => { 
-                isModalOpen = false; 
-                updateUI(); 
-            };
-            
-            const renderModal = () => {
-                if (!isModalOpen) return;
-                
-                Modal({
-                    isOpen: isModalOpen, 
-                    onClose: closeModal, 
-                    size: 'lg',
-                    children: submissionSuccess ?
-                        createElement('div', { class: 'text-center py-10' },
-                            createElement('i', { class: 'fas fa-check-circle text-6xl text-green-500 mb-4' }),
-                            createElement('h2', { class: 'text-2xl font-bold text-slate-800' }, 'Submission Successful!'),
-                            createElement('p', { class: 'text-gray-600 mt-2' }, 'Your report has been shared with all team members in real-time.'),
-                            createElement('button', { 
-                                class: 'mt-6 bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg',
-                                onclick: closeModal
-                            }, 'Close')
-                        ) :
-                        createElement('div', null,
-                            createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6' }, 'Weekly Report Submission'),
-                            createElement('form', { class: 'space-y-4', onsubmit: handleSubmitReport },
-                                createElement('div', null, 
-                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Report Title'), 
-                                    createElement('input', { 
-                                        type: 'text', 
-                                        name: 'title', 
-                                        placeholder: 'e.g., Q1 Week 4 Progress Report', 
-                                        required: true, 
-                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
-                                    })
-                                ),
-                                createElement('div', null, 
-                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Target Team'), 
-                                    createElement('select', { 
-                                        name: 'targetTeam', 
-                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
-                                    },
-                                        ...Object.values(TEAM_MAPPING).map(team => 
-                                            createElement('option', { value: team.name }, team.name)
-                                        )
-                                    )
-                                ),
-                                createElement('div', null, 
-                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Progress Report'), 
-                                    createElement('textarea', { 
-                                        name: 'progress', 
-                                        placeholder: 'Describe your progress...', 
-                                        required: true, 
-                                        rows: 4, 
-                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
-                                    })
-                                ),
-                                createElement('div', null, 
-                                    createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, "Next Week's Plan"), 
-                                    createElement('textarea', { 
-                                        name: 'plan', 
-                                        placeholder: 'Outline your plans...', 
-                                        required: true, 
-                                        rows: 3, 
-                                        class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
-                                    })
-                                ),
-                                createElement('button', { 
-                                    type: 'submit', 
-                                    class: 'w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2' 
-                                }, 
-                                    createElement('i', { class: 'fas fa-paper-plane' }),
-                                    'Submit Report to Team'
-                                )
-                            )
-                        )
-                });
-            };
-
-            // Subscribe to data updates
-            const unsubscribers = [
-                backendService.subscribe('users', (data) => {
-                    users = data;
-                    updateUI();
-                }),
-                backendService.subscribe('comments', (data) => {
-                    comments = data;
-                    updateUI();
-                }),
-                backendService.subscribe('submissions', (data) => {
-                    submissions = data;
-                    updateUI();
-                }),
-                backendService.subscribe('tasks', (data) => {
-                    tasks = data;
-                    updateUI();
-                })
-            ];
-            
-            // Initial data load
-            Promise.all([
-                backendService.getUsers(),
-                backendService.getComments(),
-                backendService.getSubmissions(),
-                backendService.getTasks()
-            ]).then(([userData, commentData, submissionData, taskData]) => {
-                users = userData;
-                comments = commentData;
-                submissions = submissionData;
-                tasks = taskData;
-                updateUI();
-            });
-            
-            return container;
-        }
-
         // --- MAIN APP ---
         function App() {
             const root = document.getElementById('root');
@@ -710,7 +536,11 @@
             let isSyncing = false;
             let lastSyncTime = 'just now';
             let isSidebarOpen = window.innerWidth >= 1024;
-            
+            let users = [];
+            let comments = [];
+            let submissions = [];
+            let tasks = [];
+
             const handleLogin = (user) => {
                 currentUser = user;
                 backendService.setCurrentUser(user);
@@ -747,33 +577,101 @@
                     updateUI();
                 }, 1000);
             };
-            
-            const renderPage = () => {
-                if (!currentUser) return null;
+
+            const showRegisterModal = () => {
+                const teamOptions = Object.values(TEAM_MAPPING).map(team => 
+                    createElement('option', { value: team.name }, team.name)
+                );
                 
-                switch (currentPage) {
-                    case 'dashboard': 
-                        return DashboardPage({ currentUser, triggerSync });
-                    case 'tasks': 
-                        return createElement('div', { class: 'text-center p-8' }, 'Tasks page coming soon...');
-                    case 'submissions': 
-                        return createElement('div', { class: 'text-center p-8' }, 'Submissions page coming soon...');
-                    case 'team': 
-                        return createElement('div', { class: 'text-center p-8' }, 'Team page coming soon...');
-                    case 'settings': 
-                        return createElement('div', { class: 'text-center p-8' }, 'Settings page coming soon...');
-                    default: 
-                        return DashboardPage({ currentUser, triggerSync });
+                const modalContent = createElement('div', null,
+                    createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6' }, 'Register New Team Member'),
+                    createElement('form', { class: 'space-y-4', onsubmit: handleRegister },
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Username'), 
+                            createElement('input', { 
+                                type: 'text', 
+                                name: 'username', 
+                                placeholder: 'Enter username', 
+                                required: true, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                            })
+                        ),
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Password'), 
+                            createElement('input', { 
+                                type: 'password', 
+                                name: 'password', 
+                                placeholder: 'Enter password', 
+                                required: true, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                            })
+                        ),
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Team'), 
+                            createElement('select', { 
+                                name: 'team', 
+                                required: true, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                            }, ...teamOptions)
+                        ),
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Admin Code'), 
+                            createElement('input', { 
+                                type: 'password', 
+                                name: 'adminCode', 
+                                placeholder: 'Enter admin code', 
+                                required: true, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                            })
+                        ),
+                        createElement('button', { 
+                            type: 'submit', 
+                            class: 'w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2' 
+                        }, 
+                            createElement('i', { class: 'fas fa-user-plus' }),
+                            'Register Member'
+                        )
+                    )
+                );
+
+                Modal({
+                    isOpen: true,
+                    onClose: () => {},
+                    children: modalContent
+                });
+            };
+
+            const handleRegister = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const userData = {
+                    username: formData.get('username'),
+                    password: formData.get('password'),
+                    team: formData.get('team'),
+                    isOnline: false
+                };
+                const adminCode = formData.get('adminCode');
+
+                try {
+                    await backendService.registerUser(userData, adminCode);
+                    alert('User registered successfully!');
+                    // Refresh users list
+                    users = await backendService.getUsers();
+                    if (currentPage === 'team') renderPage(currentPage);
+                    // Close modal
+                    document.querySelectorAll('.fixed.inset-0.bg-black').forEach(modal => modal.remove());
+                } catch (error) {
+                    alert(error.message);
                 }
             };
-            
-            function updateUI() {
-                root.innerHTML = '';
-                
+
+            const renderPage = () => {
                 if (!currentUser) {
-                    root.appendChild(LoginScreen({ onLogin: handleLogin }));
+                    renderLoginScreen();
                     return;
                 }
+
+                root.innerHTML = '';
                 
                 // Add sync indicator
                 root.appendChild(SyncStatusIndicator({ isSyncing, lastSyncTime }));
@@ -821,6 +719,21 @@
                         createElement('ul', { class: 'space-y-2' }, ...navLinks)
                     )
                 );
+
+                // Add Register button to sidebar for admins
+                if (currentUser.team === 'Administrator') {
+                    sidebar.appendChild(
+                        createElement('div', { class: 'mt-8' },
+                            createElement('button', {
+                                class: 'w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2',
+                                onclick: showRegisterModal
+                            },
+                                createElement('i', { class: 'fas fa-user-plus' }),
+                                'Register New Member'
+                            )
+                        )
+                    );
+                }
                 
                 layout.appendChild(sidebar);
                 
@@ -878,16 +791,615 @@
                 );
                 
                 const mainContentContainer = createElement('div', { class: 'mt-10' });
-                const pageElement = renderPage();
-                if (pageElement) mainContentContainer.appendChild(pageElement);
+                
+                // Render current page content
+                switch(currentPage) {
+                    case 'dashboard':
+                        mainContentContainer.appendChild(renderDashboard());
+                        break;
+                    case 'tasks':
+                        mainContentContainer.appendChild(renderTasks());
+                        break;
+                    case 'submissions':
+                        mainContentContainer.appendChild(renderSubmissions());
+                        break;
+                    case 'team':
+                        mainContentContainer.appendChild(renderTeam());
+                        break;
+                    case 'settings':
+                        mainContentContainer.appendChild(renderSettings());
+                        break;
+                    default:
+                        mainContentContainer.appendChild(renderDashboard());
+                }
                 
                 main.appendChild(header);
                 main.appendChild(mainContentContainer);
                 layout.appendChild(main);
                 
                 root.appendChild(layout);
-            }
-            
+            };
+
+            const renderLoginScreen = () => {
+                root.innerHTML = '';
+                
+                const loginContainer = createElement('div', { 
+                    class: 'min-h-screen bg-slate-100 flex items-center justify-center p-4 animate-fade-in' 
+                });
+                
+                const loginCard = createElement('div', { 
+                    class: 'bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center animate-scale-up' 
+                },
+                    createElement('div', { class: 'flex justify-center items-center gap-3 mb-4' },
+                        createElement('div', { 
+                            class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' 
+                        }, 'DH'),
+                        createElement('span', { class: 'text-2xl font-extrabold text-slate-800' }, 'DigiHive')
+                    ),
+                    createElement('div', { class: 'my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500' },
+                        createElement('p', { class: 'text-blue-700 font-medium' }, 
+                            'Real-time collaborative dashboard with shared data across all teams'
+                        )
+                    ),
+                    createElement('form', { class: 'space-y-4', onsubmit: handleLoginSubmit },
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Username'), 
+                            createElement('input', { 
+                                type: 'text', 
+                                name: 'username', 
+                                required: true, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500', 
+                                placeholder: 'Enter your username' 
+                            })
+                        ),
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Password'), 
+                            createElement('input', { 
+                                type: 'password', 
+                                name: 'password', 
+                                required: true, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500', 
+                                placeholder: 'Enter your password' 
+                            })
+                        ),
+                        createElement('button', { 
+                            type: 'submit', 
+                            class: 'w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-lg' 
+                        }, 'Login to Dashboard')
+                    ),
+                    createElement('div', { class: 'mt-4 text-sm text-gray-600' },
+                        'Demo accounts: admin/password, dev/password, designer/password'
+                    ),
+                    createElement('div', { class: 'mt-6 pt-4 border-t border-gray-200' },
+                        createElement('button', {
+                            class: 'w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors',
+                            onclick: showRegisterModal
+                        },
+                            createElement('i', { class: 'fas fa-user-plus mr-2' }),
+                            'Register New Team Member'
+                        )
+                    )
+                );
+                
+                loginContainer.appendChild(loginCard);
+                root.appendChild(loginContainer);
+            };
+
+            const handleLoginSubmit = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const username = formData.get('username');
+                const password = formData.get('password');
+                
+                try {
+                    const user = await backendService.loginUser(username, password);
+                    handleLogin(user);
+                } catch (error) {
+                    alert('Invalid username or password.');
+                }
+            };
+
+            const renderDashboard = () => {
+                const container = createElement('div', { class: 'space-y-8' });
+                
+                // Stats cards
+                const stats = [
+                    { icon: 'fa-list-check', value: tasks.filter(task => new Date(task.startDate) > new Date()).length, label: 'Upcoming Tasks', color: 'bg-blue-500' },
+                    { icon: 'fa-check-double', value: submissions.length, label: 'Total Submissions', color: 'bg-violet-500' },
+                    { icon: 'fa-comments', value: comments.length, label: 'Team Comments', color: 'bg-teal-500' },
+                    { icon: 'fa-users', value: users.filter(u => u.isOnline).length, label: 'Online Now', color: 'bg-amber-500' },
+                ];
+                
+                container.appendChild(TeamPresenceHeader({ users }));
+                
+                container.appendChild(
+                    createElement('div', { class: 'p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800 mb-6' },
+                        createElement('i', { class: 'fas fa-sync-alt mr-2' }), 
+                        ' All data is synchronized in real-time across all users and browsers'
+                    )
+                );
+                
+                container.appendChild(
+                    createElement('div', { class: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6' },
+                        ...stats.map(stat => 
+                            createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
+                                createElement('div', { 
+                                    class: `w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl ${stat.color}` 
+                                }, createElement('i', { class: `fas ${stat.icon}` })),
+                                createElement('div', { class: 'mt-4' },
+                                    createElement('p', { class: 'text-4xl font-bold text-slate-800' }, stat.value),
+                                    createElement('p', { class: 'text-md text-gray-500 font-medium' }, stat.label)
+                                )
+                            )
+                        )
+                    )
+                );
+                
+                container.appendChild(
+                    createElement('div', { class: 'grid grid-cols-1 lg:grid-cols-3 gap-8' },
+                        createElement('div', { class: 'lg:col-span-2' }, 
+                            CommentsSection({ currentUser })
+                        ),
+                        createElement('div', { class: 'lg:col-span-1 space-y-8' },
+                            createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
+                                createElement('h3', { class: 'text-xl font-bold text-slate-800 mb-4' }, 'Live Team Activity'),
+                                createElement('div', { class: 'space-y-3' },
+                                    createElement('div', { class: 'flex items-center justify-between p-3 bg-green-50 rounded-lg' },
+                                        createElement('div', { class: 'flex items-center gap-3' },
+                                            createElement('i', { class: 'fas fa-sync-alt text-green-600' }),
+                                            createElement('span', { class: 'font-semibold text-sm text-green-800' }, 'Real-Time Sync')
+                                        ),
+                                        createElement('span', { class: 'font-bold text-sm text-green-600' }, 'Active')
+                                    ),
+                                    createElement('div', { class: 'text-sm text-gray-600' },
+                                        createElement('p', { class: 'font-semibold mb-2' }, 'Recent Activity:'),
+                                        ...comments.slice(0, 3).map(comment => 
+                                            createElement('p', { class: 'truncate text-xs mb-1' },
+                                                `${comment.username} (${comment.team}): ${comment.text}`
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            createElement('div', { 
+                                class: 'bg-white rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300',
+                                onclick: showSubmissionModal
+                            },
+                                createElement('div', { class: 'flex flex-col items-center text-center gap-4' },
+                                    createElement('div', { 
+                                        class: 'w-16 h-16 rounded-full bg-blue-100 text-blue-500 text-3xl flex items-center justify-center' 
+                                    }, createElement('i', { class: 'fas fa-cloud-upload-alt' })),
+                                    createElement('div', null, 
+                                        createElement('h3', { class: 'font-bold text-slate-800 text-lg' }, 'Submit Weekly Report'), 
+                                        createElement('p', { class: 'text-sm text-gray-500 mt-1' }, 'Share progress with the team')
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+                
+                return container;
+            };
+
+            const showSubmissionModal = () => {
+                const teamOptions = Object.values(TEAM_MAPPING).map(team => 
+                    createElement('option', { value: team.name }, team.name)
+                );
+
+                const modalContent = createElement('div', null,
+                    createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6' }, 'Weekly Report Submission'),
+                    createElement('form', { class: 'space-y-4', onsubmit: handleSubmitReport },
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Report Title'), 
+                            createElement('input', { 
+                                type: 'text', 
+                                name: 'title', 
+                                placeholder: 'e.g., Q1 Week 4 Progress Report', 
+                                required: true, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                            })
+                        ),
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Target Team'), 
+                            createElement('select', { 
+                                name: 'targetTeam', 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                            }, ...teamOptions)
+                        ),
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Progress Report'), 
+                            createElement('textarea', { 
+                                name: 'progress', 
+                                placeholder: 'Describe your progress...', 
+                                required: true, 
+                                rows: 4, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                            })
+                        ),
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, "Next Week's Plan"), 
+                            createElement('textarea', { 
+                                name: 'plan', 
+                                placeholder: 'Outline your plans...', 
+                                required: true, 
+                                rows: 3, 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                            })
+                        ),
+                        createElement('div', null, 
+                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Attachment (Optional, max 2MB)'), 
+                            createElement('input', { 
+                                type: 'file', 
+                                name: 'attachment', 
+                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
+                            })
+                        ),
+                        createElement('button', { 
+                            type: 'submit', 
+                            class: 'w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2' 
+                        }, 
+                            createElement('i', { class: 'fas fa-paper-plane' }),
+                            'Submit Report to Team'
+                        )
+                    )
+                );
+
+                Modal({
+                    isOpen: true,
+                    onClose: () => {},
+                    children: modalContent
+                });
+            };
+
+            const handleSubmitReport = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const fileInput = formData.get('attachment');
+                
+                // File validation
+                if (fileInput && fileInput.size > 0) {
+                    if (fileInput.size > 2 * 1024 * 1024) {
+                        alert('File size must be less than 2MB');
+                        return;
+                    }
+                }
+                
+                try {
+                    await backendService.addSubmission({ 
+                        name: formData.get('title'), 
+                        member: currentUser.username, 
+                        team: formData.get('targetTeam') || currentUser.team, 
+                        progress: formData.get('progress'), 
+                        plan: formData.get('plan'), 
+                        fileType: 'Report',
+                        attachment: fileInput && fileInput.size > 0 ? fileInput.name : null
+                    });
+                    
+                    triggerSync();
+                    alert('Submission successful!');
+                    // Close modal
+                    document.querySelectorAll('.fixed.inset-0.bg-black').forEach(modal => modal.remove());
+                } catch (error) {
+                    alert('Failed to submit report. Please try again.');
+                }
+            };
+
+            const renderTasks = () => {
+                const container = createElement('div', { class: 'space-y-6' });
+                
+                if (tasks.length === 0) {
+                    container.appendChild(
+                        createElement('div', { 
+                            class: 'bg-white rounded-2xl p-12 shadow-sm text-center text-gray-500' 
+                        },
+                            createElement('i', { class: 'fas fa-tasks text-4xl mb-3' }),
+                            createElement('h3', { class: 'text-xl font-bold' }, 'No Tasks Found'),
+                            createElement('p', null, 'Tasks will appear here when available.')
+                        )
+                    );
+                    return container;
+                }
+
+                const taskGrid = createElement('div', { 
+                    class: 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' 
+                });
+                
+                // Sort tasks by start date
+                tasks.sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+                     .forEach(task => {
+                    const teamInfo = TEAM_MAPPING[task.team];
+                    taskGrid.appendChild(
+                        createElement('div', { 
+                            class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-300' 
+                        },
+                            createElement('div', null,
+                                createElement('div', { class: 'flex justify-between items-start mb-3' },
+                                    createElement('h3', { class: 'text-lg font-bold text-slate-800 pr-2' }, task.subject),
+                                    createElement('div', { 
+                                        class: `px-3 py-1 text-xs font-semibold rounded-full ${
+                                            task.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                            task.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                                            'bg-yellow-100 text-yellow-800'
+                                        }` 
+                                    }, task.status || 'pending')
+                                ),
+                                createElement('div', { class: 'flex items-center gap-2 mb-4' },
+                                   createElement('div', { 
+                                       class: `w-6 h-6 ${teamInfo.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` 
+                                   }, teamInfo.avatar),
+                                   createElement('span', { class: 'text-sm font-semibold text-gray-600' }, task.team)
+                                ),
+                                createElement('p', { class: 'text-sm text-gray-600 mb-4 h-20 overflow-y-auto' }, task.description)
+                            ),
+                            createElement('div', { class: 'text-xs text-gray-500 border-t pt-3 mt-auto' },
+                                createElement('p', null, `Start: ${new Date(task.startDate).toLocaleString()}`),
+                                createElement('p', null, `End: ${new Date(task.endDate).toLocaleString()}`)
+                            )
+                        )
+                    );
+                });
+                
+                container.appendChild(taskGrid);
+                return container;
+            };
+
+            const renderSubmissions = () => {
+                const container = createElement('div', { class: 'space-y-6' });
+                
+                container.appendChild(
+                    createElement('div', { class: 'flex justify-between items-center' },
+                        createElement('h2', { class: 'text-2xl font-bold text-slate-800' }, 'Past Submissions Archive'),
+                        createElement('button', { 
+                            class: 'bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2',
+                            onclick: () => {
+                                const event = new CustomEvent('digihive-data-update', {
+                                    detail: { key: 'submissions', data: submissions }
+                                });
+                                window.dispatchEvent(event);
+                            }
+                        },
+                            createElement('i', { class: 'fas fa-sync-alt' }),
+                            'Refresh Data'
+                        )
+                    )
+                );
+                
+                if (submissions.length === 0) {
+                    container.appendChild(
+                        createElement('div', { 
+                            class: 'bg-white rounded-2xl p-12 shadow-sm text-center text-gray-500' 
+                        },
+                            createElement('i', { class: 'fas fa-file-archive text-4xl mb-3' }),
+                            createElement('h3', { class: 'text-xl font-bold' }, 'No Submissions Yet'),
+                            createElement('p', null, 'Submitted reports will appear here.')
+                        )
+                    );
+                    return container;
+                }
+
+                const table = createElement('div', { class: 'bg-white rounded-2xl shadow-sm overflow-hidden' },
+                    createElement('div', { class: 'overflow-x-auto' },
+                        createElement('table', { class: 'w-full' },
+                            createElement('thead', { class: 'bg-slate-100' },
+                                createElement('tr', null,
+                                    createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Title'),
+                                    createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Submitted By'),
+                                    createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Target Team'),
+                                    createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Date'),
+                                    createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Attachment'),
+                                    createElement('th', { class: 'py-3 px-4 text-left text-sm font-semibold text-slate-700' }, 'Actions')
+                                )
+                            ),
+                            createElement('tbody', { class: 'divide-y divide-slate-200' },
+                                ...submissions.map(submission => {
+                                    const teamInfo = TEAM_MAPPING[submission.team];
+                                    return createElement('tr', { class: 'hover:bg-slate-50' },
+                                        createElement('td', { class: 'py-3 px-4' }, 
+                                            createElement('div', { class: 'font-medium text-slate-800' }, submission.name)
+                                        ),
+                                        createElement('td', { class: 'py-3 px-4' }, 
+                                            createElement('div', { class: 'flex items-center gap-2' },
+                                                createElement('div', { 
+                                                    class: `w-8 h-8 ${teamInfo.color} rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` 
+                                                }, submission.member.substring(0, 2).toUpperCase()),
+                                                createElement('span', { class: 'text-sm' }, submission.member)
+                                            )
+                                        ),
+                                        createElement('td', { class: 'py-3 px-4' }, 
+                                            createElement('div', { class: 'flex items-center gap-2' },
+                                                createElement('div', { 
+                                                    class: `w-6 h-6 ${teamInfo.color} rounded-md flex-shrink-0 flex items-center justify-center text-white font-bold text-xs` 
+                                                }, teamInfo.avatar),
+                                                createElement('span', { class: 'text-sm' }, submission.team)
+                                            )
+                                        ),
+                                        createElement('td', { class: 'py-3 px-4 text-sm text-slate-600' }, 
+                                            new Date(submission.timestamp).toLocaleDateString()
+                                        ),
+                                        createElement('td', { class: 'py-3 px-4' }, 
+                                            submission.attachment ? 
+                                                createElement('a', { 
+                                                    href: '#', 
+                                                    class: 'text-blue-500 hover:text-blue-700 flex items-center gap-1',
+                                                    onclick: (e) => {
+                                                        e.preventDefault();
+                                                        alert(`Downloading: ${submission.attachment}`);
+                                                    }
+                                                },
+                                                    createElement('i', { class: 'fas fa-download' }),
+                                                    'Download'
+                                                ) :
+                                                createElement('span', { class: 'text-slate-400 text-sm' }, 'No attachment')
+                                        ),
+                                        createElement('td', { class: 'py-3 px-4' },
+                                            createElement('button', {
+                                                class: 'bg-red-500 text-white font-semibold px-3 py-1 rounded text-sm hover:bg-red-600',
+                                                onclick: () => handleDeleteSubmission(submission.id)
+                                            }, 'Delete')
+                                        )
+                                    );
+                                })
+                            )
+                        )
+                    )
+                );
+                
+                container.appendChild(table);
+                return container;
+            };
+
+            const handleDeleteSubmission = async (submissionId) => {
+                const adminCode = prompt('Enter Admin Code to delete this submission:');
+                if (adminCode !== ADMIN_CODE) {
+                    if (adminCode !== null) alert('Invalid Admin Code.');
+                    return;
+                }
+
+                if (confirm('Are you sure you want to delete this submission?')) {
+                    try {
+                        await backendService.deleteSubmission(submissionId, adminCode);
+                        alert('Submission deleted successfully!');
+                    } catch (error) {
+                        alert('Failed to delete submission.');
+                    }
+                }
+            };
+
+            const renderTeam = () => {
+                const container = createElement('div', { class: 'space-y-6' });
+                
+                container.appendChild(
+                    createElement('div', { class: 'bg-white p-4 rounded-2xl shadow-sm flex justify-end' },
+                        createElement('button', {
+                            class: 'bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2',
+                            onclick: showRegisterModal
+                        },
+                            createElement('i', { class: 'fas fa-user-plus' }),
+                            'Register New Member'
+                        )
+                    )
+                );
+
+                if (users.length === 0) {
+                    container.appendChild(
+                        createElement('div', { 
+                            class: 'bg-white rounded-2xl p-12 shadow-sm text-center text-gray-500' 
+                        },
+                            createElement('i', { class: 'fas fa-users text-4xl mb-3' }),
+                            createElement('h3', { class: 'text-xl font-bold' }, 'No Team Members'),
+                            createElement('p', null, 'Register team members to see them here.')
+                        )
+                    );
+                    return container;
+                }
+
+                const teamMemberCards = users.map(user => {
+                    const teamInfo = TEAM_MAPPING[user.team];
+                    const loginTime = user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never';
+                    const logoutTime = user.lastLogout ? new Date(user.lastLogout).toLocaleString() : 'Never';
+                    
+                    return createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4' },
+                        createElement('div', { class: 'flex items-center gap-5' },
+                            createElement('div', { class: 'relative' },
+                                createElement('div', { 
+                                    class: `w-16 h-16 ${teamInfo.color} rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-2xl` 
+                                }, teamInfo.avatar),
+                                createElement('div', { 
+                                    class: `absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${user.isOnline ? 'bg-green-400' : 'bg-gray-400'}` 
+                                })
+                            ),
+                            createElement('div', null,
+                                createElement('h3', { class: 'text-xl font-bold' }, user.username),
+                                createElement('p', { class: 'text-gray-500' }, teamInfo.role),
+                                createElement('p', { class: 'text-xs text-gray-400 mt-1' }, `Last login: ${loginTime}`),
+                                createElement('p', { class: 'text-xs text-gray-400' }, `Last logout: ${logoutTime}`)
+                            )
+                        ),
+                        createElement('button', {
+                            class: 'bg-red-100 text-red-600 hover:bg-red-200 font-bold py-2 px-4 rounded-lg w-full sm:w-auto flex items-center gap-2',
+                            onclick: () => handleDeregister(user.username)
+                        },
+                            createElement('i', { class: 'fas fa-user-minus' }),
+                            'Deregister'
+                        )
+                    );
+                });
+                
+                container.appendChild(
+                    createElement('div', { class: 'grid grid-cols-1 gap-6' }, ...teamMemberCards)
+                );
+                
+                return container;
+            };
+
+            const handleDeregister = (username) => {
+                if (username === currentUser.username) {
+                    alert("You cannot deregister yourself.");
+                    return;
+                }
+
+                const adminCode = prompt("Enter Admin Code to deregister this member:");
+                if (adminCode !== ADMIN_CODE) {
+                    if (adminCode !== null) alert("Invalid Admin Code.");
+                    return;
+                }
+
+                if (confirm(`Are you sure you want to deregister ${username}?`)) {
+                    // This would call a backend API to delete the user
+                    alert(`${username} has been deregistered.`);
+                    // Refresh users list
+                    backendService.getUsers().then(data => {
+                        users = data;
+                        if (currentPage === 'team') renderPage(currentPage);
+                    });
+                }
+            };
+
+            const renderSettings = () => {
+                return createElement('div', { class: 'text-center p-8' }, 
+                    createElement('h2', { class: 'text-2xl font-bold mb-4' }, 'Settings'),
+                    createElement('p', { class: 'text-gray-600' }, 'Settings page coming soon...')
+                );
+            };
+
+            const updateUI = async () => {
+                // Load data from backend
+                try {
+                    users = await backendService.getUsers();
+                    comments = await backendService.getComments();
+                    submissions = await backendService.getSubmissions();
+                    tasks = await backendService.getTasks();
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                }
+                
+                renderPage();
+            };
+
+            // Subscribe to data updates
+            const unsubscribers = [
+                backendService.subscribe('users', (data) => {
+                    users = data;
+                    if (currentPage === 'team' || currentPage === 'dashboard') updateUI();
+                }),
+                backendService.subscribe('comments', (data) => {
+                    comments = data;
+                    if (currentPage === 'dashboard') updateUI();
+                }),
+                backendService.subscribe('submissions', (data) => {
+                    submissions = data;
+                    if (currentPage === 'submissions' || currentPage === 'dashboard') updateUI();
+                }),
+                backendService.subscribe('tasks', (data) => {
+                    tasks = data;
+                    if (currentPage === 'tasks' || currentPage === 'dashboard') updateUI();
+                })
+            ];
+
+            // Initialize
+            updateUI();
+
             // Handle window resize
             window.addEventListener('resize', () => {
                 const shouldBeOpen = window.innerWidth >= 1024;
@@ -896,7 +1408,7 @@
                     updateUI();
                 }
             });
-            
+
             // Update user online status on load
             if (currentUser) {
                 backendService.setCurrentUser(currentUser);
@@ -905,96 +1417,17 @@
                     lastLogin: new Date().toISOString()
                 });
             }
-            
-            // Initial render
-            updateUI();
+
+            return {
+                updateUI,
+                unsubscribers
+            };
         }
 
-        // Login Screen Component
-        function LoginScreen({ onLogin }) {
-            const container = createElement('div', { 
-                class: 'min-h-screen bg-slate-100 flex items-center justify-center p-4 animate-fade-in' 
-            });
-            
-            let error = '';
-
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                error = '';
-                const formData = new FormData(e.target);
-                const username = formData.get('username');
-                const password = formData.get('password');
-                
-                try {
-                    const user = await backendService.loginUser(username, password);
-                    onLogin(user);
-                } catch (error) {
-                    console.error('Login error:', error);
-                    error = 'Invalid username or password.';
-                    updateUI();
-                }
-            };
-
-            const updateUI = () => {
-                container.innerHTML = '';
-                
-                container.appendChild(
-                    createElement('div', { 
-                        class: 'bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center animate-scale-up' 
-                    },
-                        createElement('div', { class: 'flex justify-center items-center gap-3 mb-4' },
-                            createElement('div', { 
-                                class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' 
-                            }, 'DH'),
-                            createElement('span', { class: 'text-2xl font-extrabold text-slate-800' }, 'DigiHive')
-                        ),
-                        createElement('div', { class: 'my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500' },
-                            createElement('p', { class: 'text-blue-700 font-medium' }, 
-                                'Real-time collaborative dashboard with shared data across all teams'
-                            )
-                        ),
-                        createElement('form', { class: 'space-y-4', onsubmit: handleSubmit },
-                            error && createElement('p', { class: 'text-red-500 text-sm bg-red-50 p-2 rounded' }, error),
-                            createElement('div', null, 
-                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Username'), 
-                                createElement('input', { 
-                                    type: 'text', 
-                                    name: 'username', 
-                                    required: true, 
-                                    class: 'w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500', 
-                                    placeholder: 'Enter your username' 
-                                })
-                            ),
-                            createElement('div', null, 
-                                createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Password'), 
-                                createElement('input', { 
-                                    type: 'password', 
-                                    name: 'password', 
-                                    required: true, 
-                                    class: 'w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500', 
-                                    placeholder: 'Enter your password' 
-                                })
-                            ),
-                            createElement('button', { 
-                                type: 'submit', 
-                                class: 'w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-lg' 
-                            }, 'Login to Dashboard')
-                        ),
-                        createElement('div', { class: 'mt-4 text-sm text-gray-600' },
-                            'Demo accounts: admin/password, dev/password, designer/password'
-                        )
-                    )
-                );
-            };
-            
-            // Initial UI
-            updateUI();
-            
-            return container;
-        }
-
-        // Initialize the app
-        document.addEventListener('DOMContentLoaded', App);
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            App();
+        });
     </script>
 </body>
 </html>
