@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// Data storage (in-memory for demo - replace with database in production)
+// Data storage (in-memory for demo)
 let comments = [
     {
         id: 1,
@@ -47,103 +47,151 @@ const ADMIN_CODE = '212259497';
 
 // Comments API
 app.get('/api/comments', (req, res) => {
-    res.json(comments);
+    try {
+        res.json(comments);
+    } catch (error) {
+        console.error('Error fetching comments:', error);
+        res.status(500).json({ error: 'Failed to fetch comments' });
+    }
 });
 
 app.post('/api/comments', (req, res) => {
-    const newComment = {
-        id: Date.now(),
-        ...req.body,
-        timestamp: new Date().toISOString()
-    };
-    comments.unshift(newComment);
-    res.status(201).json(newComment);
+    try {
+        const newComment = {
+            id: Date.now(),
+            ...req.body,
+            timestamp: new Date().toISOString()
+        };
+        comments.unshift(newComment);
+        res.status(201).json(newComment);
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        res.status(500).json({ error: 'Failed to add comment' });
+    }
 });
 
 // Submissions API
 app.get('/api/submissions', (req, res) => {
-    res.json(submissions);
+    try {
+        res.json(submissions);
+    } catch (error) {
+        console.error('Error fetching submissions:', error);
+        res.status(500).json({ error: 'Failed to fetch submissions' });
+    }
 });
 
 app.post('/api/submissions', (req, res) => {
-    const newSubmission = {
-        id: Date.now(),
-        ...req.body,
-        timestamp: new Date().toISOString()
-    };
-    submissions.unshift(newSubmission);
-    res.status(201).json(newSubmission);
+    try {
+        const newSubmission = {
+            id: Date.now(),
+            ...req.body,
+            timestamp: new Date().toISOString()
+        };
+        submissions.unshift(newSubmission);
+        res.status(201).json(newSubmission);
+    } catch (error) {
+        console.error('Error adding submission:', error);
+        res.status(500).json({ error: 'Failed to add submission' });
+    }
 });
 
 app.delete('/api/submissions', (req, res) => {
-    const { submissionId, adminCode } = req.body;
-    
-    if (adminCode !== ADMIN_CODE) {
-        return res.status(401).json({ error: 'Invalid admin code' });
-    }
-    
-    const submissionIndex = submissions.findIndex(s => s.id == submissionId);
-    if (submissionIndex === -1) {
-        return res.status(404).json({ error: 'Submission not found' });
-    }
-    
-    submissions.splice(submissionIndex, 1);
-    res.json({ message: 'Submission deleted successfully' });
-});
-
-// Tasks API
-app.get('/api/tasks', (req, res) => {
-    res.json(tasks);
-});
-
-// Users API
-app.get('/api/users', (req, res) => {
-    res.json(users);
-});
-
-app.post('/api/users', (req, res) => {
-    const { username, updates, action, userData, adminCode } = req.body;
-    
-    if (action === 'update') {
-        const userIndex = users.findIndex(u => u.username === username);
-        if (userIndex !== -1) {
-            users[userIndex] = { ...users[userIndex], ...updates };
-            return res.json(users[userIndex]);
-        }
-        return res.status(404).json({ error: 'User not found' });
-    }
-
-    if (action === 'login') {
-        const user = users.find(u => u.username === username && u.password === updates.password);
-        if (user) {
-            // Update login status
-            user.isOnline = true;
-            user.lastLogin = new Date().toISOString();
-            return res.json(user);
-        }
-        return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    if (action === 'register') {
+    try {
+        const { submissionId, adminCode } = req.body;
+        
         if (adminCode !== ADMIN_CODE) {
             return res.status(401).json({ error: 'Invalid admin code' });
         }
         
-        if (users.find(u => u.username === userData.username)) {
-            return res.status(400).json({ error: 'Username already exists' });
+        const submissionIndex = submissions.findIndex(s => s.id == submissionId);
+        if (submissionIndex === -1) {
+            return res.status(404).json({ error: 'Submission not found' });
         }
         
-        const newUser = {
-            ...userData,
-            isOnline: false,
-            lastLogin: null,
-            lastLogout: null
-        };
-        users.push(newUser);
-        return res.status(201).json(newUser);
+        submissions.splice(submissionIndex, 1);
+        res.json({ message: 'Submission deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting submission:', error);
+        res.status(500).json({ error: 'Failed to delete submission' });
     }
+});
 
-    res.status(400).json({ error: 'Invalid action' });
+// Tasks API
+app.get('/api/tasks', (req, res) => {
+    try {
+        res.json(tasks);
+    } catch (error) {
+        console.error('Error fetching tasks:', error);
+        res.status(500).json({ error: 'Failed to fetch tasks' });
+    }
+});
+
+// Users API
+app.get('/api/users', (req, res) => {
+    try {
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+app.post('/api/users', (req, res) => {
+    try {
+        const { username, updates, action, userData, adminCode, password } = req.body;
+        
+        console.log('Received user action:', action, 'username:', username);
+        
+        if (action === 'update') {
+            const userIndex = users.findIndex(u => u.username === username);
+            if (userIndex === -1) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            users[userIndex] = { ...users[userIndex], ...updates };
+            return res.json(users[userIndex]);
+        }
+
+        if (action === 'login') {
+            console.log('Login attempt for:', username);
+            const user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                // Update user status
+                user.isOnline = true;
+                user.lastLogin = new Date().toISOString();
+                
+                // Return user without password
+                const { password: _, ...userWithoutPassword } = user;
+                return res.json(userWithoutPassword);
+            } else {
+                console.log('Login failed for:', username);
+                return res.status(401).json({ error: 'Invalid username or password' });
+            }
+        }
+
+        if (action === 'register') {
+            if (adminCode !== ADMIN_CODE) {
+                return res.status(401).json({ error: 'Invalid admin code' });
+            }
+            
+            if (users.find(u => u.username === userData.username)) {
+                return res.status(400).json({ error: 'Username already exists' });
+            }
+            
+            const newUser = {
+                ...userData,
+                isOnline: false,
+                lastLogin: null,
+                lastLogout: null
+            };
+            users.push(newUser);
+            return res.status(201).json(newUser);
+        }
+
+        res.status(400).json({ error: 'Invalid action' });
+    } catch (error) {
+        console.error('Error in users API:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 // Health check endpoint
