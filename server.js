@@ -167,4 +167,5 @@ app.listen(PORT, () => {
     console.log(`🚀 DigiHive server running on port ${PORT}`);
     console.log(`📊 API endpoints available at /api/comments, /api/submissions, /api/tasks, /api/users`);
     console.log(`🌐 Frontend served from: http://localhost:${PORT}`);
+    console.log(`💬 Comments update frequency: Hourly (stable)`);
 });
