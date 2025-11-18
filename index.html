@@ -253,8 +253,10 @@
                 if (!this.listeners.has(key)) this.listeners.set(key, new Set());
                 this.listeners.get(key).add(callback);
                 
-                // Set up polling for real-time updates (every 3 seconds)
+                // Set up polling for real-time updates (every 3 seconds for most data, 1 hour for comments)
                 if (!this.pollingIntervals.has(key)) {
+                    const intervalTime = key === 'comments' ? 3600000 : 3000; // 1 hour for comments, 3 seconds for others
+                    
                     const interval = setInterval(async () => {
                         try {
                             const data = await this[`get${key.charAt(0).toUpperCase() + key.slice(1)}`]();
@@ -262,7 +264,7 @@
                         } catch (error) {
                             console.error(`Error polling ${key}:`, error);
                         }
-                    }, 3000);
+                    }, intervalTime);
                     
                     this.pollingIntervals.set(key, interval);
                 }
@@ -361,21 +363,6 @@
             return modalContainer;
         }
 
-        const SyncStatusIndicator = ({ isSyncing, lastSyncTime }) => {
-            return createElement('div', { 
-                class: `fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg transition-all duration-300 ${
-                    isSyncing ? 'bg-blue-500 text-white animate-pulse-sync' : 'bg-green-500 text-white'
-                } animate-slide-in-right` 
-            },
-                createElement('i', { 
-                    class: `fas ${isSyncing ? 'fa-sync-alt fa-spin' : 'fa-check-circle'} mr-1` 
-                }),
-                createElement('span', { class: 'text-sm font-medium' }, 
-                    isSyncing ? 'Syncing...' : `Live - ${lastSyncTime}`
-                )
-            );
-        }
-
         const TeamPresenceHeader = ({ users = [] }) => {
             const onlineUsers = users.filter(u => u.isOnline);
             const onlineTeamsCount = new Set(onlineUsers.map(u => u.team)).size;
@@ -423,9 +410,9 @@
                 container.appendChild(
                     createElement('div', { class: 'flex items-center justify-between mb-4' },
                         createElement('h3', { class: 'text-xl font-bold text-slate-800' }, 'Team Comments'),
-                        createElement('div', { class: 'flex items-center gap-2 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-md' },
-                            createElement('i', { class: 'fas fa-sync-alt mr-1' }),
-                            createElement('span', null, 'Live Updates - All Teams')
+                        createElement('div', { class: 'flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-md' },
+                            createElement('i', { class: 'fas fa-clock mr-1' }),
+                            createElement('span', null, 'Updates hourly')
                         )
                     )
                 );
@@ -466,7 +453,9 @@
                     });
                     
                     newComment = '';
-                    // UI will update automatically via subscription
+                    // Manually update comments after posting
+                    comments = await backendService.getComments();
+                    updateUI();
                 } catch (error) {
                     alert('Failed to post comment. Please try again.');
                 }
@@ -511,7 +500,7 @@
                 return commentsList;
             };
 
-            // Subscribe to comments updates
+            // Subscribe to comments updates (now only updates hourly)
             const unsubscribe = backendService.subscribe('comments', (data) => {
                 comments = data;
                 updateUI();
@@ -533,8 +522,6 @@
             // App state
             let currentUser = JSON.parse(localStorage.getItem('digihive_currentUser') || 'null');
             let currentPage = 'dashboard';
-            let isSyncing = false;
-            let lastSyncTime = 'just now';
             let isSidebarOpen = window.innerWidth >= 1024;
             let users = [];
             let comments = [];
@@ -569,13 +556,8 @@
             };
             
             const triggerSync = () => {
-                isSyncing = true;
+                // Simply reload data without showing sync indicator
                 updateUI();
-                setTimeout(() => {
-                    isSyncing = false;
-                    lastSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    updateUI();
-                }, 1000);
             };
 
             const showRegisterModal = () => {
@@ -672,9 +654,6 @@
                 }
 
                 root.innerHTML = '';
-                
-                // Add sync indicator
-                root.appendChild(SyncStatusIndicator({ isSyncing, lastSyncTime }));
                 
                 const layout = createElement('div', { class: 'flex min-h-screen bg-slate-50' });
                 
@@ -774,7 +753,7 @@
                             onclick: triggerSync
                         },
                             createElement('i', { class: 'fas fa-sync-alt' }),
-                            'Sync Now'
+                            'Refresh Data'
                         ),
                         createElement('div', { class: 'flex items-center gap-3 bg-white p-2 rounded-full shadow-sm' },
                             createElement('div', { 
@@ -914,8 +893,8 @@
                 
                 container.appendChild(
                     createElement('div', { class: 'p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 text-blue-800 mb-6' },
-                        createElement('i', { class: 'fas fa-sync-alt mr-2' }), 
-                        ' All data is synchronized in real-time across all users and browsers'
+                        createElement('i', { class: 'fas fa-clock mr-2' }), 
+                        ' Comments update hourly to allow uninterrupted writing'
                     )
                 );
                 
@@ -942,14 +921,14 @@
                         ),
                         createElement('div', { class: 'lg:col-span-1 space-y-8' },
                             createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
-                                createElement('h3', { class: 'text-xl font-bold text-slate-800 mb-4' }, 'Live Team Activity'),
+                                createElement('h3', { class: 'text-xl font-bold text-slate-800 mb-4' }, 'Team Activity'),
                                 createElement('div', { class: 'space-y-3' },
-                                    createElement('div', { class: 'flex items-center justify-between p-3 bg-green-50 rounded-lg' },
+                                    createElement('div', { class: 'flex items-center justify-between p-3 bg-blue-50 rounded-lg' },
                                         createElement('div', { class: 'flex items-center gap-3' },
-                                            createElement('i', { class: 'fas fa-sync-alt text-green-600' }),
-                                            createElement('span', { class: 'font-semibold text-sm text-green-800' }, 'Real-Time Sync')
+                                            createElement('i', { class: 'fas fa-clock text-blue-600' }),
+                                            <span class="font-semibold text-sm text-blue-800">Hourly Updates</span>
                                         ),
-                                        createElement('span', { class: 'font-bold text-sm text-green-600' }, 'Active')
+                                        <span class="font-bold text-sm text-blue-600">Stable</span>
                                     ),
                                     createElement('div', { class: 'text-sm text-gray-600' },
                                         createElement('p', { class: 'font-semibold mb-2' }, 'Recent Activity:'),
