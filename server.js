@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
 
-// Data storage (in-memory for demo - replace with database in production)
+// Data storage (in-memory for demo)
 let comments = [
     {
         id: 1,
@@ -162,13 +162,14 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Get port from environment variable (Render provides this) or default to 10000
+// Get port from environment variable (Render provides this)
 const PORT = process.env.PORT || 10000;
 
-// Listen on 0.0.0.0 to accept external connections
+// Listen on 0.0.0.0 to accept external connections - THIS IS CRITICAL FOR RENDER
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 DigiHive server running on port ${PORT}`);
     console.log(`📊 API endpoints available at /api/comments, /api/submissions, /api/tasks, /api/users`);
-    console.log(`🌐 Frontend served from: http://0.0.0.0:${PORT}`);
+    console.log(`🌐 Frontend available at: https://your-service.onrender.com`);
     console.log(`💬 Comments update frequency: Hourly (stable)`);
+    console.log(`✅ Server bound to 0.0.0.0:${PORT} - Ready for external connections`);
 });
