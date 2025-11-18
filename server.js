@@ -3,133 +3,94 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 
+// Import your data modules
+const comments = require('./comments.js');
+const users = require('./users.js');
+const tasks = require('./tasks.js');
+const submissions = require('./submissions.js');
+
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// Serve static files from the current directory
 app.use(express.static(__dirname));
 
-// Data storage (in-memory for demo - replace with database in production)
-let comments = [
-    {
-        id: 1,
-        username: 'Jonasmdluli',
-        team: 'Full-Stack',
-        text: 'If any of the team member is facing challenges on their weekly task, they can post their comments here with the challenge and when their submission is due',
-        timestamp: new Date('2025-11-17T14:05:25').toISOString()
-    }
-];
-
-let submissions = [];
-
-let tasks = [
-    { id: 1, subject: "Full-stack Week 1 Server Infrastructure", startDate: "2026-01-13T09:00:00.000Z", endDate: "2026-01-13T11:00:00.000Z", description: "Set up cloud server environment. Configure database architecture. Implement basic security protocols. Create deployment pipeline.", team: "Full-Stack", status: "pending" },
-    { id: 2, subject: "Full-stack Week 1 Database Setup", startDate: "2026-01-14T09:00:00.000Z", endDate: "2026-01-14T11:00:00.000Z", description: "Design database schemas. Set up user tables and relationships. Implement data migration scripts. Create backup systems.", team: "Full-Stack", status: "pending" },
-    // ... keep your existing tasks data
-];
-
-let users = [
-    { username: 'admin', password: 'password', team: 'Administrator', isOnline: false, lastLogin: null, lastLogout: null },
-    { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false, lastLogin: null, lastLogout: null },
-    // ... keep your existing users data
-];
-
-const ADMIN_CODE = '212259497';
-
-// API Routes (keep all your existing API endpoints exactly as they were)
+// API Routes
 app.get('/api/comments', (req, res) => {
-    res.json(comments);
+    res.json(comments.getComments());
 });
 
 app.post('/api/comments', (req, res) => {
-    const newComment = {
-        id: Date.now(),
-        ...req.body,
-        timestamp: new Date().toISOString()
-    };
-    comments.unshift(newComment);
-    res.status(201).json(newComment);
+    try {
+        const newComment = comments.addComment(req.body);
+        res.status(201).json(newComment);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 });
 
 app.get('/api/submissions', (req, res) => {
-    res.json(submissions);
+    res.json(submissions.getSubmissions());
 });
 
 app.post('/api/submissions', (req, res) => {
-    const newSubmission = {
-        id: Date.now(),
-        ...req.body,
-        timestamp: new Date().toISOString()
-    };
-    submissions.unshift(newSubmission);
-    res.status(201).json(newSubmission);
+    try {
+        const newSubmission = submissions.addSubmission(req.body);
+        res.status(201).json(newSubmission);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 });
 
 app.delete('/api/submissions', (req, res) => {
     const { submissionId, adminCode } = req.body;
     
-    if (adminCode !== ADMIN_CODE) {
+    if (adminCode !== '212259497') {
         return res.status(401).json({ error: 'Invalid admin code' });
     }
     
-    const submissionIndex = submissions.findIndex(s => s.id == submissionId);
-    if (submissionIndex === -1) {
-        return res.status(404).json({ error: 'Submission not found' });
+    try {
+        submissions.deleteSubmission(submissionId);
+        res.json({ message: 'Submission deleted successfully' });
+    } catch (error) {
+        res.status(404).json({ error: error.message });
     }
-    
-    submissions.splice(submissionIndex, 1);
-    res.json({ message: 'Submission deleted successfully' });
 });
 
 app.get('/api/tasks', (req, res) => {
-    res.json(tasks);
+    res.json(tasks.getTasks());
 });
 
 app.get('/api/users', (req, res) => {
-    res.json(users);
+    res.json(users.getUsers());
 });
 
 app.post('/api/users', (req, res) => {
     const { username, updates, action, userData, adminCode } = req.body;
     
     if (action === 'update') {
-        const userIndex = users.findIndex(u => u.username === username);
-        if (userIndex !== -1) {
-            users[userIndex] = { ...users[userIndex], ...updates };
-            return res.json(users[userIndex]);
+        try {
+            const updatedUser = users.updateUser(username, updates);
+            res.json(updatedUser);
+        } catch (error) {
+            res.status(404).json({ error: error.message });
         }
-        return res.status(404).json({ error: 'User not found' });
+    } else if (action === 'login') {
+        try {
+            const user = users.loginUser(username, updates.password);
+            res.json(user);
+        } catch (error) {
+            res.status(401).json({ error: error.message });
+        }
+    } else if (action === 'register') {
+        try {
+            const newUser = users.registerUser(userData, adminCode);
+            res.status(201).json(newUser);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    } else {
+        res.status(400).json({ error: 'Invalid action' });
     }
-
-    if (action === 'login') {
-        const user = users.find(u => u.username === username && u.password === updates.password);
-        if (user) {
-            return res.json(user);
-        }
-        return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    if (action === 'register') {
-        if (adminCode !== ADMIN_CODE) {
-            return res.status(401).json({ error: 'Invalid admin code' });
-        }
-        
-        if (users.find(u => u.username === userData.username)) {
-            return res.status(400).json({ error: 'Username already exists' });
-        }
-        
-        const newUser = {
-            ...userData,
-            isOnline: false,
-            lastLogin: null,
-            lastLogout: null
-        };
-        users.push(newUser);
-        return res.status(201).json(newUser);
-    }
-
-    res.status(400).json({ error: 'Invalid action' });
 });
 
 // Health check endpoint
@@ -138,15 +99,15 @@ app.get('/api/health', (req, res) => {
         status: 'OK', 
         timestamp: new Date().toISOString(),
         data: {
-            comments: comments.length,
-            submissions: submissions.length,
-            tasks: tasks.length,
-            users: users.length
+            comments: comments.getComments().length,
+            submissions: submissions.getSubmissions().length,
+            tasks: tasks.getTasks().length,
+            users: users.getUsers().length
         }
     });
 });
 
-// Serve the main HTML file for all other routes - FIXED
+// Serve the main HTML file for all other routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -160,5 +121,5 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`📊 API endpoints available at /api/comments, /api/submissions, /api/tasks, /api/users`);
     console.log(`🌐 Frontend served from: http://0.0.0.0:${PORT}`);
     console.log(`💬 Comments update frequency: Hourly (stable)`);
-    console.log(`✅ Static files serving from: ${__dirname}`);
+    console.log(`✅ All modules loaded successfully`);
 });
