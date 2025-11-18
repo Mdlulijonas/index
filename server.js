@@ -3,20 +3,20 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
-
-// Serve static files (your HTML, CSS, JS)
 app.use(express.static('.'));
 
-// Your Netlify functions converted to Express routes
+// Data storage
 let comments = [];
 let submissions = [];
+let tasks = [
+    { id: 1, subject: "Full-stack Week 1 Server Infrastructure", startDate: "2026-01-13T09:00:00.000Z", endDate: "2026-01-13T11:00:00.000Z", description: "Set up cloud server environment.", team: "Full-Stack", status: "pending" },
+    // ... your other tasks
+];
 let users = [
     { username: 'admin', password: 'password', team: 'Administrator', isOnline: false, lastLogin: null, lastLogout: null },
-    { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false, lastLogin: null, lastLogout: null },
-    { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false, lastLogin: null, lastLogout: null }
+    // ... your other users
 ];
 
 // Comments API
@@ -34,7 +34,7 @@ app.post('/api/comments', (req, res) => {
     res.status(201).json(newComment);
 });
 
-// Submissions API
+// Submissions API  
 app.get('/api/submissions', (req, res) => {
     res.json(submissions);
 });
@@ -47,6 +47,11 @@ app.post('/api/submissions', (req, res) => {
     };
     submissions.unshift(newSubmission);
     res.status(201).json(newSubmission);
+});
+
+// Tasks API
+app.get('/api/tasks', (req, res) => {
+    res.json(tasks);
 });
 
 // Users API
@@ -77,12 +82,12 @@ app.post('/api/users', (req, res) => {
     res.status(400).json({ error: 'Invalid action' });
 });
 
-// Serve your main HTML file for all other routes (SPA support)
+// SPA fallback
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`DigiHive server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
