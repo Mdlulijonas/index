@@ -1,57 +1,24 @@
-let users = [
-    { username: 'admin', password: 'password', team: 'Administrator', isOnline: false, lastLogin: null, lastLogout: null },
-    { username: 'dev', password: 'password', team: 'Full-Stack', isOnline: false, lastLogin: null, lastLogout: null },
-    { username: 'designer', password: 'password', team: 'UI/UX', isOnline: false, lastLogin: null, lastLogout: null },
-    { username: 'marketer', password: 'password', team: 'Marketing', isOnline: false, lastLogin: null, lastLogout: null },
-    { username: 'support', password: 'password', team: 'Support', isOnline: false, lastLogin: null, lastLogout: null },
-    { username: 'writer', password: 'password', team: 'Content', isOnline: false, lastLogin: null, lastLogout: null }
-];
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-const ADMIN_CODE = '212259497';
+const UserSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, required: true }, // e.g. "Full-stack Developer", "UI/UX Designer"
+  isAdmin: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
 
-function getUsers() {
-    return users;
-}
+UserSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
 
-function updateUser(username, updates) {
-    const userIndex = users.findIndex(u => u.username === username);
-    if (userIndex === -1) {
-        throw new Error('User not found');
-    }
-    users[userIndex] = { ...users[userIndex], ...updates };
-    return users[userIndex];
-}
-
-function loginUser(username, password) {
-    const user = users.find(u => u.username === username && u.password === password);
-    if (!user) {
-        throw new Error('Invalid credentials');
-    }
-    return user;
-}
-
-function registerUser(userData, adminCode) {
-    if (adminCode !== ADMIN_CODE) {
-        throw new Error('Invalid admin code');
-    }
-    
-    if (users.find(u => u.username === userData.username)) {
-        throw new Error('Username already exists');
-    }
-    
-    const newUser = {
-        ...userData,
-        isOnline: false,
-        lastLogin: null,
-        lastLogout: null
-    };
-    users.push(newUser);
-    return newUser;
-}
-
-module.exports = {
-    getUsers,
-    updateUser,
-    loginUser,
-    registerUser
+UserSchema.methods.comparePassword = function(candidate) {
+  return bcrypt.compare(candidate, this.password);
 };
+
+module.exports = mongoose.model('User', UserSchema);
