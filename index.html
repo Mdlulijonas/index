@@ -1,890 +1,1743 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DigiHive - Team Collaboration Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigiHive Team Workstation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; color: #1A1A2E; }
-        .hidden { display: none; }
-        #sidebar { transition: transform 0.3s ease-in-out; }
-        .modal-content { transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
-        .modal.open .modal-content { transform: scale(1) translateY(0); opacity: 1; }
-        .modal .modal-content { transform: scale(0.95) translateY(10px); opacity: 0; }
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes scale-up { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
-        .animate-scale-up { animation: scale-up 0.3s ease-out forwards; }
-        @keyframes pulse-sync {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-            50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --accent: #f72585;
+            --success: #4cc9f0;
+            --warning: #f9c74f;
+            --error: #e63946;
+            --dark: #1e293b;
+            --gray-dark: #64748b;
+            --gray: #94a3b8;
+            --gray-light: #e2e8f0;
+            --background: #f8fafc;
+            --white: #ffffff;
+            --energy-blue: #4895ef;
+            --energy-purple: #7209b7;
+            --energy-pink: #f72585;
+            --energy-yellow: #f9c74f;
         }
-        .animate-pulse-sync { animation: pulse-sync 2s infinite; }
-        @keyframes slide-in-right { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .animate-slide-in-right { animation: slide-in-right 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
         
-        /* Prevent blinking/flashing */
-        .login-container { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: #f1f5f9;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: var(--background);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: var(--white);
+            border-right: 1px solid var(--gray-light);
+            padding: 2rem 1rem;
+            position: fixed;
+            width: 250px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            padding: 0 1rem;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+        
+        .nav-links li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--gray-dark);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-links a:hover, .nav-links a.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .nav-links i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .team-section {
+            margin-top: 2rem;
+        }
+        
+        .team-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray-dark);
+            margin-bottom: 1rem;
+            padding: 0 1rem;
+        }
+        
+        .team-members {
+            list-style: none;
+        }
+        
+        .team-member {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+        
+        .team-member:hover {
+            background: var(--gray-light);
+        }
+        
+        .member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        
+        .member-info {
+            flex: 1;
+        }
+        
+        .member-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .member-role {
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+        
+        .member-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+        
+        /* Main Content */
+        .main-content {
+            grid-column: 2;
+            padding: 2rem;
+            margin-left: 250px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .welcome-message h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-message p {
+            color: var(--gray-dark);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .notification {
+            position: relative;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--error);
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+        
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+        
+        /* Task Section */
+        .task-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .week-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .week-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .week-btn {
+            background: var(--gray-light);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .week-btn:hover {
+            background: var(--gray);
+        }
+        
+        .current-week {
+            font-weight: 600;
+        }
+        
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .task-card {
+            background: var(--background);
+            border-radius: 8px;
+            padding: 1.25rem;
+            border-left: 4px solid var(--energy-blue);
+        }
+        
+        .task-card.completed {
+            border-left-color: var(--success);
+            opacity: 0.8;
+        }
+        
+        .task-card.overdue {
+            border-left-color: var(--error);
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .task-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .task-due {
+            font-size: 0.8rem;
+            color: var(--gray-dark);
+        }
+        
+        .task-description {
+            color: var(--gray-dark);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .task-assignee {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: var(--energy-blue);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--gray);
+            color: var(--dark);
+        }
+        
+        .btn-outline:hover {
+            background: var(--gray-light);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #0da271;
+        }
+        
+        /* Progress Section */
+        .progress-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .progress-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .progress-card {
+            background: var(--background);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .progress-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-label {
+            font-size: 0.9rem;
+            color: var(--gray-dark);
+        }
+        
+        .chart-container {
+            height: 200px;
+            margin-top: 1rem;
+        }
+        
+        /* Productivity Section */
+        .productivity-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        
+        .motivation-card {
+            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .motivation-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        
+        .motivation-author {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .tips-list {
+            list-style: none;
+        }
+        
+        .tips-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--gray-light);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .tips-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .tip-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--energy-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+        
+        /* File Upload */
+        .upload-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--gray);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area.active {
+            border-color: var(--energy-blue);
+            background: rgba(67, 97, 238, 0.05);
+        }
+        
+        .upload-icon {
+            font-size: 2rem;
+            color: var(--gray);
+            margin-bottom: 1rem;
+        }
+        
+        .upload-text {
+            margin-bottom: 1rem;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-list {
+            margin-top: 1rem;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--background);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .file-icon {
+            color: var(--energy-blue);
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        /* Comments Section */
+        .comments-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        
+        .comment-form {
+            margin-bottom: 1.5rem;
+        }
+        
+        .comment-input {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            resize: vertical;
+            min-height: 80px;
+            margin-bottom: 1rem;
+        }
+        
+        .comments-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .comment {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        
+        .comment:last-child {
+            border-bottom: none;
+        }
+        
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .comment-user {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .comment-time {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        .comment-team {
+            font-size: 0.8rem;
+            color: var(--gray-dark);
+            background: var(--gray-light);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .comment-text {
+            color: var(--dark);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
             z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        /* Login Styles */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            padding: 2rem;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .login-logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .login-logo-text {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* Motivational Popup */
+        .motivation-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .motivation-popup.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .popup-content {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            transition: transform 0.4s ease;
+        }
+        
+        .motivation-popup.active .popup-content {
+            transform: translateY(0);
+        }
+        
+        .popup-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .popup-logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .popup-logo-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .popup-quote {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--dark);
+            line-height: 1.4;
+        }
+        
+        .popup-author {
+            font-size: 1rem;
+            color: var(--energy-purple);
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+        
+        .popup-btn {
+            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .popup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                grid-column: 1;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Online Status */
+        .online-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--success);
+            margin-top: 0.25rem;
+        }
+        
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
-    <div id="root"></div>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="login-logo-icon">DH</div>
+                <div class="login-logo-text">DigiHive</div>
+            </div>
+            
+            <div class="motivation-card" style="margin-bottom: 2rem;">
+                <div class="motivation-text" id="loginMotivation">
+                    "Every great digital product began as an idea. Your work today brings DigiHive closer to reality."
+                </div>
+                <div class="motivation-author">- Team Lead</div>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="loginUsername" placeholder="Enter your username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                </button>
+                
+                <button type="button" class="btn btn-outline" style="width: 100%;" onclick="showRegisterModal()">
+                    <i class="fas fa-user-plus"></i> Register New Member
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard (Hidden until login) -->
+    <div id="dashboard" style="display: none;">
+        <!-- Motivational Popup -->
+        <div class="motivation-popup active" id="motivationPopup">
+            <div class="popup-content">
+                <div class="popup-logo">
+                    <div class="popup-logo-icon">DH</div>
+                    <div class="popup-logo-text">DigiHive</div>
+                </div>
+                <div class="popup-quote" id="popupQuote">"The right steps will always lead you to success"</div>
+                <div class="popup-author" id="popupAuthor">- Success Team DigiHive</div>
+                <button class="popup-btn" id="popupBtn">Let's Get Started!</button>
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="logo">
+                    <div class="logo-icon">DH</div>
+                    <div class="logo-text">DigiHive</div>
+                </div>
+                
+                <ul class="nav-links">
+                    <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</a></li>
+                    <li><a href="#" onclick="showSection('tasks')"><i class="fas fa-tasks"></i> My Tasks</a></li>
+                    <li><a href="#" onclick="showSection('submissions')"><i class="fas fa-file-upload"></i> Submissions</a></li>
+                    <li><a href="#" onclick="showSection('team')"><i class="fas fa-users"></i> Team</a></li>
+                    <li><a href="#" onclick="showSection('comments')"><i class="fas fa-comments"></i> Comments</a></li>
+                </ul>
+                
+                <div class="team-section">
+                    <div class="team-title">ONLINE TEAM MEMBERS</div>
+                    <ul class="team-members" id="onlineMembers">
+                        <!-- Online members will be populated here -->
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="header">
+                    <div class="welcome-message">
+                        <h1 id="welcomeTitle">Welcome to DigiHive Workstation</h1>
+                        <p id="welcomeSubtitle">Track progress, submit work, and collaborate with your team</p>
+                    </div>
+                    <div class="user-info">
+                        <div class="notification">
+                            <i class="fas fa-bell"></i>
+                            <div class="notification-badge" id="notificationCount">0</div>
+                        </div>
+                        <div class="user-avatar">
+                            <div class="member-avatar" id="userAvatar">US</div>
+                        </div>
+                        <button class="btn btn-outline" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Dashboard Section -->
+                <div id="dashboardSection" class="dashboard-section">
+                    <div class="dashboard-grid">
+                        <!-- Left Column -->
+                        <div class="left-column">
+                            <!-- Current Week Tasks -->
+                            <div class="task-section">
+                                <div class="section-header">
+                                    <div class="section-title">This Week's Tasks</div>
+                                    <div class="week-selector">
+                                        <div class="week-nav">
+                                            <button class="week-btn"><i class="fas fa-chevron-left"></i></button>
+                                            <button class="week-btn"><i class="fas fa-chevron-right"></i></button>
+                                        </div>
+                                        <div class="current-week">Week 1: Jan 12-16, 2026</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="task-list" id="taskList">
+                                    <!-- Tasks will be populated here -->
+                                </div>
+                            </div>
+                            
+                            <!-- Comments Section -->
+                            <div class="comments-section">
+                                <div class="section-header">
+                                    <div class="section-title">Team Comments</div>
+                                    <div class="online-status">
+                                        <div class="status-dot"></div>
+                                        <span>Live Updates</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="comment-form">
+                                    <textarea class="comment-input" id="commentInput" placeholder="Share your thoughts, challenges, or updates with the team..."></textarea>
+                                    <button class="btn btn-primary" onclick="postComment()">
+                                        <i class="fas fa-paper-plane"></i> Post Comment
+                                    </button>
+                                </div>
+                                
+                                <div class="comments-list" id="commentsList">
+                                    <!-- Comments will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column -->
+                        <div class="right-column">
+                            <!-- Progress Section -->
+                            <div class="progress-section">
+                                <div class="section-header">
+                                    <div class="section-title">Project Progress</div>
+                                </div>
+                                
+                                <div class="progress-grid">
+                                    <div class="progress-card">
+                                        <div class="progress-value" id="overallProgress">12%</div>
+                                        <div class="progress-label">Overall Completion</div>
+                                    </div>
+                                    <div class="progress-card">
+                                        <div class="progress-value" id="tasksCompleted">4/10</div>
+                                        <div class="progress-label">Tasks Completed</div>
+                                    </div>
+                                    <div class="progress-card">
+                                        <div class="progress-value" id="behindSchedule">0</div>
+                                        <div class="progress-label">Behind Schedule</div>
+                                    </div>
+                                    <div class="progress-card">
+                                        <div class="progress-value" id="daysToLaunch">6</div>
+                                        <div class="progress-label">Days to Launch</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="chart-container">
+                                    <canvas id="progressChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- Productivity Section -->
+                            <div class="productivity-section">
+                                <div class="section-header">
+                                    <div class="section-title">Daily Motivation</div>
+                                </div>
+                                
+                                <div class="motivation-card">
+                                    <div class="motivation-text" id="dailyMotivation">
+                                        "Every great digital product began as an idea. Your work today brings DigiHive closer to reality."
+                                    </div>
+                                    <div class="motivation-author" id="motivationAuthor">- Team Lead</div>
+                                </div>
+                                
+                                <div class="section-header">
+                                    <div class="section-title">Productivity Tips</div>
+                                </div>
+                                
+                                <ul class="tips-list">
+                                    <li>
+                                        <div class="tip-icon"><i class="fas fa-check"></i></div>
+                                        <div>Break large tasks into smaller, manageable steps</div>
+                                    </li>
+                                    <li>
+                                        <div class="tip-icon"><i class="fas fa-clock"></i></div>
+                                        <div>Use the Pomodoro technique: 25 mins work, 5 mins break</div>
+                                    </li>
+                                    <li>
+                                        <div class="tip-icon"><i class="fas fa-bell"></i></div>
+                                        <div>Set clear daily goals and review them each morning</div>
+                                    </li>
+                                    <li>
+                                        <div class="tip-icon"><i class="fas fa-times"></i></div>
+                                        <div>Minimize distractions by turning off non-essential notifications</div>
+                                    </li>
+                                </ul>
+                                
+                                <div style="margin-top: 1.5rem;">
+                                    <button class="btn btn-primary" onclick="showSubmissionModal()" style="width: 100%;">
+                                        <i class="fas fa-file-upload"></i> Submit Weekly Report
+                                    </button>
+                                    <button class="btn btn-outline" onclick="showRegisterModal()" style="width: 100%; margin-top: 0.5rem;">
+                                        <i class="fas fa-user-plus"></i> Register New Member
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other Sections (Hidden by default) -->
+                <div id="tasksSection" class="dashboard-section" style="display: none;">
+                    <!-- Tasks section content -->
+                </div>
+                
+                <div id="submissionsSection" class="dashboard-section" style="display: none;">
+                    <!-- Submissions section content -->
+                </div>
+                
+                <div id="teamSection" class="dashboard-section" style="display: none;">
+                    <!-- Team section content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Register New Team Member</h2>
+                <button class="close-modal" onclick="closeRegisterModal()">&times;</button>
+            </div>
+            
+            <form id="registerForm">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" name="password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Team</label>
+                    <select class="form-select" name="team" required>
+                        <option value="">Select Team</option>
+                        <option value="Administrator">Administrator</option>
+                        <option value="Full-Stack">Full-Stack Development</option>
+                        <option value="UI/UX">UI/UX Design</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Support">Support</option>
+                        <option value="Content">Content</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Admin Code</label>
+                    <input type="password" class="form-input" name="adminCode" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-user-plus"></i> Register Member
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Submission Modal -->
+    <div class="modal" id="submissionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Submit Weekly Report</h2>
+                <button class="close-modal" onclick="closeSubmissionModal()">&times;</button>
+            </div>
+            
+            <form id="submissionForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label class="form-label">Report Title</label>
+                    <input type="text" class="form-input" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Team</label>
+                    <select class="form-select" name="team" required>
+                        <option value="">Select Team</option>
+                        <option value="Administrator">Administrator</option>
+                        <option value="Full-Stack">Full-Stack Development</option>
+                        <option value="UI/UX">UI/UX Design</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Support">Support</option>
+                        <option value="Content">Content</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Progress Report</label>
+                    <textarea class="form-textarea" name="progress" placeholder="Describe your progress this week..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Next Week's Plan</label>
+                    <textarea class="form-textarea" name="plan" placeholder="Outline your plans for next week..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Attachment (Optional, max 2MB)</label>
+                    <input type="file" class="form-input" name="attachment" accept=".pdf,.doc,.docx,.txt,.zip">
+                </div>
+                
+                <button type="submit" class="btn btn-success" style="width: 100%;">
+                    <i class="fas fa-paper-plane"></i> Submit Report
+                </button>
+            </form>
+        </div>
+    </div>
 
     <script>
-        // --- CONSTANTS ---
-        const TEAM_MAPPING = {
-            'Administrator': { name: 'Administrator', color: 'bg-red-500', avatar: 'AD', role: 'System Administration' },
-            'Full-Stack': { name: 'Full-Stack', color: 'bg-blue-600', avatar: 'FS', role: 'Development Team' },
-            'UI/UX': { name: 'UI/UX', color: 'bg-purple-600', avatar: 'UX', role: 'Design Team' },
-            'Marketing': { name: 'Marketing', color: 'bg-green-500', avatar: 'MK', role: 'Marketing Team' },
-            'Support': { name: 'Support', color: 'bg-teal-500', avatar: 'ST', role: 'Support Team' },
-            'Content': { name: 'Content', color: 'bg-orange-500', avatar: 'CT', role: 'Content Team' },
-        };
-        
-        const PAGE_TITLES = {
-            dashboard: 'Dashboard',
-            tasks: 'My Tasks - Full List',
-            submissions: 'Past Submissions Archive',
-            team: 'Team Directory',
-            settings: 'Settings'
-        };
-        
-        const PAGE_ICONS = {
-            dashboard: 'fa-chart-line',
-            tasks: 'fa-tasks',
-            submissions: 'fa-file-archive',
-            team: 'fa-users',
-            settings: 'fa-cog'
-        };
+        // Application state
+        let currentUser = null;
+        let users = [];
+        let tasks = [];
+        let comments = [];
+        let submissions = [];
 
-        const ADMIN_CODE = '212259497';
+        // DOM elements
+        const loginScreen = document.getElementById('loginScreen');
+        const dashboard = document.getElementById('dashboard');
+        const welcomeTitle = document.getElementById('welcomeTitle');
+        const welcomeSubtitle = document.getElementById('welcomeSubtitle');
+        const userAvatar = document.getElementById('userAvatar');
 
-        // --- BACKEND SERVICE WITH /api ENDPOINTS ---
-        class BackendService {
-            constructor() {
-                this.baseURL = '/api';
-                this.listeners = new Map();
-                this.pollingIntervals = new Map();
-                this.currentUser = null;
-                this.isInitialized = false;
-            }
-
-            setCurrentUser(user) {
-                this.currentUser = user;
-            }
-
-            async getUsers() {
-                try {
-                    const response = await fetch(`${this.baseURL}/users`);
-                    if (!response.ok) throw new Error('Failed to fetch users');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error fetching users:', error);
-                    return [];
-                }
-            }
-
-            async updateUser(username, updates) {
-                try {
-                    const response = await fetch(`${this.baseURL}/users`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, updates, action: 'update' })
-                    });
-                    if (!response.ok) throw new Error('Failed to update user');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error updating user:', error);
-                    throw error;
-                }
-            }
-
-            async registerUser(userData, adminCode) {
-                try {
-                    const response = await fetch(`${this.baseURL}/users`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            action: 'register', 
-                            userData: userData,
-                            adminCode: adminCode
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        return await response.json();
-                    } else {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Registration failed');
-                    }
-                } catch (error) {
-                    console.error('Registration error:', error);
-                    throw error;
-                }
-            }
-
-            async loginUser(username, password) {
-                try {
-                    console.log('Attempting login for:', username);
-                    const response = await fetch(`${this.baseURL}/users`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            action: 'login', 
-                            username: username, 
-                            password: password 
-                        })
-                    });
-                    
-                    console.log('Login response status:', response.status);
-                    
-                    if (response.ok) {
-                        const user = await response.json();
-                        console.log('Login successful for:', user.username);
-                        return user;
-                    } else {
-                        const errorText = await response.text();
-                        console.log('Login failed with response:', errorText);
-                        try {
-                            const errorData = JSON.parse(errorText);
-                            throw new Error(errorData.error || 'Login failed');
-                        } catch (e) {
-                            throw new Error('Server error: ' + errorText.substring(0, 100));
-                        }
-                    }
-                } catch (error) {
-                    console.error('Login error:', error);
-                    throw error;
-                }
-            }
-
-            async getComments() {
-                try {
-                    const response = await fetch(`${this.baseURL}/comments`);
-                    if (!response.ok) throw new Error('Failed to fetch comments');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error fetching comments:', error);
-                    return [];
-                }
-            }
-
-            async addComment(comment) {
-                try {
-                    const response = await fetch(`${this.baseURL}/comments`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(comment)
-                    });
-                    if (!response.ok) throw new Error('Failed to add comment');
-                    const result = await response.json();
-                    this.notifyListeners('comments', await this.getComments());
-                    return result;
-                } catch (error) {
-                    console.error('Error adding comment:', error);
-                    throw error;
-                }
-            }
-
-            async getSubmissions() {
-                try {
-                    const response = await fetch(`${this.baseURL}/submissions`);
-                    if (!response.ok) throw new Error('Failed to fetch submissions');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error fetching submissions:', error);
-                    return [];
-                }
-            }
-
-            async addSubmission(submission) {
-                try {
-                    const response = await fetch(`${this.baseURL}/submissions`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(submission)
-                    });
-                    if (!response.ok) throw new Error('Failed to add submission');
-                    const result = await response.json();
-                    this.notifyListeners('submissions', await this.getSubmissions());
-                    return result;
-                } catch (error) {
-                    console.error('Error adding submission:', error);
-                    throw error;
-                }
-            }
-
-            async deleteSubmission(submissionId, adminCode) {
-                try {
-                    const response = await fetch(`${this.baseURL}/submissions`, {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            submissionId: submissionId,
-                            adminCode: adminCode 
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        this.notifyListeners('submissions', await this.getSubmissions());
-                        return true;
-                    } else {
-                        throw new Error('Failed to delete submission');
-                    }
-                } catch (error) {
-                    console.error('Error deleting submission:', error);
-                    throw error;
-                }
-            }
-
-            async getTasks() {
-                try {
-                    const response = await fetch(`${this.baseURL}/tasks`);
-                    if (!response.ok) throw new Error('Failed to fetch tasks');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error fetching tasks:', error);
-                    return [];
-                }
-            }
-
-            subscribe(key, callback) {
-                if (!this.listeners.has(key)) this.listeners.set(key, new Set());
-                this.listeners.get(key).add(callback);
-                
-                // Set up polling for real-time updates (every 3 seconds for most data, 1 hour for comments)
-                if (!this.pollingIntervals.has(key)) {
-                    const intervalTime = key === 'comments' ? 3600000 : 3000;
-                    
-                    const interval = setInterval(async () => {
-                        try {
-                            const data = await this[`get${key.charAt(0).toUpperCase() + key.slice(1)}`]();
-                            this.notifyListeners(key, data);
-                        } catch (error) {
-                            console.error(`Error polling ${key}:`, error);
-                        }
-                    }, intervalTime);
-                    
-                    this.pollingIntervals.set(key, interval);
-                }
-                
-                return () => {
-                    this.listeners.get(key)?.delete(callback);
-                    if (this.listeners.get(key)?.size === 0) {
-                        const interval = this.pollingIntervals.get(key);
-                        if (interval) {
-                            clearInterval(interval);
-                            this.pollingIntervals.delete(key);
-                        }
-                    }
-                };
-            }
-
-            notifyListeners(key, data) { 
-                if (this.listeners.has(key)) {
-                    this.listeners.get(key).forEach(callback => {
-                        try {
-                            callback(data);
-                        } catch (error) {
-                            console.error('Error in listener:', error);
-                        }
-                    });
-                }
-            }
-
-            initialize() {
-                if (this.isInitialized) return;
-                this.isInitialized = true;
-            }
-        }
-
-        const backendService = new BackendService();
-
-        // --- UTILITIES ---
-        function createElement(tag, props, ...children) {
-            const element = document.createElement(tag);
-            if (props) {
-                Object.keys(props).forEach(key => {
-                    if (key.startsWith('on') && typeof props[key] === 'function') {
-                        element.addEventListener(key.substring(2).toLowerCase(), props[key]);
-                    } else if (key === 'class') {
-                        element.className = props[key];
-                    } else {
-                        element.setAttribute(key, props[key]);
-                    }
-                });
-            }
-            children.forEach(child => {
-                if (typeof child === 'string' || typeof child === 'number') {
-                    element.appendChild(document.createTextNode(child));
-                } else if (child) {
-                    element.appendChild(child);
-                }
-            });
-            return element;
-        }
-
-        // --- COMPONENTS ---
-        const Modal = ({ isOpen, onClose, children, size = 'md' }) => {
-            if (!isOpen) return null;
-            
-            const sizeClasses = { 
-                sm: 'max-w-sm', 
-                md: 'max-w-md', 
-                lg: 'max-w-2xl', 
-                xl: 'max-w-4xl' 
-            };
-            
-            const modalContainer = createElement('div', { 
-                class: 'fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in' 
-            });
-            
-            const modalContent = createElement('div', { 
-                class: `bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative animate-scale-up` 
-            });
-            
-            const closeButton = createElement('button', { 
-                class: 'absolute top-4 right-6 text-gray-400 hover:text-gray-600 text-2xl transition-colors', 
-                onclick: onClose 
-            }, '×');
-            
-            modalContent.appendChild(closeButton);
-            
-            if (Array.isArray(children)) {
-                children.forEach(child => {
-                    if (child) modalContent.appendChild(child);
-                });
-            } else if (children) {
-                modalContent.appendChild(children);
-            }
-            
-            modalContainer.appendChild(modalContent);
-            modalContainer.onclick = (e) => { 
-                if (e.target === modalContainer) onClose(); 
-            };
-            
-            document.body.appendChild(modalContainer);
-            return modalContainer;
-        }
-
-        // ... (rest of your components remain the same)
-
-        // --- MAIN APP ---
-        function App() {
-            const root = document.getElementById('root');
-            
-            // App state
-            let currentUser = JSON.parse(localStorage.getItem('digihive_currentUser') || 'null');
-            let currentPage = 'dashboard';
-            let isSidebarOpen = window.innerWidth >= 1024;
-            let users = [];
-            let comments = [];
-            let submissions = [];
-            let tasks = [];
-            let isInitialized = false;
-            let unsubscribers = [];
-
-            const handleLogin = (user) => {
-                currentUser = user;
-                backendService.setCurrentUser(user);
-                localStorage.setItem('digihive_currentUser', JSON.stringify(user));
-                
-                // Update user online status
-                backendService.updateUser(user.username, { 
-                    isOnline: true,
-                    lastLogin: new Date().toISOString()
-                });
-                
-                initializeApp();
-            };
-            
-            const handleLogout = async () => {
-                if (currentUser) {
-                    await backendService.updateUser(currentUser.username, { 
-                        isOnline: false, 
-                        lastLogout: new Date().toISOString() 
-                    });
-                }
-                
-                // Unsubscribe from all updates
-                unsubscribers.forEach(unsub => unsub());
-                unsubscribers = [];
-                
-                currentUser = null;
-                backendService.setCurrentUser(null);
-                localStorage.removeItem('digihive_currentUser');
-                isInitialized = false;
-                
-                renderLoginScreen();
-            };
-            
-            const triggerSync = () => {
-                updateUI();
-            };
-
-            const initializeApp = () => {
-                if (isInitialized) return;
-                
-                // Subscribe to data updates
-                unsubscribers = [
-                    backendService.subscribe('users', (data) => {
-                        users = data;
-                        if (currentPage === 'team' || currentPage === 'dashboard') updateUI();
-                    }),
-                    backendService.subscribe('comments', (data) => {
-                        comments = data;
-                        if (currentPage === 'dashboard') updateUI();
-                    }),
-                    backendService.subscribe('submissions', (data) => {
-                        submissions = data;
-                        if (currentPage === 'submissions' || currentPage === 'dashboard') updateUI();
-                    }),
-                    backendService.subscribe('tasks', (data) => {
-                        tasks = data;
-                        if (currentPage === 'tasks' || currentPage === 'dashboard') updateUI();
-                    })
-                ];
-                
-                isInitialized = true;
-                updateUI();
-            };
-
-            const showRegisterModal = () => {
-                const teamOptions = Object.values(TEAM_MAPPING).map(team => 
-                    createElement('option', { value: team.name }, team.name)
-                );
-                
-                const modalContent = createElement('div', null,
-                    createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-6' }, 'Register New Team Member'),
-                    createElement('form', { class: 'space-y-4', onsubmit: handleRegister },
-                        createElement('div', null, 
-                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Username'), 
-                            createElement('input', { 
-                                type: 'text', 
-                                name: 'username', 
-                                placeholder: 'Enter username', 
-                                required: true, 
-                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
-                            })
-                        ),
-                        createElement('div', null, 
-                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Password'), 
-                            createElement('input', { 
-                                type: 'password', 
-                                name: 'password', 
-                                placeholder: 'Enter password', 
-                                required: true, 
-                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
-                            })
-                        ),
-                        createElement('div', null, 
-                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Team'), 
-                            createElement('select', { 
-                                name: 'team', 
-                                required: true, 
-                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
-                            }, ...teamOptions)
-                        ),
-                        createElement('div', null, 
-                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1' }, 'Admin Code'), 
-                            createElement('input', { 
-                                type: 'password', 
-                                name: 'adminCode', 
-                                placeholder: 'Enter admin code', 
-                                required: true, 
-                                class: 'w-full border-2 border-gray-200 rounded-lg p-2' 
-                            })
-                        ),
-                        createElement('button', { 
-                            type: 'submit', 
-                            class: 'w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2' 
-                        }, 
-                            createElement('i', { class: 'fas fa-user-plus' }),
-                            'Register Member'
-                        )
-                    )
-                );
-
-                Modal({
-                    isOpen: true,
-                    onClose: () => {},
-                    children: modalContent
-                });
-            };
-
-            const handleRegister = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const userData = {
-                    username: formData.get('username'),
-                    password: formData.get('password'),
-                    team: formData.get('team'),
-                    isOnline: false
-                };
-                const adminCode = formData.get('adminCode');
-
-                try {
-                    await backendService.registerUser(userData, adminCode);
-                    alert('User registered successfully!');
-                    // Refresh users list
-                    users = await backendService.getUsers();
-                    if (currentPage === 'team') updateUI();
-                    // Close modal
-                    document.querySelectorAll('.fixed.inset-0.bg-black').forEach(modal => modal.remove());
-                } catch (error) {
-                    alert(error.message);
-                }
-            };
-
-            const renderPage = () => {
-                if (!currentUser) {
-                    renderLoginScreen();
-                    return;
-                }
-
-                if (!isInitialized) {
-                    initializeApp();
-                }
-
-                root.innerHTML = '';
-                
-                const layout = createElement('div', { class: 'flex min-h-screen bg-slate-50' });
-                
-                // Sidebar
-                const sidebar = createElement('aside', { 
-                    class: `fixed top-0 left-0 h-full w-72 bg-slate-800 text-slate-200 p-6 z-40 transform transition-transform duration-300 ease-in-out ${
-                        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                    } lg:translate-x-0 overflow-y-auto` 
-                });
-                
-                sidebar.appendChild(
-                    createElement('div', { class: 'flex items-center gap-3 mb-12 px-2' },
-                        createElement('div', { 
-                            class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' 
-                        }, 'DH'),
-                        createElement('span', { class: 'text-2xl font-extrabold text-slate-200' }, 'DigiHive')
-                    )
-                );
-                
-                const navLinks = Object.keys(PAGE_TITLES).map(page => 
-                    createElement('li', null,
-                        createElement('a', { 
-                            href: '#', 
-                            class: `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${
-                                currentPage === page ? 'bg-blue-600 shadow-lg text-white' : 'text-slate-300'
-                            }`, 
-                            onclick: (e) => {
-                                e.preventDefault();
-                                currentPage = page;
-                                if (window.innerWidth < 1024) isSidebarOpen = false;
-                                updateUI();
-                            } 
-                        },
-                            createElement('i', { class: `w-5 text-center text-lg fas ${PAGE_ICONS[page]}` }),
-                            createElement('span', null, PAGE_TITLES[page])
-                        )
-                    )
-                );
-                
-                sidebar.appendChild(
-                    createElement('nav', null, 
-                        createElement('ul', { class: 'space-y-2' }, ...navLinks)
-                    )
-                );
-
-                // Add Register button to sidebar for admins
-                if (currentUser.team === 'Administrator') {
-                    sidebar.appendChild(
-                        createElement('div', { class: 'mt-8' },
-                            createElement('button', {
-                                class: 'w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2',
-                                onclick: showRegisterModal
-                            },
-                                createElement('i', { class: 'fas fa-user-plus' }),
-                                'Register New Member'
-                            )
-                        )
-                    );
-                }
-                
-                layout.appendChild(sidebar);
-                
-                // Overlay for mobile sidebar
-                if (isSidebarOpen && window.innerWidth < 1024) {
-                    layout.appendChild(
-                        createElement('div', { 
-                            class: 'fixed inset-0 bg-black/50 z-30 lg:hidden', 
-                            onclick: () => { 
-                                isSidebarOpen = false; 
-                                updateUI(); 
-                            } 
-                        })
-                    );
-                }
-                
-                // Main content area
-                const main = createElement('main', { 
-                    class: `flex-1 transition-all duration-300 ease-in-out ${
-                        window.innerWidth >= 1024 ? 'lg:ml-72' : ''
-                    } p-6 sm:p-8 md:p-12` 
-                });
-                
-                const header = createElement('header', { class: 'flex justify-between items-center flex-wrap gap-4' },
-                    createElement('h1', { class: 'text-2xl md:text-4xl font-bold text-slate-800' }, 
-                        PAGE_TITLES[currentPage] || 'Dashboard'
-                    ),
-                    createElement('div', { class: 'flex items-center gap-4' },
-                        createElement('button', { 
-                            class: 'lg:hidden text-2xl text-gray-600', 
-                            onclick: () => { 
-                                isSidebarOpen = !isSidebarOpen; 
-                                updateUI(); 
-                            } 
-                        }, createElement('i', { class: 'fas fa-bars' })),
-                        createElement('button', { 
-                            class: 'bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2',
-                            onclick: triggerSync
-                        },
-                            createElement('i', { class: 'fas fa-sync-alt' }),
-                            'Refresh Data'
-                        ),
-                        createElement('div', { class: 'flex items-center gap-3 bg-white p-2 rounded-full shadow-sm' },
-                            createElement('div', { 
-                                class: `w-10 h-10 rounded-full ${TEAM_MAPPING[currentUser.team].color} text-white flex items-center justify-center font-bold` 
-                            }, currentUser.username.substring(0, 2).toUpperCase()),
-                            createElement('span', { class: 'font-semibold text-sm hidden sm:block pr-2' }, currentUser.username)
-                        ),
-                        createElement('button', { 
-                            title: 'Logout', 
-                            class: 'text-gray-500 hover:text-red-500 text-2xl transition', 
-                            onclick: handleLogout 
-                        }, createElement('i', { class: 'fas fa-sign-out-alt' }))
-                    )
-                );
-                
-                const mainContentContainer = createElement('div', { class: 'mt-10' });
-                
-                // Render current page content
-                switch(currentPage) {
-                    case 'dashboard':
-                        mainContentContainer.appendChild(renderDashboard());
-                        break;
-                    case 'tasks':
-                        mainContentContainer.appendChild(renderTasks());
-                        break;
-                    case 'submissions':
-                        mainContentContainer.appendChild(renderSubmissions());
-                        break;
-                    case 'team':
-                        mainContentContainer.appendChild(renderTeam());
-                        break;
-                    case 'settings':
-                        mainContentContainer.appendChild(renderSettings());
-                        break;
-                    default:
-                        mainContentContainer.appendChild(renderDashboard());
-                }
-                
-                main.appendChild(header);
-                main.appendChild(mainContentContainer);
-                layout.appendChild(main);
-                
-                root.appendChild(layout);
-            };
-
-            const renderLoginScreen = () => {
-                root.innerHTML = '';
-                
-                const loginContainer = createElement('div', { 
-                    class: 'login-container flex items-center justify-center p-4 animate-fade-in' 
-                });
-                
-                const loginCard = createElement('div', { 
-                    class: 'bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center animate-scale-up' 
-                },
-                    createElement('div', { class: 'flex justify-center items-center gap-3 mb-4' },
-                        createElement('div', { 
-                            class: 'w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg' 
-                        }, 'DH'),
-                        createElement('span', { class: 'text-2xl font-extrabold text-slate-800' }, 'DigiHive')
-                    ),
-                    createElement('div', { class: 'my-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500' },
-                        createElement('p', { class: 'text-blue-700 font-medium' }, 
-                            'Real-time collaborative dashboard with shared data across all teams'
-                        )
-                    ),
-                    createElement('form', { class: 'space-y-4', onsubmit: handleLoginSubmit },
-                        createElement('div', null, 
-                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Username'), 
-                            createElement('input', { 
-                                type: 'text', 
-                                name: 'username', 
-                                required: true, 
-                                class: 'w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500', 
-                                placeholder: 'Enter your username',
-                                value: 'admin' // Default for testing
-                            })
-                        ),
-                        createElement('div', null, 
-                            createElement('label', { class: 'block text-sm font-medium text-gray-700 mb-1 text-left' }, 'Password'), 
-                            createElement('input', { 
-                                type: 'password', 
-                                name: 'password', 
-                                required: true, 
-                                class: 'w-full border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-blue-500', 
-                                placeholder: 'Enter your password',
-                                value: 'password' // Default for testing
-                            })
-                        ),
-                        createElement('button', { 
-                            type: 'submit', 
-                            class: 'w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-lg' 
-                        }, 'Login to Dashboard')
-                    ),
-                    createElement('div', { class: 'mt-6 pt-4 border-t border-gray-200' },
-                        createElement('button', {
-                            class: 'w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors',
-                            onclick: showRegisterModal
-                        },
-                            createElement('i', { class: 'fas fa-user-plus mr-2' }),
-                            'Register New Team Member'
-                        )
-                    )
-                );
-                
-                loginContainer.appendChild(loginCard);
-                root.appendChild(loginContainer);
-            };
-
-            const handleLoginSubmit = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const username = formData.get('username');
-                const password = formData.get('password');
-                
-                try {
-                    const user = await backendService.loginUser(username, password);
-                    handleLogin(user);
-                } catch (error) {
-                    alert('Invalid username or password.');
-                }
-            };
-
-            const renderDashboard = () => {
-                const container = createElement('div', { class: 'space-y-8' });
-                
-                // Stats cards
-                const stats = [
-                    { icon: 'fa-list-check', value: tasks.filter(task => new Date(task.startDate) > new Date()).length, label: 'Upcoming Tasks', color: 'bg-blue-500' },
-                    { icon: 'fa-check-double', value: submissions.length, label: 'Total Submissions', color: 'bg-violet-500' },
-                    { icon: 'fa-comments', value: comments.length, label: 'Team Comments', color: 'bg-teal-500' },
-                    { icon: 'fa-users', value: users.filter(u => u.isOnline).length, label: 'Online Now', color: 'bg-amber-500' },
-                ];
-                
-                // TeamPresenceHeader and other dashboard components...
-                container.appendChild(
-                    createElement('div', { class: 'bg-white rounded-2xl p-6 shadow-sm' },
-                        createElement('h2', { class: 'text-2xl font-bold text-slate-800 mb-4' }, 'Welcome to DigiHive Dashboard'),
-                        createElement('p', { class: 'text-gray-600' }, `Hello ${currentUser.username}! You are logged in as ${currentUser.team} team.`)
-                    )
-                );
-                
-                return container;
-            };
-
-            const renderTasks = () => {
-                return createElement('div', { class: 'text-center p-8' }, 
-                    createElement('h2', { class: 'text-2xl font-bold mb-4' }, 'Tasks'),
-                    createElement('p', { class: 'text-gray-600' }, 'Tasks page coming soon...')
-                );
-            };
-
-            const renderSubmissions = () => {
-                return createElement('div', { class: 'text-center p-8' }, 
-                    createElement('h2', { class: 'text-2xl font-bold mb-4' }, 'Submissions'),
-                    createElement('p', { class: 'text-gray-600' }, 'Submissions page coming soon...')
-                );
-            };
-
-            const renderTeam = () => {
-                return createElement('div', { class: 'text-center p-8' }, 
-                    createElement('h2', { class: 'text-2xl font-bold mb-4' }, 'Team'),
-                    createElement('p', { class: 'text-gray-600' }, 'Team page coming soon...')
-                );
-            };
-
-            const renderSettings = () => {
-                return createElement('div', { class: 'text-center p-8' }, 
-                    createElement('h2', { class: 'text-2xl font-bold mb-4' }, 'Settings'),
-                    createElement('p', { class: 'text-gray-600' }, 'Settings page coming soon...')
-                );
-            };
-
-            const updateUI = async () => {
-                // Only load data if user is logged in and app is initialized
-                if (currentUser && isInitialized) {
-                    try {
-                        users = await backendService.getUsers();
-                        comments = await backendService.getComments();
-                        submissions = await backendService.getSubmissions();
-                        tasks = await backendService.getTasks();
-                    } catch (error) {
-                        console.error('Error loading data:', error);
-                    }
-                }
-                
-                renderPage();
-            };
-
-            // Initialize
-            if (currentUser) {
-                initializeApp();
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            const savedUser = localStorage.getItem('digihive_currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showDashboard();
             } else {
-                renderLoginScreen();
+                showLogin();
             }
 
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                const shouldBeOpen = window.innerWidth >= 1024;
-                if (isSidebarOpen !== shouldBeOpen) {
-                    isSidebarOpen = shouldBeOpen;
-                    updateUI();
-                }
-            });
+            // Set up login form
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            
+            // Set up register form
+            document.getElementById('registerForm').addEventListener('submit', handleRegister);
+            
+            // Set up submission form
+            document.getElementById('submissionForm').addEventListener('submit', handleSubmission);
+            
+            // Initialize motivational popup
+            initMotivationalPopup();
+            
+            // Load initial data
+            loadInitialData();
+        });
 
-            // Update user online status on load
-            if (currentUser) {
-                backendService.setCurrentUser(currentUser);
-                backendService.updateUser(currentUser.username, { 
-                    isOnline: true,
-                    lastLogin: new Date().toISOString()
-                });
-            }
-
-            return {
-                updateUI,
-                unsubscribers
-            };
+        // Show login screen
+        function showLogin() {
+            loginScreen.style.display = 'flex';
+            dashboard.style.display = 'none';
         }
 
-        // Initialize the app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            App();
-        });
+        // Show dashboard
+        function showDashboard() {
+            loginScreen.style.display = 'none';
+            dashboard.style.display = 'block';
+            
+            // Update welcome message
+            welcomeTitle.textContent = `Welcome back, ${currentUser.username}!`;
+            welcomeSubtitle.textContent = `You are logged in as ${currentUser.team}`;
+            userAvatar.textContent = currentUser.username.substring(0, 2).toUpperCase();
+            
+            // Load dashboard data
+            loadDashboardData();
+        }
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    currentUser = user;
+                    localStorage.setItem('digihive_currentUser', JSON.stringify(user));
+                    showDashboard();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Network error during login');
+            }
+        }
+
+        // Handle register
+        async function handleRegister(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            const userData = {
+                username: formData.get('username'),
+                password: formData.get('password'),
+                team: formData.get('team'),
+                isOnline: false
+            };
+            const adminCode = formData.get('adminCode');
+
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'register',
+                        userData: userData,
+                        adminCode: adminCode
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('User registered successfully!');
+                    closeRegisterModal();
+                    e.target.reset();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Registration failed');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('Network error during registration');
+            }
+        }
+
+        // Handle submission
+        async function handleSubmission(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            // Add current user info
+            formData.append('member', currentUser.username);
+            formData.append('fileType', 'Report');
+            
+            try {
+                const response = await fetch('/api/submissions', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    alert('Submission successful!');
+                    closeSubmissionModal();
+                    e.target.reset();
+                    loadSubmissions();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Submission failed');
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert('Network error during submission');
+            }
+        }
+
+        // Show register modal
+        function showRegisterModal() {
+            document.getElementById('registerModal').classList.add('active');
+        }
+
+        // Close register modal
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.remove('active');
+        }
+
+        // Show submission modal
+        function showSubmissionModal() {
+            document.getElementById('submissionModal').classList.add('active');
+        }
+
+        // Close submission modal
+        function closeSubmissionModal() {
+            document.getElementById('submissionModal').classList.remove('active');
+        }
+
+        // Show section
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.dashboard-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show selected section
+            document.getElementById(section + 'Section').style.display = 'block';
+            
+            // Update navigation
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Load section data
+            if (section === 'submissions') {
+                loadSubmissions();
+            } else if (section === 'tasks') {
+                loadTasks();
+            } else if (section === 'team') {
+                loadTeam();
+            } else if (section === 'comments') {
+                loadComments();
+            }
+        }
+
+        // Load initial data
+        async function loadInitialData() {
+            await Promise.all([
+                loadUsers(),
+                loadTasks(),
+                loadComments(),
+                loadSubmissions()
+            ]);
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            await loadTasks();
+            await loadComments();
+            updateProgress();
+            updateOnlineMembers();
+        }
+
+        // Load users
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                users = await response.json();
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        // Load tasks
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/tasks');
+                tasks = await response.json();
+                renderTasks();
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
+        // Load comments
+        async function loadComments() {
+            try {
+                const response = await fetch('/api/comments');
+                comments = await response.json();
+                renderComments();
+            } catch (error) {
+                console.error('Error loading comments:', error);
+            }
+        }
+
+        // Load submissions
+        async function loadSubmissions() {
+            try {
+                const response = await fetch('/api/submissions');
+                submissions = await response.json();
+                renderSubmissions();
+            } catch (error) {
+                console.error('Error loading submissions:', error);
+            }
+        }
+
+        // Render tasks
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const taskCard = document.createElement('div');
+                taskCard.className = `task-card ${task.status === 'completed' ? 'completed' : ''}`;
+                
+                taskCard.innerHTML = `
+                    <div class="task-header">
+                        <div>
+                            <div class="task-title">${task.subject}</div>
+                            <div class="task-due">Due: ${new Date(task.endDate).toLocaleDateString()}</div>
+                        </div>
+                        <div class="task-priority" style="color: ${getPriorityColor(task.status)};">
+                            ${getPriorityText(task.status)}
+                        </div>
+                    </div>
+                    <div class="task-description">
+                        ${task.description}
+                    </div>
+                    <div class="task-meta">
+                        <div class="task-assignee">
+                            <div class="member-avatar">${task.team.substring(0, 2)}</div>
+                            <span>${task.team} Team</span>
+                        </div>
+                        <div class="task-actions">
+                            <button class="btn btn-outline">View Details</button>
+                            <button class="btn btn-primary">Start Task</button>
+                        </div>
+                    </div>
+                `;
+                
+                taskList.appendChild(taskCard);
+            });
+        }
+
+        // Render comments
+        function renderComments() {
+            const commentsList = document.getElementById('commentsList');
+            commentsList.innerHTML = '';
+            
+            comments.forEach(comment => {
+                const commentElement = document.createElement('div');
+                commentElement.className = 'comment';
+                
+                commentElement.innerHTML = `
+                    <div class="comment-header">
+                        <div class="comment-user">
+                            <div class="member-avatar">${comment.username.substring(0, 2)}</div>
+                            ${comment.username}
+                            <span class="comment-team">${comment.team}</span>
+                        </div>
+                        <div class="comment-time">${new Date(comment.timestamp).toLocaleString()}</div>
+                    </div>
+                    <div class="comment-text">${comment.text}</div>
+                `;
+                
+                commentsList.appendChild(commentElement);
+            });
+        }
+
+        // Render submissions
+        function renderSubmissions() {
+            // This would render the submissions in the submissions section
+            console.log('Submissions loaded:', submissions.length);
+        }
+
+        // Post comment
+        async function postComment() {
+            const commentInput = document.getElementById('commentInput');
+            const text = commentInput.value.trim();
+            
+            if (!text) return;
+            
+            try {
+                const response = await fetch('/api/comments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: currentUser.username,
+                        team: currentUser.team,
+                        text: text
+                    })
+                });
+                
+                if (response.ok) {
+                    commentInput.value = '';
+                    loadComments();
+                } else {
+                    alert('Failed to post comment');
+                }
+            } catch (error) {
+                console.error('Error posting comment:', error);
+                alert('Network error while posting comment');
+            }
+        }
+
+        // Update progress
+        function updateProgress() {
+            const completedTasks = tasks.filter(task => task.status === 'completed').length;
+            const totalTasks = tasks.length;
+            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            
+            document.getElementById('overallProgress').textContent = `${progress}%`;
+            document.getElementById('tasksCompleted').textContent = `${completedTasks}/${totalTasks}`;
+        }
+
+        // Update online members
+        function updateOnlineMembers() {
+            const onlineMembersList = document.getElementById('onlineMembers');
+            onlineMembersList.innerHTML = '';
+            
+            const onlineUsers = users.filter(user => user.isOnline);
+            
+            onlineUsers.forEach(user => {
+                const memberElement = document.createElement('li');
+                memberElement.className = 'team-member';
+                
+                memberElement.innerHTML = `
+                    <div class="member-avatar">${user.username.substring(0, 2)}</div>
+                    <div class="member-info">
+                        <div class="member-name">${user.username}</div>
+                        <div class="member-role">${user.team}</div>
+                        <div class="online-status">
+                            <div class="status-dot"></div>
+                            <span>Online since ${user.lastLogin ? new Date(user.lastLogin).toLocaleTimeString() : 'recently'}</span>
+                        </div>
+                    </div>
+                    <div class="member-status"></div>
+                `;
+                
+                onlineMembersList.appendChild(memberElement);
+            });
+        }
+
+        // Get priority color
+        function getPriorityColor(status) {
+            switch (status) {
+                case 'completed': return 'var(--success)';
+                case 'in-progress': return 'var(--warning)';
+                case 'planned': return 'var(--energy-blue)';
+                default: return 'var(--gray)';
+            }
+        }
+
+        // Get priority text
+        function getPriorityText(status) {
+            switch (status) {
+                case 'completed': return 'Completed';
+                case 'in-progress': return 'In Progress';
+                case 'planned': return 'Planned';
+                default: return 'Pending';
+            }
+        }
+
+        // Load team
+        function loadTeam() {
+            // Implementation for team section
+        }
+
+        // Logout
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('digihive_currentUser');
+            showLogin();
+        }
+
+        // Motivational popup
+        function initMotivationalPopup() {
+            const motivationPopup = document.getElementById('motivationPopup');
+            const popupBtn = document.getElementById('popupBtn');
+            const popupQuote = document.getElementById('popupQuote');
+            const popupAuthor = document.getElementById('popupAuthor');
+            
+            const motivationalQuotes = [
+                {
+                    text: "The right steps will always lead you to success",
+                    author: "Success Team DigiHive"
+                },
+                {
+                    text: "Your energy and focus today will build the foundation for tomorrow's achievements",
+                    author: "Productivity Team DigiHive"
+                },
+                {
+                    text: "Every line of code you write brings us closer to empowering creators worldwide",
+                    author: "Development Team DigiHive"
+                },
+                {
+                    text: "Your creativity and attention to detail make DigiHive exceptional",
+                    author: "Design Team DigiHive"
+                }
+            ];
+            
+            // Set random quote
+            const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+            popupQuote.textContent = `"${motivationalQuotes[randomIndex].text}"`;
+            popupAuthor.textContent = `- ${motivationalQuotes[randomIndex].author}`;
+            
+            // Close popup when button is clicked
+            popupBtn.addEventListener('click', function() {
+                motivationPopup.classList.remove('active');
+            });
+            
+            // Also update daily motivation
+            document.getElementById('dailyMotivation').textContent = `"${motivationalQuotes[randomIndex].text}"`;
+            document.getElementById('motivationAuthor').textContent = `- ${motivationalQuotes[randomIndex].author}`;
+            
+            // Update login motivation
+            document.getElementById('loginMotivation').textContent = `"${motivationalQuotes[randomIndex].text}"`;
+        }
+
+        // Initialize progress chart
+        function initProgressChart() {
+            const progressCtx = document.getElementById('progressChart').getContext('2d');
+            const progressChart = new Chart(progressCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                    datasets: [{
+                        label: 'Task Completion %',
+                        data: [12, 25, 45, 60, 80, 95],
+                        backgroundColor: 'rgba(67, 97, 238, 0.8)',
+                        borderColor: 'rgba(67, 97, 238, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Call initProgressChart when the dashboard is shown
+        setTimeout(initProgressChart, 1000);
     </script>
 </body>
 </html>
