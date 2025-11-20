@@ -1,28 +1,11 @@
-let comments = [
-    {
-        id: 1,
-        username: 'Jonasmdluli',
-        team: 'Full-Stack',
-        text: 'If any of the team member is facing challenges on their weekly task, they can post their comments here with the challenge and when their submission is due',
-        timestamp: new Date('2025-11-17T14:05:25').toISOString()
-    }
-];
+const mongoose = require('mongoose');
 
-function getComments() {
-    return comments;
-}
+const CommentSchema = new mongoose.Schema({
+  submissionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
+  authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  authorName: { type: String },
+  text: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
 
-function addComment(commentData) {
-    const newComment = {
-        id: Date.now(),
-        ...commentData,
-        timestamp: new Date().toISOString()
-    };
-    comments.unshift(newComment);
-    return newComment;
-}
-
-module.exports = {
-    getComments,
-    addComment
-};
+module.exports = mongoose.model('Comment', CommentSchema);
