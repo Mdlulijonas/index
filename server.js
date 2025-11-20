@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
+const fs = require('fs');
 const app = express();
 
 // Middleware
@@ -9,13 +10,21 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // File upload configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/')
+    cb(null, uploadsDir)
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname)
+    // Sanitize filename and add timestamp
+    const originalName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    cb(null, Date.now() + '-' + originalName)
   }
 });
 
@@ -23,6 +32,17 @@ const upload = multer({
   storage: storage,
   limits: {
     fileSize: 2 * 1024 * 1024 // 2MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Allow specific file types
+    const allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.zip'];
+    const fileExt = path.extname(file.originalname).toLowerCase();
+    
+    if (allowedTypes.includes(fileExt)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only PDF, DOC, DOCX, TXT, and ZIP files are allowed.'));
+    }
   }
 });
 
@@ -123,7 +143,13 @@ app.post('/api/submissions', upload.single('attachment'), (req, res) => {
 app.get('/api/submissions/download/:filename', (req, res) => {
   try {
     const filename = req.params.filename;
-    const filePath = path.join(__dirname, 'uploads', filename);
+    const filePath = path.join(uploadsDir, filename);
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
     res.download(filePath);
   } catch (error) {
     console.error('Error downloading file:', error);
@@ -142,6 +168,15 @@ app.delete('/api/submissions', (req, res) => {
     const submissionIndex = submissions.findIndex(s => s.id == submissionId);
     if (submissionIndex === -1) {
       return res.status(404).json({ error: 'Submission not found' });
+    }
+    
+    // Remove file from uploads directory if it exists
+    const submission = submissions[submissionIndex];
+    if (submission.attachment) {
+      const filePath = path.join(uploadsDir, submission.attachment);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
     
     submissions.splice(submissionIndex, 1);
@@ -165,7 +200,12 @@ app.get('/api/tasks', (req, res) => {
 // Users API
 app.get('/api/users', (req, res) => {
   try {
-    res.json(users);
+    // Return users without passwords for security
+    const usersWithoutPasswords = users.map(user => {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+    res.json(usersWithoutPasswords);
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
@@ -184,7 +224,10 @@ app.post('/api/users', (req, res) => {
         return res.status(404).json({ error: 'User not found' });
       }
       users[userIndex] = { ...users[userIndex], ...updates };
-      return res.json(users[userIndex]);
+      
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = users[userIndex];
+      return res.json(userWithoutPassword);
     }
 
     if (action === 'login') {
@@ -217,10 +260,14 @@ app.post('/api/users', (req, res) => {
         ...userData,
         isOnline: false,
         lastLogin: null,
-        lastLogout: null
+        lastLogout: null,
+        role: `${userData.team} Member`
       };
       users.push(newUser);
-      return res.status(201).json(newUser);
+      
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = newUser;
+      return res.status(201).json(userWithoutPassword);
     }
 
     res.status(400).json({ error: 'Invalid action' });
@@ -244,6 +291,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Error handling middleware
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File too large. Maximum size is 2MB.' });
+    }
+  }
+  console.error('Unhandled error:', error);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 // Serve the main HTML file for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -252,17 +310,11 @@ app.get('*', (req, res) => {
 // Get port from environment variable (Render provides this)
 const PORT = process.env.PORT || 10000;
 
-// Create uploads directory if it doesn't exist
-const fs = require('fs');
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
-
-// Listen on 0.0.0.0 to accept external connections
+// Listen on all network interfaces
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 DigiHive server running on port ${PORT}`);
   console.log(`📊 API endpoints available at /api/comments, /api/submissions, /api/tasks, /api/users`);
   console.log(`🌐 Frontend served from: http://0.0.0.0:${PORT}`);
-  console.log(`💬 Comments update frequency: Hourly (stable)`);
+  console.log(`💾 Uploads directory: ${uploadsDir}`);
   console.log(`✅ Server ready and accepting connections`);
 });
