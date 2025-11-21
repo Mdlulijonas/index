@@ -8,23 +8,31 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --secondary: #7209b7;
-            --accent: #f72585;
-            --success: #4cc9f0;
-            --warning: #f9c74f;
-            --error: #e63946;
-            --dark: #1e293b;
-            --gray-dark: #64748b;
-            --gray: #94a3b8;
-            --gray-light: #e2e8f0;
-            --background: #f8fafc;
-            --white: #ffffff;
-            --energy-blue: #4895ef;
-            --energy-purple: #7209b7;
-            --energy-pink: #f72585;
-            --energy-yellow: #f9c74f;
+            --primary: #2A5CAA;
+            --primary-light: #3A7BDA;
+            --primary-dark: #1E4A8C;
+            --secondary: #3E7CB1;
+            --accent: #F0544F;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --error: #D32F2F;
+            --dark: #1A1A2E;
+            --gray-dark: #5D6D7E;
+            --gray: #85929E;
+            --gray-light: #EAECEE;
+            --background: #F8FAFC;
+            --white: #FFFFFF;
+            --card-bg: #FFFFFF;
+            --sidebar-bg: #1E293B;
+            --sidebar-text: #E2E8F0;
+            
+            /* Team Colors */
+            --dev: #2A5CAA;
+            --design: #673AB7;
+            --marketing: #4CAF50;
+            --support: #009688;
+            --content: #FF9800;
+            --admin: #D32F2F;
         }
         
         * {
@@ -38,56 +46,127 @@
             background: var(--background);
             color: var(--dark);
             line-height: 1.6;
+            overflow-x: hidden;
         }
         
+        /* Login Styles */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--design));
+            padding: 2rem;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .login-logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-light), var(--design));
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.4rem;
+        }
+        
+        .login-logo-text {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-light), var(--design));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .motivation-card {
+            background: linear-gradient(135deg, var(--primary), var(--design));
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+        
+        .motivation-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-style: italic;
+        }
+        
+        .motivation-author {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        /* Modern Dashboard Layout */
         .dashboard {
-            display: grid;
-            grid-template-columns: 250px 1fr;
+            display: flex;
             min-height: 100vh;
         }
         
-        /* Sidebar */
+        /* Sidebar - Dark Theme */
         .sidebar {
-            background: var(--white);
-            border-right: 1px solid var(--gray-light);
-            padding: 2rem 1rem;
-            position: fixed;
-            width: 250px;
+            background: var(--sidebar-bg);
+            padding: 2rem 1.5rem;
+            width: 280px;
             height: 100vh;
             overflow-y: auto;
+            box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+            position: fixed;
+            z-index: 100;
         }
         
         .logo {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            margin-bottom: 2rem;
-            padding: 0 1rem;
+            margin-bottom: 3rem;
+            padding: 0 0.5rem;
         }
         
         .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
-            border-radius: 10px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary-light), var(--design));
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
+            font-size: 1.1rem;
         }
         
         .logo-text {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--sidebar-text);
         }
         
         .nav-links {
             list-style: none;
-            margin-bottom: 2rem;
+            margin-bottom: 3rem;
         }
         
         .nav-links li {
@@ -98,21 +177,29 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            color: var(--gray-dark);
+            padding: 0.85rem 1rem;
+            color: var(--sidebar-text);
             text-decoration: none;
-            border-radius: 8px;
+            border-radius: 10px;
             transition: all 0.3s ease;
+            opacity: 0.8;
         }
         
-        .nav-links a:hover, .nav-links a.active {
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            opacity: 1;
+        }
+        
+        .nav-links a.active {
             background: var(--primary);
-            color: white;
+            opacity: 1;
+            box-shadow: 0 4px 12px rgba(42, 92, 170, 0.3);
         }
         
         .nav-links i {
             width: 20px;
             text-align: center;
+            font-size: 1.1rem;
         }
         
         .team-section {
@@ -122,9 +209,10 @@
         .team-title {
             font-size: 0.9rem;
             font-weight: 600;
-            color: var(--gray-dark);
+            color: var(--sidebar-text);
             margin-bottom: 1rem;
-            padding: 0 1rem;
+            padding: 0 0.5rem;
+            opacity: 0.7;
         }
         
         .team-members {
@@ -138,24 +226,31 @@
             padding: 0.75rem 1rem;
             border-radius: 8px;
             transition: background 0.3s ease;
+            margin-bottom: 0.5rem;
         }
         
         .team-member:hover {
-            background: var(--gray-light);
+            background: rgba(255, 255, 255, 0.05);
         }
         
         .member-avatar {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
+        
+        .member-avatar.dev { background: var(--dev); }
+        .member-avatar.design { background: var(--design); }
+        .member-avatar.marketing { background: var(--marketing); }
+        .member-avatar.support { background: var(--support); }
+        .member-avatar.content { background: var(--content); }
+        .member-avatar.admin { background: var(--admin); }
         
         .member-info {
             flex: 1;
@@ -164,6 +259,7 @@
         .member-name {
             font-size: 0.9rem;
             font-weight: 500;
+            color: var(--sidebar-text);
         }
         
         .member-role {
@@ -180,67 +276,160 @@
         
         /* Main Content */
         .main-content {
-            grid-column: 2;
-            padding: 2rem;
-            margin-left: 250px;
+            flex: 1;
+            padding: 2.5rem 3rem;
+            margin-left: 280px;
+            width: calc(100% - 280px);
         }
         
+        /* Header */
         .header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
+            align-items: flex-start;
+            margin-bottom: 2.5rem;
         }
         
         .welcome-message h1 {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
+            color: var(--dark);
         }
         
         .welcome-message p {
             color: var(--gray-dark);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
         }
         
         .user-info {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 1.5rem;
         }
         
         .notification {
             position: relative;
+            background: var(--white);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            cursor: pointer;
         }
         
         .notification-badge {
             position: absolute;
             top: -5px;
             right: -5px;
-            background: var(--error);
+            background: var(--accent);
             color: white;
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .user-avatar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--white);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
         
         /* Dashboard Grid */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
         }
         
-        /* Task Section */
-        .task-section {
-            background: var(--white);
+        /* Stats Cards */
+        .stats-container {
+            grid-column: span 12;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
             border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: white;
+        }
+        
+        .stat-icon.overview { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
+        .stat-icon.tasks { background: linear-gradient(135deg, var(--design), #8A63D2); }
+        .stat-icon.progress { background: linear-gradient(135deg, var(--support), #00BFA5); }
+        .stat-icon.team { background: linear-gradient(135deg, var(--content), #FFB74D); }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.95rem;
+            color: var(--gray-dark);
+            font-weight: 500;
+        }
+        
+        /* Main Sections */
+        .dashboard-section {
+            display: none;
+        }
+        
+        .dashboard-section.active {
+            display: block;
+        }
+        
+        /* Task Overview */
+        .task-overview {
+            grid-column: span 8;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         }
         
         .section-header {
@@ -251,107 +440,142 @@
         }
         
         .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--dark);
         }
         
-        .week-selector {
+        /* Task Display */
+        .task-display {
             display: flex;
-            align-items: center;
-            gap: 1rem;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
         }
         
-        .week-nav {
-            display: flex;
-            gap: 0.5rem;
+        .task-display::-webkit-scrollbar {
+            width: 6px;
         }
         
-        .week-btn {
+        .task-display::-webkit-scrollbar-track {
             background: var(--gray-light);
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.3s ease;
+            border-radius: 3px;
         }
         
-        .week-btn:hover {
-            background: var(--gray);
+        .task-display::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
         }
         
-        .current-week {
-            font-weight: 600;
-        }
-        
-        .task-list {
+        .task-item {
+            background: var(--background);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border-left: 4px solid;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             display: flex;
             flex-direction: column;
             gap: 1rem;
         }
         
-        .task-card {
-            background: var(--background);
-            border-radius: 8px;
-            padding: 1.25rem;
-            border-left: 4px solid var(--energy-blue);
+        .task-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
         
-        .task-card.completed {
-            border-left-color: var(--success);
-            opacity: 0.8;
-        }
-        
-        .task-card.overdue {
-            border-left-color: var(--error);
-        }
+        .task-item.dev { border-left-color: var(--dev); }
+        .task-item.design { border-left-color: var(--design); }
+        .task-item.marketing { border-left-color: var(--marketing); }
+        .task-item.support { border-left-color: var(--support); }
+        .task-item.content { border-left-color: var(--content); }
+        .task-item.completed { opacity: 0.7; }
         
         .task-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 0.75rem;
         }
         
         .task-title {
             font-weight: 600;
             margin-bottom: 0.25rem;
+            color: var(--dark);
+            font-size: 1.2rem;
         }
         
         .task-due {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: var(--gray-dark);
+        }
+        
+        .task-priority {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .priority-high {
+            background: rgba(255, 152, 0, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+        
+        .priority-medium {
+            background: rgba(76, 175, 80, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(76, 175, 80, 0.3);
         }
         
         .task-description {
             color: var(--gray-dark);
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
         }
         
-        .task-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .task-assignee {
+        .task-role {
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .role-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+        
+        .role-icon.dev { background: var(--dev); }
+        .role-icon.design { background: var(--design); }
+        .role-icon.marketing { background: var(--marketing); }
+        .role-icon.support { background: var(--support); }
+        .role-icon.content { background: var(--content); }
+        
+        .role-name {
+            font-size: 0.85rem;
+            color: var(--gray-dark);
+            font-weight: 500;
         }
         
         .task-actions {
             display: flex;
+            justify-content: flex-end;
             gap: 0.5rem;
+            margin-top: 0.5rem;
         }
         
         .btn {
             padding: 0.5rem 1rem;
-            border-radius: 6px;
+            border-radius: 8px;
             border: none;
             font-weight: 500;
             cursor: pointer;
@@ -359,10 +583,11 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            font-size: 0.85rem;
         }
         
         .btn-primary {
-            background: var(--energy-blue);
+            background: var(--primary);
             color: white;
         }
         
@@ -386,73 +611,112 @@
         }
         
         .btn-success:hover {
-            background: #0da271;
+            background: #3d8b40;
         }
         
-        /* Progress Section */
-        .progress-section {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        /* Team Progress */
+        .team-progress {
+            grid-column: span 4;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         }
         
-        .progress-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+        .progress-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
         
-        .progress-card {
-            background: var(--background);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
+        .progress-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
         
-        .progress-value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
-        .progress-label {
-            font-size: 0.9rem;
-            color: var(--gray-dark);
+        .team-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
         }
         
-        .chart-container {
-            height: 200px;
-            margin-top: 1rem;
+        .team-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
         }
         
-        /* Productivity Section */
-        .productivity-section {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
+        .team-dot.dev { background: var(--dev); }
+        .team-dot.design { background: var(--design); }
+        .team-dot.marketing { background: var(--marketing); }
+        .team-dot.support { background: var(--support); }
+        .team-dot.content { background: var(--content); }
+        
+        .progress-percent {
+            font-weight: 600;
+            color: var(--dark);
         }
         
-        .motivation-card {
-            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+        .progress-bar {
+            height: 8px;
+            background: var(--gray-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+        
+        .progress-fill.dev { background: var(--dev); }
+        .progress-fill.design { background: var(--design); }
+        .progress-fill.marketing { background: var(--marketing); }
+        .progress-fill.support { background: var(--support); }
+        .progress-fill.content { background: var(--content); }
+        
+        /* Activity & Motivation Section */
+        .activity-section {
+            grid-column: span 4;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .motivation-card-dash {
+            background: linear-gradient(135deg, var(--primary), var(--design));
             color: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         }
         
-        .motivation-text {
+        .motivation-text-dash {
             font-size: 1.1rem;
             font-weight: 500;
             margin-bottom: 1rem;
+            font-style: italic;
+            line-height: 1.5;
         }
         
-        .motivation-author {
+        .motivation-author-dash {
             font-size: 0.9rem;
-            opacity: 0.8;
+            opacity: 0.9;
+        }
+        
+        .tips-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         }
         
         .tips-list {
@@ -474,7 +738,7 @@
         .tip-icon {
             width: 24px;
             height: 24px;
-            background: var(--energy-blue);
+            background: var(--primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -483,78 +747,20 @@
             font-size: 0.8rem;
         }
         
-        /* File Upload */
-        .upload-section {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-        
-        .upload-area {
-            border: 2px dashed var(--gray);
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .upload-area.active {
-            border-color: var(--energy-blue);
-            background: rgba(67, 97, 238, 0.05);
-        }
-        
-        .upload-icon {
-            font-size: 2rem;
-            color: var(--gray);
-            margin-bottom: 1rem;
-        }
-        
-        .upload-text {
-            margin-bottom: 1rem;
-        }
-        
-        .file-input {
-            display: none;
-        }
-        
-        .file-list {
-            margin-top: 1rem;
-        }
-        
-        .file-item {
+        .action-buttons {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            background: var(--background);
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
-        }
-        
-        .file-info {
-            display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 0.75rem;
-        }
-        
-        .file-icon {
-            color: var(--energy-blue);
-        }
-        
-        .file-actions {
-            display: flex;
-            gap: 0.5rem;
+            margin-top: 1.5rem;
         }
         
         /* Comments Section */
         .comments-section {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
+            grid-column: span 8;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         }
         
         .comment-form {
@@ -569,16 +775,37 @@
             resize: vertical;
             min-height: 80px;
             margin-bottom: 1rem;
+            font-size: 0.95rem;
         }
         
         .comments-list {
             max-height: 400px;
             overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        
+        .comments-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .comments-list::-webkit-scrollbar-track {
+            background: var(--gray-light);
+            border-radius: 3px;
+        }
+        
+        .comments-list::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
         }
         
         .comment {
             padding: 1rem;
             border-bottom: 1px solid var(--gray-light);
+            transition: background 0.3s ease;
+        }
+        
+        .comment:hover {
+            background: var(--background);
         }
         
         .comment:last-child {
@@ -614,6 +841,47 @@
         
         .comment-text {
             color: var(--dark);
+            line-height: 1.5;
+        }
+        
+        .comment-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c62828;
+        }
+        
+        /* Online Status */
+        .online-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--success);
+            margin-top: 0.25rem;
+        }
+        
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
         
         /* Modal Styles */
@@ -636,17 +904,18 @@
         
         .modal-content {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 2rem;
             max-width: 500px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
         }
         
         .modal-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
         }
@@ -678,61 +947,13 @@
             width: 100%;
             padding: 0.75rem;
             border: 1px solid var(--gray-light);
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 1rem;
         }
         
         .form-textarea {
             resize: vertical;
             min-height: 100px;
-        }
-        
-        /* Login Styles */
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
-            padding: 2rem;
-        }
-        
-        .login-card {
-            background: white;
-            border-radius: 16px;
-            padding: 3rem;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-        
-        .login-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .login-logo-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        
-        .login-logo-text {
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
         
         /* Motivational Popup */
@@ -742,7 +963,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -759,12 +980,12 @@
         
         .popup-content {
             background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 500px;
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 600px;
             width: 90%;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
             transform: translateY(20px);
             transition: transform 0.4s ease;
         }
@@ -777,104 +998,174 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
         
         .popup-logo-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
-            border-radius: 12px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-light), var(--design));
+            border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
         }
         
         .popup-logo-text {
-            font-size: 1.8rem;
+            font-size: 2.2rem;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            background: linear-gradient(135deg, var(--primary-light), var(--design));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         
         .popup-quote {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: 600;
             margin-bottom: 1rem;
             color: var(--dark);
             line-height: 1.4;
+            font-style: italic;
         }
         
         .popup-author {
-            font-size: 1rem;
-            color: var(--energy-purple);
+            font-size: 1.1rem;
+            color: var(--primary);
             font-weight: 500;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
         }
         
         .popup-btn {
-            background: linear-gradient(135deg, var(--energy-blue), var(--energy-purple));
+            background: linear-gradient(135deg, var(--primary), var(--design));
             color: white;
             border: none;
-            padding: 0.75rem 2rem;
-            border-radius: 8px;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            font-size: 1.1rem;
         }
         
         .popup-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+            box-shadow: 0 10px 25px rgba(67, 97, 238, 0.4);
         }
         
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .dashboard {
-                grid-template-columns: 1fr;
+        /* Submissions & Team Sections */
+        .submissions-list, .team-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        
+        .submission-item, .team-member-item {
+            background: var(--background);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary);
+            transition: transform 0.2s ease;
+        }
+        
+        .submission-item:hover, .team-member-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .submission-header, .team-member-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .submission-title, .team-member-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--dark);
+        }
+        
+        .submission-meta, .team-member-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--gray-dark);
+        }
+        
+        .submission-content {
+            color: var(--gray-dark);
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
             }
             
+            .task-overview, .team-progress, .comments-section, .activity-section {
+                grid-column: span 12;
+            }
+        }
+        
+        @media (max-width: 1024px) {
             .sidebar {
-                display: none;
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
             }
             
             .main-content {
                 margin-left: 0;
-                grid-column: 1;
+                width: 100%;
+                padding: 1.5rem;
             }
-            
-            .dashboard-grid {
+        }
+        
+        @media (max-width: 768px) {
+            .stats-container {
                 grid-template-columns: 1fr;
             }
-        }
-        
-        /* Online Status */
-        .online-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.8rem;
-            color: var(--success);
-            margin-top: 0.25rem;
-        }
-        
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--success);
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .task-actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -887,11 +1178,11 @@
                 <div class="login-logo-text">DigiHive</div>
             </div>
             
-            <div class="motivation-card" style="margin-bottom: 2rem;">
+            <div class="motivation-card">
                 <div class="motivation-text" id="loginMotivation">
-                    "Every great digital product began as an idea. Your work today brings DigiHive closer to reality."
+                    "The right steps will always lead you to success"
                 </div>
-                <div class="motivation-author">- Team Lead</div>
+                <div class="motivation-author">- Success Team DigiHive</div>
             </div>
             
             <form id="loginForm">
@@ -905,11 +1196,11 @@
                     <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem; padding: 0.75rem;">
                     <i class="fas fa-sign-in-alt"></i> Login to Dashboard
                 </button>
                 
-                <button type="button" class="btn btn-outline" style="width: 100%;" onclick="showRegisterModal()">
+                <button type="button" class="btn btn-outline" style="width: 100%; padding: 0.75rem;" onclick="showRegisterModal()">
                     <i class="fas fa-user-plus"></i> Register New Member
                 </button>
             </form>
@@ -941,10 +1232,11 @@
                 
                 <ul class="nav-links">
                     <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</a></li>
-                    <li><a href="#" onclick="showSection('tasks')"><i class="fas fa-tasks"></i> My Tasks</a></li>
+                    <li><a href="#" onclick="showSection('tasks')"><i class="fas fa-tasks"></i> Start Task</a></li>
                     <li><a href="#" onclick="showSection('submissions')"><i class="fas fa-file-upload"></i> Submissions</a></li>
                     <li><a href="#" onclick="showSection('team')"><i class="fas fa-users"></i> Team</a></li>
                     <li><a href="#" onclick="showSection('comments')"><i class="fas fa-comments"></i> Comments</a></li>
+                    <li><a href="#" onclick="showSection('settings')"><i class="fas fa-cog"></i> Settings</a></li>
                 </ul>
                 
                 <div class="team-section">
@@ -969,6 +1261,7 @@
                         </div>
                         <div class="user-avatar">
                             <div class="member-avatar" id="userAvatar">US</div>
+                            <span id="userName">User</span>
                         </div>
                         <button class="btn btn-outline" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
@@ -977,96 +1270,91 @@
                 </div>
                 
                 <!-- Dashboard Section -->
-                <div id="dashboardSection" class="dashboard-section">
+                <div id="dashboardSection" class="dashboard-section active">
                     <div class="dashboard-grid">
-                        <!-- Left Column -->
-                        <div class="left-column">
-                            <!-- Current Week Tasks -->
-                            <div class="task-section">
-                                <div class="section-header">
-                                    <div class="section-title">This Week's Tasks</div>
-                                    <div class="week-selector">
-                                        <div class="week-nav">
-                                            <button class="week-btn"><i class="fas fa-chevron-left"></i></button>
-                                            <button class="week-btn"><i class="fas fa-chevron-right"></i></button>
-                                        </div>
-                                        <div class="current-week">Week 1: Jan 12-16, 2026</div>
+                        <!-- Stats Cards -->
+                        <div class="stats-container">
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-value" id="totalTasks">0</div>
+                                        <div class="stat-label">Active Tasks</div>
                                     </div>
-                                </div>
-                                
-                                <div class="task-list" id="taskList">
-                                    <!-- Tasks will be populated here -->
+                                    <div class="stat-icon overview">
+                                        <i class="fas fa-tasks"></i>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <!-- Comments Section -->
-                            <div class="comments-section">
-                                <div class="section-header">
-                                    <div class="section-title">Team Comments</div>
-                                    <div class="online-status">
-                                        <div class="status-dot"></div>
-                                        <span>Live Updates</span>
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-value" id="completedTasks">0</div>
+                                        <div class="stat-label">Completed</div>
+                                    </div>
+                                    <div class="stat-icon tasks">
+                                        <i class="fas fa-check-circle"></i>
                                     </div>
                                 </div>
-                                
-                                <div class="comment-form">
-                                    <textarea class="comment-input" id="commentInput" placeholder="Share your thoughts, challenges, or updates with the team..."></textarea>
-                                    <button class="btn btn-primary" onclick="postComment()">
-                                        <i class="fas fa-paper-plane"></i> Post Comment
-                                    </button>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-value" id="overallProgress">0%</div>
+                                        <div class="stat-label">Overall Progress</div>
+                                    </div>
+                                    <div class="stat-icon progress">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
                                 </div>
-                                
-                                <div class="comments-list" id="commentsList">
-                                    <!-- Comments will be populated here -->
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-value" id="teamMembers">0</div>
+                                        <div class="stat-label">Team Members</div>
+                                    </div>
+                                    <div class="stat-icon team">
+                                        <i class="fas fa-users"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Right Column -->
-                        <div class="right-column">
-                            <!-- Progress Section -->
-                            <div class="progress-section">
-                                <div class="section-header">
-                                    <div class="section-title">Project Progress</div>
-                                </div>
-                                
-                                <div class="progress-grid">
-                                    <div class="progress-card">
-                                        <div class="progress-value" id="overallProgress">12%</div>
-                                        <div class="progress-label">Overall Completion</div>
-                                    </div>
-                                    <div class="progress-card">
-                                        <div class="progress-value" id="tasksCompleted">4/10</div>
-                                        <div class="progress-label">Tasks Completed</div>
-                                    </div>
-                                    <div class="progress-card">
-                                        <div class="progress-value" id="behindSchedule">0</div>
-                                        <div class="progress-label">Behind Schedule</div>
-                                    </div>
-                                    <div class="progress-card">
-                                        <div class="progress-value" id="daysToLaunch">6</div>
-                                        <div class="progress-label">Days to Launch</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="chart-container">
-                                    <canvas id="progressChart"></canvas>
-                                </div>
+                        <!-- Task Overview -->
+                        <div class="task-overview">
+                            <div class="section-header">
+                                <div class="section-title">This Week's Tasks</div>
                             </div>
                             
-                            <!-- Productivity Section -->
-                            <div class="productivity-section">
-                                <div class="section-header">
-                                    <div class="section-title">Daily Motivation</div>
+                            <div class="task-display" id="taskDisplay">
+                                <!-- Tasks will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Team Progress -->
+                        <div class="team-progress">
+                            <div class="section-header">
+                                <div class="section-title">Team Progress</div>
+                            </div>
+                            
+                            <div class="progress-bars" id="teamProgressBars">
+                                <!-- Progress bars will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Activity & Motivation Section -->
+                        <div class="activity-section">
+                            <div class="motivation-card-dash">
+                                <div class="motivation-text-dash" id="dailyMotivation">
+                                    "The right steps will always lead you to success"
                                 </div>
-                                
-                                <div class="motivation-card">
-                                    <div class="motivation-text" id="dailyMotivation">
-                                        "Every great digital product began as an idea. Your work today brings DigiHive closer to reality."
-                                    </div>
-                                    <div class="motivation-author" id="motivationAuthor">- Team Lead</div>
-                                </div>
-                                
+                                <div class="motivation-author-dash" id="motivationAuthor">- Success Team DigiHive</div>
+                            </div>
+                            
+                            <div class="tips-card">
                                 <div class="section-header">
                                     <div class="section-title">Productivity Tips</div>
                                 </div>
@@ -1090,30 +1378,125 @@
                                     </li>
                                 </ul>
                                 
-                                <div style="margin-top: 1.5rem;">
-                                    <button class="btn btn-primary" onclick="showSubmissionModal()" style="width: 100%;">
+                                <div class="action-buttons">
+                                    <button class="btn btn-primary" onclick="showSubmissionModal()">
                                         <i class="fas fa-file-upload"></i> Submit Weekly Report
                                     </button>
-                                    <button class="btn btn-outline" onclick="showRegisterModal()" style="width: 100%; margin-top: 0.5rem;">
+                                    <button class="btn btn-outline" onclick="showRegisterModal()">
                                         <i class="fas fa-user-plus"></i> Register New Member
                                     </button>
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Comments Section -->
+                        <div class="comments-section">
+                            <div class="section-header">
+                                <div class="section-title">Team Comments</div>
+                                <div class="online-status">
+                                    <div class="status-dot"></div>
+                                    <span>Live Updates</span>
+                                </div>
+                            </div>
+                            
+                            <div class="comment-form">
+                                <textarea class="comment-input" id="commentInput" placeholder="Share your thoughts, challenges, or updates with the team..."></textarea>
+                                <button class="btn btn-primary" onclick="postComment()">
+                                    <i class="fas fa-paper-plane"></i> Post Comment
+                                </button>
+                            </div>
+                            
+                            <div class="comments-list" id="commentsList">
+                                <!-- Comments will be populated here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Other Sections (Hidden by default) -->
-                <div id="tasksSection" class="dashboard-section" style="display: none;">
-                    <!-- Tasks section content -->
+                <!-- Tasks Section -->
+                <div id="tasksSection" class="dashboard-section">
+                    <div class="task-overview">
+                        <div class="section-header">
+                            <div class="section-title">All Tasks</div>
+                            <button class="btn btn-primary" onclick="showSubmissionModal()">
+                                <i class="fas fa-file-upload"></i> Submit Report
+                            </button>
+                        </div>
+                        
+                        <div class="task-display" id="allTasksDisplay">
+                            <!-- All tasks will be populated here -->
+                        </div>
+                    </div>
                 </div>
                 
-                <div id="submissionsSection" class="dashboard-section" style="display: none;">
-                    <!-- Submissions section content -->
+                <!-- Submissions Section -->
+                <div id="submissionsSection" class="dashboard-section">
+                    <div class="task-overview">
+                        <div class="section-header">
+                            <div class="section-title">All Submissions</div>
+                            <button class="btn btn-primary" onclick="showSubmissionModal()">
+                                <i class="fas fa-plus"></i> New Submission
+                            </button>
+                        </div>
+                        
+                        <div class="submissions-list" id="submissionsList">
+                            <!-- Submissions will be populated here -->
+                        </div>
+                    </div>
                 </div>
                 
-                <div id="teamSection" class="dashboard-section" style="display: none;">
-                    <!-- Team section content -->
+                <!-- Team Section -->
+                <div id="teamSection" class="dashboard-section">
+                    <div class="task-overview">
+                        <div class="section-header">
+                            <div class="section-title">Team Members</div>
+                            <button class="btn btn-primary" onclick="showRegisterModal()">
+                                <i class="fas fa-user-plus"></i> Register Member
+                            </button>
+                        </div>
+                        
+                        <div class="team-list" id="teamList">
+                            <!-- Team members will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comments Section (Full) -->
+                <div id="commentsSection" class="dashboard-section">
+                    <div class="comments-section" style="grid-column: span 12;">
+                        <div class="section-header">
+                            <div class="section-title">Team Comments</div>
+                            <div class="online-status">
+                                <div class="status-dot"></div>
+                                <span>Live Updates</span>
+                            </div>
+                        </div>
+                        
+                        <div class="comment-form">
+                            <textarea class="comment-input" id="commentInputFull" placeholder="Share your thoughts, challenges, or updates with the team..."></textarea>
+                            <button class="btn btn-primary" onclick="postCommentFull()">
+                                <i class="fas fa-paper-plane"></i> Post Comment
+                            </button>
+                        </div>
+                        
+                        <div class="comments-list" id="commentsListFull">
+                            <!-- Comments will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Settings Section -->
+                <div id="settingsSection" class="dashboard-section">
+                    <div class="task-overview">
+                        <div class="section-header">
+                            <div class="section-title">Settings</div>
+                        </div>
+                        <div style="text-align: center; padding: 3rem;">
+                            <i class="fas fa-tools" style="font-size: 4rem; color: var(--gray); margin-bottom: 1rem;"></i>
+                            <h3 style="color: var(--gray-dark); margin-bottom: 0.5rem;">Settings Under Development</h3>
+                            <p style="color: var(--gray);">This section is currently being developed and will be available soon.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1212,6 +1595,28 @@
         </div>
     </div>
 
+    <!-- Delete Comment Modal -->
+    <div class="modal" id="deleteCommentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Delete Comment</h2>
+                <button class="close-modal" onclick="closeDeleteCommentModal()">&times;</button>
+            </div>
+            
+            <form id="deleteCommentForm">
+                <input type="hidden" id="commentToDelete">
+                <div class="form-group">
+                    <label class="form-label">Admin Code</label>
+                    <input type="password" class="form-input" name="adminCode" required>
+                </div>
+                
+                <button type="submit" class="btn btn-danger" style="width: 100%;">
+                    <i class="fas fa-trash"></i> Delete Comment
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Application state
         let currentUser = null;
@@ -1219,6 +1624,43 @@
         let tasks = [];
         let comments = [];
         let submissions = [];
+        let currentQuoteIndex = 0;
+
+        // Motivational quotes - NO REPEATS
+        const motivationalQuotes = [
+            {
+                text: "The right steps will always lead you to success",
+                author: "Success Team DigiHive"
+            },
+            {
+                text: "Your energy and focus today will build the foundation for tomorrow's achievements",
+                author: "Productivity Team DigiHive"
+            },
+            {
+                text: "Every line of code you write brings us closer to empowering creators worldwide",
+                author: "Development Team DigiHive"
+            },
+            {
+                text: "Your creativity and attention to detail make DigiHive exceptional",
+                author: "Design Team DigiHive"
+            },
+            {
+                text: "Collaboration multiplies our impact - together we achieve extraordinary results",
+                author: "Teamwork Champions DigiHive"
+            },
+            {
+                text: "Small consistent efforts lead to massive accomplishments over time",
+                author: "Consistency Crew DigiHive"
+            },
+            {
+                text: "Your unique perspective adds value that no one else can contribute",
+                author: "Innovation Team DigiHive"
+            },
+            {
+                text: "Challenges are opportunities in disguise - embrace them with enthusiasm",
+                author: "Growth Mindset DigiHive"
+            }
+        ];
 
         // DOM elements
         const loginScreen = document.getElementById('loginScreen');
@@ -1226,6 +1668,7 @@
         const welcomeTitle = document.getElementById('welcomeTitle');
         const welcomeSubtitle = document.getElementById('welcomeSubtitle');
         const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -1246,6 +1689,9 @@
             
             // Set up submission form
             document.getElementById('submissionForm').addEventListener('submit', handleSubmission);
+            
+            // Set up delete comment form
+            document.getElementById('deleteCommentForm').addEventListener('submit', handleDeleteComment);
             
             // Initialize motivational popup
             initMotivationalPopup();
@@ -1269,9 +1715,40 @@
             welcomeTitle.textContent = `Welcome back, ${currentUser.username}!`;
             welcomeSubtitle.textContent = `You are logged in as ${currentUser.team}`;
             userAvatar.textContent = currentUser.username.substring(0, 2).toUpperCase();
+            userName.textContent = currentUser.username;
+            
+            // Set user avatar color based on team
+            setUserAvatarColor(currentUser.team);
             
             // Load dashboard data
             loadDashboardData();
+        }
+
+        // Set user avatar color based on team
+        function setUserAvatarColor(team) {
+            const avatar = document.getElementById('userAvatar');
+            avatar.className = 'member-avatar';
+            
+            switch(team) {
+                case 'Full-Stack':
+                    avatar.classList.add('dev');
+                    break;
+                case 'UI/UX':
+                    avatar.classList.add('design');
+                    break;
+                case 'Marketing':
+                    avatar.classList.add('marketing');
+                    break;
+                case 'Support':
+                    avatar.classList.add('support');
+                    break;
+                case 'Content':
+                    avatar.classList.add('content');
+                    break;
+                case 'Administrator':
+                    avatar.classList.add('admin');
+                    break;
+            }
         }
 
         // Handle login
@@ -1339,6 +1816,7 @@
                     alert('User registered successfully!');
                     closeRegisterModal();
                     e.target.reset();
+                    loadUsers();
                 } else {
                     const error = await response.json();
                     alert(error.error || 'Registration failed');
@@ -1379,6 +1857,40 @@
             }
         }
 
+        // Handle delete comment
+        async function handleDeleteComment(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const commentId = document.getElementById('commentToDelete').value;
+            const adminCode = formData.get('adminCode');
+
+            try {
+                const response = await fetch('/api/comments', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        commentId: parseInt(commentId),
+                        adminCode: adminCode
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Comment deleted successfully!');
+                    closeDeleteCommentModal();
+                    e.target.reset();
+                    loadComments();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to delete comment');
+                }
+            } catch (error) {
+                console.error('Delete comment error:', error);
+                alert('Network error while deleting comment');
+            }
+        }
+
         // Show register modal
         function showRegisterModal() {
             document.getElementById('registerModal').classList.add('active');
@@ -1399,11 +1911,22 @@
             document.getElementById('submissionModal').classList.remove('active');
         }
 
+        // Show delete comment modal
+        function showDeleteCommentModal(commentId) {
+            document.getElementById('commentToDelete').value = commentId;
+            document.getElementById('deleteCommentModal').classList.add('active');
+        }
+
+        // Close delete comment modal
+        function closeDeleteCommentModal() {
+            document.getElementById('deleteCommentModal').classList.remove('active');
+        }
+
         // Show section
         function showSection(section) {
             // Hide all sections
-            document.querySelectorAll('.dashboard-section').forEach(section => {
-                section.style.display = 'none';
+            document.querySelectorAll('.dashboard-section').forEach(sec => {
+                sec.style.display = 'none';
             });
             
             // Show selected section
@@ -1419,11 +1942,13 @@
             if (section === 'submissions') {
                 loadSubmissions();
             } else if (section === 'tasks') {
-                loadTasks();
+                loadAllTasks();
             } else if (section === 'team') {
                 loadTeam();
             } else if (section === 'comments') {
-                loadComments();
+                loadCommentsFull();
+            } else if (section === 'dashboard') {
+                loadDashboardData();
             }
         }
 
@@ -1443,6 +1968,9 @@
             await loadComments();
             updateProgress();
             updateOnlineMembers();
+            updateStats();
+            renderDashboardTasks();
+            renderTeamProgress();
         }
 
         // Load users
@@ -1460,7 +1988,6 @@
             try {
                 const response = await fetch('/api/tasks');
                 tasks = await response.json();
-                renderTasks();
             } catch (error) {
                 console.error('Error loading tasks:', error);
             }
@@ -1477,6 +2004,17 @@
             }
         }
 
+        // Load comments for full comments section
+        async function loadCommentsFull() {
+            try {
+                const response = await fetch('/api/comments');
+                comments = await response.json();
+                renderCommentsFull();
+            } catch (error) {
+                console.error('Error loading comments:', error);
+            }
+        }
+
         // Load submissions
         async function loadSubmissions() {
             try {
@@ -1488,42 +2026,126 @@
             }
         }
 
-        // Render tasks
-        function renderTasks() {
-            const taskList = document.getElementById('taskList');
-            taskList.innerHTML = '';
+        // Load all tasks for tasks section
+        async function loadAllTasks() {
+            await loadTasks();
+            renderAllTasks();
+        }
+
+        // Load team for team section
+        async function loadTeam() {
+            await loadUsers();
+            renderTeam();
+        }
+
+        // Render dashboard tasks
+        function renderDashboardTasks() {
+            const taskDisplay = document.getElementById('taskDisplay');
+            taskDisplay.innerHTML = '';
+            
+            // Show only first 5 tasks on dashboard
+            const displayTasks = tasks.slice(0, 5);
+            
+            displayTasks.forEach(task => {
+                const taskElement = createTaskElement(task);
+                taskDisplay.appendChild(taskElement);
+            });
+        }
+
+        // Render all tasks
+        function renderAllTasks() {
+            const allTasksDisplay = document.getElementById('allTasksDisplay');
+            allTasksDisplay.innerHTML = '';
             
             tasks.forEach(task => {
-                const taskCard = document.createElement('div');
-                taskCard.className = `task-card ${task.status === 'completed' ? 'completed' : ''}`;
-                
-                taskCard.innerHTML = `
-                    <div class="task-header">
-                        <div>
-                            <div class="task-title">${task.subject}</div>
-                            <div class="task-due">Due: ${new Date(task.endDate).toLocaleDateString()}</div>
-                        </div>
-                        <div class="task-priority" style="color: ${getPriorityColor(task.status)};">
-                            ${getPriorityText(task.status)}
-                        </div>
-                    </div>
-                    <div class="task-description">
-                        ${task.description}
-                    </div>
-                    <div class="task-meta">
-                        <div class="task-assignee">
-                            <div class="member-avatar">${task.team.substring(0, 2)}</div>
-                            <span>${task.team} Team</span>
-                        </div>
-                        <div class="task-actions">
-                            <button class="btn btn-outline">View Details</button>
-                            <button class="btn btn-primary">Start Task</button>
-                        </div>
-                    </div>
-                `;
-                
-                taskList.appendChild(taskCard);
+                const taskElement = createTaskElement(task);
+                allTasksDisplay.appendChild(taskElement);
             });
+        }
+
+        // Create task element
+        function createTaskElement(task) {
+            const taskElement = document.createElement('div');
+            const teamClass = getTeamClass(task.team);
+            const priorityClass = task.priority === 'High' ? 'priority-high' : 'priority-medium';
+            
+            taskElement.className = `task-item ${teamClass}`;
+            if (task.status === 'completed') {
+                taskElement.classList.add('completed');
+            }
+            
+            taskElement.innerHTML = `
+                <div class="task-header">
+                    <div>
+                        <div class="task-title">${task.subject}</div>
+                        <div class="task-due">Due: ${new Date(task.endDate).toLocaleDateString()}</div>
+                    </div>
+                    <div class="task-priority ${priorityClass}">${task.priority || 'Medium'}</div>
+                </div>
+                <div class="task-description">
+                    ${task.description}
+                </div>
+                <div class="task-role">
+                    <div class="role-icon ${teamClass}">
+                        ${getTeamIcon(task.team)}
+                    </div>
+                    <div class="role-name">${task.team} Team</div>
+                </div>
+                <div class="task-actions">
+                    <button class="btn btn-outline" onclick="viewTaskDetails(${task.id})">View Details</button>
+                    <button class="btn btn-primary" onclick="startTask(${task.id})">Start Task</button>
+                </div>
+            `;
+            
+            return taskElement;
+        }
+
+        // Get team class
+        function getTeamClass(team) {
+            switch(team) {
+                case 'Full-Stack': return 'dev';
+                case 'UI/UX': return 'design';
+                case 'Marketing': return 'marketing';
+                case 'Support': return 'support';
+                case 'Content': return 'content';
+                case 'Administrator': return 'admin';
+                default: return 'dev';
+            }
+        }
+
+        // Get team icon
+        function getTeamIcon(team) {
+            switch(team) {
+                case 'Full-Stack': return '<i class="fas fa-code"></i>';
+                case 'UI/UX': return '<i class="fas fa-palette"></i>';
+                case 'Marketing': return '<i class="fas fa-chart-line"></i>';
+                case 'Support': return '<i class="fas fa-headset"></i>';
+                case 'Content': return '<i class="fas fa-pen-nib"></i>';
+                case 'Administrator': return '<i class="fas fa-cog"></i>';
+                default: return '<i class="fas fa-tasks"></i>';
+            }
+        }
+
+        // View task details
+        function viewTaskDetails(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                // Prompt for admin code to add details
+                const adminCode = prompt('Enter admin code to add task details:');
+                if (adminCode === '212259497') {
+                    const newDetails = prompt('Enter additional task details:');
+                    if (newDetails) {
+                        alert('Task details updated! (This would be saved to the database in a real application)');
+                    }
+                } else {
+                    alert('Invalid admin code');
+                }
+            }
+        }
+
+        // Start task - redirects to submission
+        function startTask(taskId) {
+            showSubmissionModal();
         }
 
         // Render comments
@@ -1531,30 +2153,157 @@
             const commentsList = document.getElementById('commentsList');
             commentsList.innerHTML = '';
             
-            comments.forEach(comment => {
-                const commentElement = document.createElement('div');
-                commentElement.className = 'comment';
-                
-                commentElement.innerHTML = `
-                    <div class="comment-header">
-                        <div class="comment-user">
-                            <div class="member-avatar">${comment.username.substring(0, 2)}</div>
-                            ${comment.username}
-                            <span class="comment-team">${comment.team}</span>
-                        </div>
-                        <div class="comment-time">${new Date(comment.timestamp).toLocaleString()}</div>
-                    </div>
-                    <div class="comment-text">${comment.text}</div>
-                `;
-                
+            // Show only recent comments on dashboard
+            const recentComments = comments.slice(0, 5);
+            
+            recentComments.forEach(comment => {
+                const commentElement = createCommentElement(comment);
                 commentsList.appendChild(commentElement);
             });
         }
 
+        // Render comments for full comments section
+        function renderCommentsFull() {
+            const commentsListFull = document.getElementById('commentsListFull');
+            commentsListFull.innerHTML = '';
+            
+            comments.forEach(comment => {
+                const commentElement = createCommentElement(comment, true);
+                commentsListFull.appendChild(commentElement);
+            });
+        }
+
+        // Create comment element
+        function createCommentElement(comment, showDelete = false) {
+            const commentElement = document.createElement('div');
+            commentElement.className = 'comment';
+            
+            let deleteButton = '';
+            if (showDelete && currentUser.team === 'Administrator') {
+                deleteButton = `
+                    <div class="comment-actions">
+                        <button class="btn btn-danger" onclick="showDeleteCommentModal(${comment.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                `;
+            }
+            
+            commentElement.innerHTML = `
+                <div class="comment-header">
+                    <div class="comment-user">
+                        <div class="member-avatar ${getTeamClass(comment.team)}">${comment.username.substring(0, 2)}</div>
+                        ${comment.username}
+                        <span class="comment-team">${comment.team}</span>
+                    </div>
+                    <div class="comment-time">${new Date(comment.timestamp).toLocaleString()}</div>
+                </div>
+                <div class="comment-text">${comment.text}</div>
+                ${deleteButton}
+            `;
+            
+            return commentElement;
+        }
+
         // Render submissions
         function renderSubmissions() {
-            // This would render the submissions in the submissions section
-            console.log('Submissions loaded:', submissions.length);
+            const submissionsList = document.getElementById('submissionsList');
+            submissionsList.innerHTML = '';
+            
+            submissions.forEach(submission => {
+                const submissionElement = document.createElement('div');
+                submissionElement.className = 'submission-item';
+                
+                let downloadButton = '';
+                if (submission.attachment) {
+                    downloadButton = `<button class="btn btn-outline" onclick="downloadSubmission('${submission.attachment}', '${submission.originalFileName}')">
+                        <i class="fas fa-download"></i> Download
+                    </button>`;
+                }
+                
+                submissionElement.innerHTML = `
+                    <div class="submission-header">
+                        <div class="submission-title">${submission.name}</div>
+                        <div class="submission-meta">
+                            <span>By: ${submission.member}</span>
+                            <span>Team: ${submission.team}</span>
+                            <span>${new Date(submission.timestamp).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                    <div class="submission-content">
+                        <strong>Progress:</strong> ${submission.progress}
+                    </div>
+                    <div class="submission-content">
+                        <strong>Next Week's Plan:</strong> ${submission.plan}
+                    </div>
+                    <div class="task-actions">
+                        ${downloadButton}
+                    </div>
+                `;
+                
+                submissionsList.appendChild(submissionElement);
+            });
+        }
+
+        // Render team
+        function renderTeam() {
+            const teamList = document.getElementById('teamList');
+            teamList.innerHTML = '';
+            
+            users.forEach(user => {
+                const teamElement = document.createElement('div');
+                teamElement.className = 'team-member-item';
+                
+                teamElement.innerHTML = `
+                    <div class="team-member-header">
+                        <div class="team-member-name">${user.username}</div>
+                        <div class="team-member-meta">
+                            <span>${user.team}</span>
+                            <span class="online-status">
+                                <div class="status-dot" style="background: ${user.isOnline ? 'var(--success)' : 'var(--gray)'};"></div>
+                                <span>${user.isOnline ? 'Online' : 'Offline'}</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+                
+                teamList.appendChild(teamElement);
+            });
+        }
+
+        // Render team progress
+        function renderTeamProgress() {
+            const teamProgressBars = document.getElementById('teamProgressBars');
+            teamProgressBars.innerHTML = '';
+            
+            const teams = ['Full-Stack', 'UI/UX', 'Marketing', 'Support', 'Content'];
+            const teamProgress = {
+                'Full-Stack': 65,
+                'UI/UX': 80,
+                'Marketing': 45,
+                'Support': 70,
+                'Content': 55
+            };
+            
+            teams.forEach(team => {
+                const progressElement = document.createElement('div');
+                progressElement.className = 'progress-item';
+                
+                progressElement.innerHTML = `
+                    <div class="progress-header">
+                        <div class="team-name">
+                            <div class="team-dot ${getTeamClass(team)}"></div>
+                            <span>${team}</span>
+                        </div>
+                        <div class="progress-percent">${teamProgress[team]}%</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${getTeamClass(team)}" style="width: ${teamProgress[team]}%"></div>
+                    </div>
+                `;
+                
+                teamProgressBars.appendChild(progressElement);
+            });
         }
 
         // Post comment
@@ -1589,6 +2338,43 @@
             }
         }
 
+        // Post comment from full comments section
+        async function postCommentFull() {
+            const commentInput = document.getElementById('commentInputFull');
+            const text = commentInput.value.trim();
+            
+            if (!text) return;
+            
+            try {
+                const response = await fetch('/api/comments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: currentUser.username,
+                        team: currentUser.team,
+                        text: text
+                    })
+                });
+                
+                if (response.ok) {
+                    commentInput.value = '';
+                    loadCommentsFull();
+                } else {
+                    alert('Failed to post comment');
+                }
+            } catch (error) {
+                console.error('Error posting comment:', error);
+                alert('Network error while posting comment');
+            }
+        }
+
+        // Download submission
+        function downloadSubmission(filename, originalName) {
+            window.open(`/api/submissions/download/${filename}`, '_blank');
+        }
+
         // Update progress
         function updateProgress() {
             const completedTasks = tasks.filter(task => task.status === 'completed').length;
@@ -1596,7 +2382,22 @@
             const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
             
             document.getElementById('overallProgress').textContent = `${progress}%`;
-            document.getElementById('tasksCompleted').textContent = `${completedTasks}/${totalTasks}`;
+        }
+
+        // Update stats
+        function updateStats() {
+            const completedTasks = tasks.filter(task => task.status === 'completed').length;
+            const totalTasks = tasks.length;
+            const onlineUsers = users.filter(user => user.isOnline).length;
+            
+            document.getElementById('totalTasks').textContent = totalTasks;
+            document.getElementById('completedTasks').textContent = completedTasks;
+            document.getElementById('teamMembers').textContent = users.length;
+            
+            // Update notification count
+            document.getElementById('notificationCount').textContent = tasks.filter(task => 
+                task.status !== 'completed' && new Date(task.endDate) < new Date()
+            ).length;
         }
 
         // Update online members
@@ -1611,13 +2412,13 @@
                 memberElement.className = 'team-member';
                 
                 memberElement.innerHTML = `
-                    <div class="member-avatar">${user.username.substring(0, 2)}</div>
+                    <div class="member-avatar ${getTeamClass(user.team)}">${user.username.substring(0, 2)}</div>
                     <div class="member-info">
                         <div class="member-name">${user.username}</div>
                         <div class="member-role">${user.team}</div>
                         <div class="online-status">
                             <div class="status-dot"></div>
-                            <span>Online since ${user.lastLogin ? new Date(user.lastLogin).toLocaleTimeString() : 'recently'}</span>
+                            <span>Online</span>
                         </div>
                     </div>
                     <div class="member-status"></div>
@@ -1627,29 +2428,52 @@
             });
         }
 
-        // Get priority color
-        function getPriorityColor(status) {
-            switch (status) {
-                case 'completed': return 'var(--success)';
-                case 'in-progress': return 'var(--warning)';
-                case 'planned': return 'var(--energy-blue)';
-                default: return 'var(--gray)';
+        // Motivational popup
+        function initMotivationalPopup() {
+            const motivationPopup = document.getElementById('motivationPopup');
+            const popupBtn = document.getElementById('popupBtn');
+            const popupQuote = document.getElementById('popupQuote');
+            const popupAuthor = document.getElementById('popupAuthor');
+            const dailyMotivation = document.getElementById('dailyMotivation');
+            const motivationAuthor = document.getElementById('motivationAuthor');
+            const loginMotivation = document.getElementById('loginMotivation');
+            
+            // Set random quote (no repeats in sequence)
+            const usedIndices = new Set();
+            
+            function getRandomQuote() {
+                if (usedIndices.size === motivationalQuotes.length) {
+                    usedIndices.clear();
+                }
+                
+                let randomIndex;
+                do {
+                    randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+                } while (usedIndices.has(randomIndex));
+                
+                usedIndices.add(randomIndex);
+                return motivationalQuotes[randomIndex];
             }
-        }
-
-        // Get priority text
-        function getPriorityText(status) {
-            switch (status) {
-                case 'completed': return 'Completed';
-                case 'in-progress': return 'In Progress';
-                case 'planned': return 'Planned';
-                default: return 'Pending';
+            
+            function updateAllQuotes() {
+                const quote = getRandomQuote();
+                popupQuote.textContent = `"${quote.text}"`;
+                popupAuthor.textContent = `- ${quote.author}`;
+                dailyMotivation.textContent = `"${quote.text}"`;
+                motivationAuthor.textContent = `- ${quote.author}`;
+                loginMotivation.textContent = `"${quote.text}"`;
             }
-        }
-
-        // Load team
-        function loadTeam() {
-            // Implementation for team section
+            
+            // Set initial quotes
+            updateAllQuotes();
+            
+            // Rotate quotes every 15 seconds
+            setInterval(updateAllQuotes, 15000);
+            
+            // Close popup when button is clicked
+            popupBtn.addEventListener('click', function() {
+                motivationPopup.classList.remove('active');
+            });
         }
 
         // Logout
@@ -1658,86 +2482,6 @@
             localStorage.removeItem('digihive_currentUser');
             showLogin();
         }
-
-        // Motivational popup
-        function initMotivationalPopup() {
-            const motivationPopup = document.getElementById('motivationPopup');
-            const popupBtn = document.getElementById('popupBtn');
-            const popupQuote = document.getElementById('popupQuote');
-            const popupAuthor = document.getElementById('popupAuthor');
-            
-            const motivationalQuotes = [
-                {
-                    text: "The right steps will always lead you to success",
-                    author: "Success Team DigiHive"
-                },
-                {
-                    text: "Your energy and focus today will build the foundation for tomorrow's achievements",
-                    author: "Productivity Team DigiHive"
-                },
-                {
-                    text: "Every line of code you write brings us closer to empowering creators worldwide",
-                    author: "Development Team DigiHive"
-                },
-                {
-                    text: "Your creativity and attention to detail make DigiHive exceptional",
-                    author: "Design Team DigiHive"
-                }
-            ];
-            
-            // Set random quote
-            const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
-            popupQuote.textContent = `"${motivationalQuotes[randomIndex].text}"`;
-            popupAuthor.textContent = `- ${motivationalQuotes[randomIndex].author}`;
-            
-            // Close popup when button is clicked
-            popupBtn.addEventListener('click', function() {
-                motivationPopup.classList.remove('active');
-            });
-            
-            // Also update daily motivation
-            document.getElementById('dailyMotivation').textContent = `"${motivationalQuotes[randomIndex].text}"`;
-            document.getElementById('motivationAuthor').textContent = `- ${motivationalQuotes[randomIndex].author}`;
-            
-            // Update login motivation
-            document.getElementById('loginMotivation').textContent = `"${motivationalQuotes[randomIndex].text}"`;
-        }
-
-        // Initialize progress chart
-        function initProgressChart() {
-            const progressCtx = document.getElementById('progressChart').getContext('2d');
-            const progressChart = new Chart(progressCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
-                    datasets: [{
-                        label: 'Task Completion %',
-                        data: [12, 25, 45, 60, 80, 95],
-                        backgroundColor: 'rgba(67, 97, 238, 0.8)',
-                        borderColor: 'rgba(67, 97, 238, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Call initProgressChart when the dashboard is shown
-        setTimeout(initProgressChart, 1000);
     </script>
 </body>
 </html>
