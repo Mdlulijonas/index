@@ -60,16 +60,106 @@ let comments = [
 let submissions = [];
 
 let tasks = [
-  { id: 1, subject: "Server Infrastructure Setup", startDate: "2026-01-13T09:00:00.000Z", endDate: "2026-01-13T11:00:00.000Z", description: "Set up cloud server environment. Configure database architecture. Implement basic security protocols. Create deployment pipeline.", team: "Full-Stack", status: "pending" },
-  { id: 2, subject: "Database Design & Implementation", startDate: "2026-01-14T09:00:00.000Z", endDate: "2026-01-14T11:00:00.000Z", description: "Design database schemas. Set up user tables and relationships. Implement data migration scripts. Create backup systems.", team: "Full-Stack", status: "pending" },
-  { id: 3, subject: "Design System Creation", startDate: "2026-01-13T11:00:00.000Z", endDate: "2026-01-13T13:00:00.000Z", description: "Create brand color palette. Design typography system. Build component library. Establish design principles.", team: "UI/UX", status: "pending" },
-  { id: 4, subject: "Wireframes & Prototypes", startDate: "2026-01-14T11:00:00.000Z", endDate: "2026-01-14T13:00:00.000Z", description: "Create homepage wireframes. Design user onboarding flow. Map seller dashboard layout. Prototype product listing pages.", team: "UI/UX", status: "pending" },
-  { id: 5, subject: "Competitor Analysis", startDate: "2026-01-13T14:00:00.000Z", endDate: "2026-01-13T16:00:00.000Z", description: "Research 5 competitor platforms. Analyze their pricing strategies. Study user acquisition methods. Identify market gaps.", team: "Marketing", status: "pending" },
-  { id: 6, subject: "Target Audience Research", startDate: "2026-01-14T14:00:00.000Z", endDate: "2026-01-14T16:00:00.000Z", description: "Define primary user personas. Research creator demographics. Identify buyer pain points. Create audience segmentation.", team: "Marketing", status: "pending" },
-  { id: 7, subject: "Helpdesk System Setup", startDate: "2026-01-13T16:00:00.000Z", endDate: "2026-01-13T17:30:00.000Z", description: "Choose helpdesk software. Set up ticketing system. Create support categories. Configure automation rules.", team: "Support", status: "planned" },
-  { id: 8, subject: "Documentation Creation", startDate: "2026-01-14T16:00:00.000Z", endDate: "2026-01-14T17:30:00.000Z", description: "Create documentation structure. Write getting started guides. Develop FAQ templates. Set up knowledge base.", team: "Support", status: "planned" },
-  { id: 9, subject: "Content Calendar Planning", startDate: "2026-01-13T13:00:00.000Z", endDate: "2026-01-13T15:00:00.000Z", description: "Plan 3-month content calendar. Research trending topics. Schedule blog post topics. Plan social media content.", team: "Content", status: "in-progress" },
-  { id: 10, subject: "Platform Setup & Configuration", startDate: "2026-01-14T13:00:00.000Z", endDate: "2026-01-14T15:00:00.000Z", description: "Set up blog platform. Create social media accounts. Configure email newsletter. Set up analytics tracking.", team: "Content", status: "in-progress" },
+  { 
+    id: 1, 
+    subject: "Server Infrastructure Setup", 
+    startDate: "2026-01-13T09:00:00.000Z", 
+    endDate: "2026-01-16T17:00:00.000Z", 
+    description: "Set up cloud server environment. Configure database architecture. Implement basic security protocols. Create deployment pipeline.", 
+    team: "Full-Stack", 
+    status: "pending",
+    priority: "High"
+  },
+  { 
+    id: 2, 
+    subject: "Database Design & Implementation", 
+    startDate: "2026-01-14T09:00:00.000Z", 
+    endDate: "2026-01-16T17:00:00.000Z", 
+    description: "Design database schemas. Set up user tables and relationships. Implement data migration scripts. Create backup systems.", 
+    team: "Full-Stack", 
+    status: "pending",
+    priority: "High"
+  },
+  { 
+    id: 3, 
+    subject: "Design System Creation", 
+    startDate: "2026-01-13T11:00:00.000Z", 
+    endDate: "2026-01-16T17:00:00.000Z", 
+    description: "Create brand color palette. Design typography system. Build component library. Establish design principles.", 
+    team: "UI/UX", 
+    status: "pending",
+    priority: "High"
+  },
+  { 
+    id: 4, 
+    subject: "Wireframes & Prototypes", 
+    startDate: "2026-01-14T11:00:00.000Z", 
+    endDate: "2026-01-16T17:00:00.000Z", 
+    description: "Create homepage wireframes. Design user onboarding flow. Map seller dashboard layout. Prototype product listing pages.", 
+    team: "UI/UX", 
+    status: "pending",
+    priority: "High"
+  },
+  { 
+    id: 5, 
+    subject: "Competitor Analysis", 
+    startDate: "2026-01-13T14:00:00.000Z", 
+    endDate: "2026-01-16T17:00:00.000Z", 
+    description: "Research 5 competitor platforms. Analyze their pricing strategies. Study user acquisition methods. Identify market gaps.", 
+    team: "Marketing", 
+    status: "pending",
+    priority: "Medium"
+  },
+  { 
+    id: 6, 
+    subject: "Target Audience Research", 
+    startDate: "2026-01-14T14:00:00.000Z", 
+    endDate: "2026-01-16T17:00:00.000Z", 
+    description: "Define primary user personas. Research creator demographics. Identify buyer pain points. Create audience segmentation.", 
+    team: "Marketing", 
+    status: "pending",
+    priority: "Medium"
+  },
+  { 
+    id: 7, 
+    subject: "Helpdesk System Setup", 
+    startDate: "2026-01-13T16:00:00.000Z", 
+    endDate: "2026-01-16T17:00:00.000Z", 
+    description: "Choose helpdesk software. Set up ticketing system. Create support categories. Configure automation rules.", 
+    team: "Support", 
+    status: "planned",
+    priority: "Medium"
+  },
+  { 
+    id: 8, 
+    subject: "Documentation Creation", 
+    startDate: "2026-01-14T16:00:00.000Z", 
+    endDate: "2026-01-16T17:00:00.000Z", 
+    description: "Create documentation structure. Write getting started guides. Develop FAQ templates. Set up knowledge base.", 
+    team: "Support", 
+    status: "planned",
+    priority: "Medium"
+  },
+  { 
+    id: 9, 
+    subject: "Content Calendar Planning", 
+    startDate: "2026-01-13T13:00:00.000Z", 
+    endDate: "2026-01-16T17:00:00.000Z", 
+    description: "Plan 3-month content calendar. Research trending topics. Schedule blog post topics. Plan social media content.", 
+    team: "Content", 
+    status: "in-progress",
+    priority: "Medium"
+  },
+  { 
+    id: 10, 
+    subject: "Platform Setup & Configuration", 
+    startDate: "2026-01-14T13:00:00.000Z", 
+    endDate: "2026-01-16T17:00:00.000Z", 
+    description: "Set up blog platform. Create social media accounts. Configure email newsletter. Set up analytics tracking.", 
+    team: "Content", 
+    status: "in-progress",
+    priority: "Medium"
+  },
 ];
 
 let users = [
@@ -86,7 +176,9 @@ const ADMIN_CODE = '212259497';
 // Comments API
 app.get('/api/comments', (req, res) => {
   try {
-    res.json(comments);
+    // Return comments sorted by timestamp (newest first)
+    const sortedComments = comments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    res.json(sortedComments);
   } catch (error) {
     console.error('Error fetching comments:', error);
     res.status(500).json({ error: 'Failed to fetch comments' });
@@ -108,10 +200,33 @@ app.post('/api/comments', (req, res) => {
   }
 });
 
+app.delete('/api/comments', (req, res) => {
+  try {
+    const { commentId, adminCode } = req.body;
+    
+    if (adminCode !== ADMIN_CODE) {
+      return res.status(401).json({ error: 'Invalid admin code' });
+    }
+    
+    const commentIndex = comments.findIndex(c => c.id == commentId);
+    if (commentIndex === -1) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+    
+    comments.splice(commentIndex, 1);
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    res.status(500).json({ error: 'Failed to delete comment' });
+  }
+});
+
 // Submissions API
 app.get('/api/submissions', (req, res) => {
   try {
-    res.json(submissions);
+    // Return submissions sorted by timestamp (newest first)
+    const sortedSubmissions = submissions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    res.json(sortedSubmissions);
   } catch (error) {
     console.error('Error fetching submissions:', error);
     res.status(500).json({ error: 'Failed to fetch submissions' });
