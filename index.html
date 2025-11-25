@@ -8,31 +8,37 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary: #2A5CAA;
-            --primary-light: #3A7BDA;
-            --primary-dark: #1E4A8C;
-            --secondary: #3E7CB1;
-            --accent: #F0544F;
+            --primary: #FFC107;
+            --primary-light: #FFD54F;
+            --primary-dark: #FF8F00;
+            --secondary: #795548;
+            --accent: #FF5722;
             --success: #4CAF50;
             --warning: #FF9800;
             --error: #D32F2F;
-            --dark: #1A1A2E;
-            --gray-dark: #5D6D7E;
-            --gray: #85929E;
-            --gray-light: #EAECEE;
-            --background: #F8FAFC;
+            --dark: #5D4037;
+            --gray-dark: #8D6E63;
+            --gray: #A1887F;
+            --gray-light: #EFEBE9;
+            --background: #FFFDE7;
             --white: #FFFFFF;
-            --card-bg: #FFFFFF;
-            --sidebar-bg: #1E293B;
-            --sidebar-text: #E2E8F0;
+            --card-bg: #FFFDF7;
+            --sidebar-bg: #5D4037;
+            --sidebar-text: #FFECB3;
             
-            /* Team Colors */
-            --dev: #2A5CAA;
-            --design: #673AB7;
+            /* Team Colors - Honeycomb inspired */
+            --dev: #FFB300;
+            --design: #FF8F00;
             --marketing: #4CAF50;
             --support: #009688;
-            --content: #FF9800;
-            --admin: #D32F2F;
+            --content: #FF7043;
+            --admin: #D84315;
+            
+            /* Bee Colors */
+            --bee-yellow: #FFC107;
+            --bee-black: #5D4037;
+            --bee-orange: #FF8F00;
+            --bee-brown: #795548;
         }
         
         * {
@@ -47,6 +53,24 @@
             color: var(--dark);
             line-height: 1.6;
             overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 193, 7, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255, 193, 7, 0.05) 0%, transparent 20%);
+        }
+        
+        /* Honeycomb Pattern Background */
+        .honeycomb-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            background-image: 
+                radial-gradient(circle at 25% 25%, var(--bee-yellow) 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, var(--bee-orange) 2px, transparent 2px);
+            background-size: 100px 100px;
+            z-index: -1;
         }
         
         /* Login Styles */
@@ -55,18 +79,42 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--primary), var(--design));
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
             padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 2%, transparent 2.5%),
+                radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.2) 1%, transparent 1.5%);
+            background-size: 100px 100px;
+            animation: float 20s infinite linear;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(-50px, -50px) rotate(360deg); }
         }
         
         .login-card {
             background: white;
             border-radius: 20px;
             padding: 3rem;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            box-shadow: 0 25px 50px rgba(93, 64, 55, 0.2);
             width: 100%;
             max-width: 450px;
             text-align: center;
+            position: relative;
+            z-index: 1;
+            border: 3px solid var(--bee-yellow);
         }
         
         .login-logo {
@@ -78,33 +126,65 @@
         }
         
         .login-logo-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--primary-light), var(--design));
-            border-radius: 15px;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: var(--bee-black);
             font-weight: bold;
-            font-size: 1.4rem;
+            font-size: 2rem;
+            position: relative;
+            border: 3px solid var(--bee-black);
+            box-shadow: 0 4px 15px rgba(93, 64, 55, 0.3);
+        }
+        
+        .login-logo-icon::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--bee-black);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
         }
         
         .login-logo-text {
-            font-size: 2.2rem;
+            font-size: 2.5rem;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--primary-light), var(--design));
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(93, 64, 55, 0.1);
         }
         
         .motivation-card {
-            background: linear-gradient(135deg, var(--primary), var(--design));
-            color: white;
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
+            color: var(--bee-black);
             border-radius: 15px;
             padding: 1.5rem;
             margin-bottom: 2rem;
             text-align: left;
+            border: 2px solid var(--bee-black);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .motivation-card::before {
+            content: '🐝';
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            font-size: 2rem;
+            opacity: 0.3;
         }
         
         .motivation-text {
@@ -117,6 +197,7 @@
         .motivation-author {
             font-size: 0.9rem;
             opacity: 0.9;
+            font-weight: 600;
         }
         
         /* Modern Dashboard Layout */
@@ -125,17 +206,28 @@
             min-height: 100vh;
         }
         
-        /* Sidebar - Dark Theme */
+        /* Sidebar - Bee Hive Theme */
         .sidebar {
-            background: var(--sidebar-bg);
+            background: linear-gradient(135deg, var(--sidebar-bg), var(--bee-brown));
             padding: 2rem 1.5rem;
             width: 280px;
             height: 100vh;
             overflow-y: auto;
-            box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 15px rgba(93, 64, 55, 0.2);
             position: fixed;
             z-index: 100;
             transition: transform 0.3s ease;
+            border-right: 3px solid var(--bee-yellow);
+        }
+        
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange), var(--bee-yellow));
         }
         
         .logo {
@@ -147,22 +239,32 @@
         }
         
         .logo-icon {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, var(--primary-light), var(--design));
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: var(--bee-black);
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1.3rem;
+            border: 2px solid var(--bee-black);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .logo-icon::before {
+            content: '🐝';
+            position: absolute;
+            font-size: 1.2rem;
         }
         
         .logo-text {
-            font-size: 1.6rem;
+            font-size: 1.8rem;
             font-weight: 800;
-            color: var(--sidebar-text);
+            color: var(--bee-yellow);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .nav-links {
@@ -184,17 +286,22 @@
             border-radius: 10px;
             transition: all 0.3s ease;
             opacity: 0.8;
+            border: 1px solid transparent;
         }
         
         .nav-links a:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 193, 7, 0.2);
             opacity: 1;
+            border-color: var(--bee-yellow);
+            transform: translateX(5px);
         }
         
         .nav-links a.active {
-            background: var(--primary);
+            background: var(--bee-yellow);
+            color: var(--bee-black);
             opacity: 1;
-            box-shadow: 0 4px 12px rgba(42, 92, 170, 0.3);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+            font-weight: 600;
         }
         
         .nav-links i {
@@ -205,15 +312,28 @@
         
         .team-section {
             margin-top: 2rem;
+            position: relative;
+        }
+        
+        .team-section::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--bee-yellow), transparent);
         }
         
         .team-title {
             font-size: 0.9rem;
             font-weight: 600;
-            color: var(--sidebar-text);
+            color: var(--bee-yellow);
             margin-bottom: 1rem;
             padding: 0 0.5rem;
-            opacity: 0.7;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .team-members {
@@ -228,10 +348,12 @@
             border-radius: 8px;
             transition: background 0.3s ease;
             margin-bottom: 0.5rem;
+            border: 1px solid transparent;
         }
         
         .team-member:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 193, 7, 0.1);
+            border-color: var(--bee-yellow);
         }
         
         .member-avatar {
@@ -244,14 +366,33 @@
             color: white;
             font-weight: bold;
             font-size: 0.85rem;
+            border: 2px solid;
         }
         
-        .member-avatar.dev { background: var(--dev); }
-        .member-avatar.design { background: var(--design); }
-        .member-avatar.marketing { background: var(--marketing); }
-        .member-avatar.support { background: var(--support); }
-        .member-avatar.content { background: var(--content); }
-        .member-avatar.admin { background: var(--admin); }
+        .member-avatar.dev { 
+            background: var(--dev);
+            border-color: #E65100;
+        }
+        .member-avatar.design { 
+            background: var(--design);
+            border-color: #EF6C00;
+        }
+        .member-avatar.marketing { 
+            background: var(--marketing);
+            border-color: #388E3C;
+        }
+        .member-avatar.support { 
+            background: var(--support);
+            border-color: #00695C;
+        }
+        .member-avatar.content { 
+            background: var(--content);
+            border-color: #D84315;
+        }
+        .member-avatar.admin { 
+            background: var(--admin);
+            border-color: #BF360C;
+        }
         
         .member-info {
             flex: 1;
@@ -265,7 +406,8 @@
         
         .member-role {
             font-size: 0.75rem;
-            color: var(--gray);
+            color: var(--bee-yellow);
+            opacity: 0.8;
         }
         
         .member-status {
@@ -273,6 +415,7 @@
             height: 8px;
             border-radius: 50%;
             background: var(--success);
+            border: 1px solid white;
         }
         
         /* Main Content */
@@ -282,6 +425,7 @@
             margin-left: 280px;
             width: calc(100% - 280px);
             transition: all 0.3s ease;
+            background: var(--background);
         }
         
         /* Header */
@@ -290,6 +434,8 @@
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 2.5rem;
+            padding: 1rem 0;
+            border-bottom: 2px solid var(--bee-yellow);
         }
         
         .welcome-message h1 {
@@ -297,6 +443,9 @@
             font-weight: 700;
             margin-bottom: 0.5rem;
             color: var(--dark);
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
         .welcome-message p {
@@ -320,8 +469,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.1);
             cursor: pointer;
+            border: 2px solid var(--bee-yellow);
         }
         
         .notification-badge {
@@ -338,6 +488,7 @@
             justify-content: center;
             font-size: 0.7rem;
             font-weight: 600;
+            border: 2px solid white;
         }
         
         .user-avatar {
@@ -347,7 +498,8 @@
             background: var(--white);
             padding: 0.5rem 1rem;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.1);
+            border: 2px solid var(--bee-yellow);
         }
         
         /* Dashboard Grid */
@@ -370,15 +522,28 @@
             background: var(--card-bg);
             border-radius: 16px;
             padding: 1.75rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid var(--bee-yellow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
         }
         
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 12px 30px rgba(93, 64, 55, 0.15);
         }
         
         .stat-header {
@@ -396,18 +561,35 @@
             align-items: center;
             justify-content: center;
             font-size: 1.4rem;
-            color: white;
+            color: var(--bee-black);
+            border: 2px solid;
         }
         
-        .stat-icon.overview { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
-        .stat-icon.tasks { background: linear-gradient(135deg, var(--design), #8A63D2); }
-        .stat-icon.progress { background: linear-gradient(135deg, var(--support), #00BFA5); }
-        .stat-icon.team { background: linear-gradient(135deg, var(--content), #FFB74D); }
+        .stat-icon.overview { 
+            background: var(--bee-yellow);
+            border-color: var(--bee-orange);
+        }
+        .stat-icon.tasks { 
+            background: var(--design);
+            border-color: var(--bee-orange);
+            color: white;
+        }
+        .stat-icon.progress { 
+            background: var(--support);
+            border-color: #00695C;
+            color: white;
+        }
+        .stat-icon.team { 
+            background: var(--content);
+            border-color: #D84315;
+            color: white;
+        }
         
         .stat-value {
             font-size: 2.5rem;
             font-weight: 700;
             margin-bottom: 0.25rem;
+            color: var(--dark);
         }
         
         .stat-label {
@@ -431,7 +613,20 @@
             background: var(--card-bg);
             border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
+            border: 2px solid var(--bee-yellow);
+            position: relative;
+        }
+        
+        .task-overview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
+            border-radius: 16px 16px 0 0;
         }
         
         .section-header {
@@ -445,6 +640,20 @@
             font-size: 1.4rem;
             font-weight: 700;
             color: var(--dark);
+            position: relative;
+            padding-left: 1rem;
+        }
+        
+        .section-title::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 24px;
+            background: var(--bee-yellow);
+            border-radius: 2px;
         }
         
         /* Task Display */
@@ -468,7 +677,7 @@
         }
         
         .task-display::-webkit-scrollbar-thumb {
-            background: var(--primary);
+            background: var(--bee-yellow);
             border-radius: 3px;
         }
         
@@ -476,24 +685,53 @@
             background: var(--background);
             border-radius: 12px;
             padding: 1.5rem;
-            border-left: 4px solid;
+            border-left: 6px solid;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            border: 1px solid var(--gray-light);
+            position: relative;
+        }
+        
+        .task-item::before {
+            content: '🐝';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            opacity: 0.3;
+            font-size: 1.2rem;
         }
         
         .task-item:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 8px 20px rgba(93, 64, 55, 0.15);
         }
         
-        .task-item.dev { border-left-color: var(--dev); }
-        .task-item.design { border-left-color: var(--design); }
-        .task-item.marketing { border-left-color: var(--marketing); }
-        .task-item.support { border-left-color: var(--support); }
-        .task-item.content { border-left-color: var(--content); }
-        .task-item.completed { opacity: 0.7; }
+        .task-item.dev { 
+            border-left-color: var(--dev);
+            background: linear-gradient(135deg, #FFFDE7, #FFECB3);
+        }
+        .task-item.design { 
+            border-left-color: var(--design);
+            background: linear-gradient(135deg, #FFF8E1, #FFE0B2);
+        }
+        .task-item.marketing { 
+            border-left-color: var(--marketing);
+            background: linear-gradient(135deg, #E8F5E8, #C8E6C9);
+        }
+        .task-item.support { 
+            border-left-color: var(--support);
+            background: linear-gradient(135deg, #E0F2F1, #B2DFDB);
+        }
+        .task-item.content { 
+            border-left-color: var(--content);
+            background: linear-gradient(135deg, #FBE9E7, #FFCCBC);
+        }
+        .task-item.completed { 
+            opacity: 0.7;
+            background: linear-gradient(135deg, #F5F5F5, #EEEEEE);
+        }
         
         .task-header {
             display: flex;
@@ -518,18 +756,19 @@
             padding: 0.25rem 0.75rem;
             border-radius: 20px;
             font-weight: 500;
+            border: 1px solid;
         }
         
         .priority-high {
             background: rgba(255, 152, 0, 0.15);
             color: var(--warning);
-            border: 1px solid rgba(255, 152, 0, 0.3);
+            border-color: rgba(255, 152, 0, 0.3);
         }
         
         .priority-medium {
             background: rgba(76, 175, 80, 0.15);
             color: var(--success);
-            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-color: rgba(76, 175, 80, 0.3);
         }
         
         .task-description {
@@ -554,6 +793,7 @@
             justify-content: center;
             color: white;
             font-size: 0.8rem;
+            border: 1px solid white;
         }
         
         .role-icon.dev { background: var(--dev); }
@@ -578,7 +818,7 @@
         .btn {
             padding: 0.5rem 1rem;
             border-radius: 8px;
-            border: none;
+            border: 2px solid;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -589,31 +829,37 @@
         }
         
         .btn-primary {
-            background: var(--primary);
-            color: white;
+            background: var(--bee-yellow);
+            color: var(--bee-black);
+            border-color: var(--bee-orange);
         }
         
         .btn-primary:hover {
-            background: var(--primary-dark);
+            background: var(--bee-orange);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 143, 0, 0.3);
         }
         
         .btn-outline {
             background: transparent;
-            border: 1px solid var(--gray);
+            border-color: var(--bee-yellow);
             color: var(--dark);
         }
         
         .btn-outline:hover {
-            background: var(--gray-light);
+            background: var(--bee-yellow);
+            color: var(--bee-black);
         }
         
         .btn-success {
             background: var(--success);
             color: white;
+            border-color: #388E3C;
         }
         
         .btn-success:hover {
             background: #3d8b40;
+            transform: translateY(-2px);
         }
         
         /* Team Progress */
@@ -622,7 +868,20 @@
             background: var(--card-bg);
             border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
+            border: 2px solid var(--bee-yellow);
+            position: relative;
+        }
+        
+        .team-progress::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
+            border-radius: 16px 16px 0 0;
         }
         
         .progress-bars {
@@ -651,9 +910,10 @@
         }
         
         .team-dot {
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
+            border: 2px solid white;
         }
         
         .team-dot.dev { background: var(--dev); }
@@ -672,18 +932,37 @@
             background: var(--gray-light);
             border-radius: 4px;
             overflow: hidden;
+            border: 1px solid var(--gray-light);
         }
         
         .progress-fill {
             height: 100%;
             border-radius: 4px;
+            transition: width 0.5s ease;
+            position: relative;
         }
         
-        .progress-fill.dev { background: var(--dev); }
-        .progress-fill.design { background: var(--design); }
-        .progress-fill.marketing { background: var(--marketing); }
-        .progress-fill.support { background: var(--support); }
-        .progress-fill.content { background: var(--content); }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .progress-fill.dev { background: linear-gradient(90deg, var(--dev), #FFD54F); }
+        .progress-fill.design { background: linear-gradient(90deg, var(--design), #FFB74D); }
+        .progress-fill.marketing { background: linear-gradient(90deg, var(--marketing), #81C784); }
+        .progress-fill.support { background: linear-gradient(90deg, var(--support), #4DB6AC); }
+        .progress-fill.content { background: linear-gradient(90deg, var(--content), #FFAB91); }
         
         /* Activity & Motivation Section */
         .activity-section {
@@ -694,11 +973,24 @@
         }
         
         .motivation-card-dash {
-            background: linear-gradient(135deg, var(--primary), var(--design));
-            color: white;
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
+            color: var(--bee-black);
             border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
+            border: 2px solid var(--bee-black);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .motivation-card-dash::before {
+            content: '🐝';
+            position: absolute;
+            bottom: -10px;
+            right: -10px;
+            font-size: 4rem;
+            opacity: 0.2;
+            transform: rotate(15deg);
         }
         
         .motivation-text-dash {
@@ -707,18 +999,36 @@
             margin-bottom: 1rem;
             font-style: italic;
             line-height: 1.5;
+            position: relative;
+            z-index: 1;
         }
         
         .motivation-author-dash {
             font-size: 0.9rem;
             opacity: 0.9;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
         }
         
         .tips-card {
             background: var(--card-bg);
             border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
+            border: 2px solid var(--bee-yellow);
+            position: relative;
+        }
+        
+        .tips-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
+            border-radius: 16px 16px 0 0;
         }
         
         .tips-list {
@@ -740,13 +1050,14 @@
         .tip-icon {
             width: 24px;
             height: 24px;
-            background: var(--primary);
+            background: var(--bee-yellow);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: var(--bee-black);
             font-size: 0.8rem;
+            border: 1px solid var(--bee-orange);
         }
         
         .action-buttons {
@@ -762,7 +1073,20 @@
             background: var(--card-bg);
             border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
+            border: 2px solid var(--bee-yellow);
+            position: relative;
+        }
+        
+        .comments-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
+            border-radius: 16px 16px 0 0;
         }
         
         .comment-form {
@@ -772,12 +1096,20 @@
         .comment-input {
             width: 100%;
             padding: 1rem;
-            border: 1px solid var(--gray-light);
+            border: 2px solid var(--bee-yellow);
             border-radius: 8px;
             resize: vertical;
             min-height: 80px;
             margin-bottom: 1rem;
             font-size: 0.95rem;
+            background: var(--background);
+            transition: border-color 0.3s ease;
+        }
+        
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--bee-orange);
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
         }
         
         .comments-list {
@@ -796,7 +1128,7 @@
         }
         
         .comments-list::-webkit-scrollbar-thumb {
-            background: var(--primary);
+            background: var(--bee-yellow);
             border-radius: 3px;
         }
         
@@ -804,10 +1136,14 @@
             padding: 1rem;
             border-bottom: 1px solid var(--gray-light);
             transition: background 0.3s ease;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background: var(--background);
         }
         
         .comment:hover {
-            background: var(--background);
+            background: var(--card-bg);
+            transform: translateX(5px);
         }
         
         .comment:last-child {
@@ -839,6 +1175,7 @@
             background: var(--gray-light);
             padding: 0.2rem 0.5rem;
             border-radius: 4px;
+            border: 1px solid var(--gray);
         }
         
         .comment-text {
@@ -856,10 +1193,12 @@
         .btn-danger {
             background: var(--error);
             color: white;
+            border-color: #C62828;
         }
         
         .btn-danger:hover {
             background: #c62828;
+            transform: translateY(-2px);
         }
         
         /* Online Status */
@@ -878,6 +1217,7 @@
             border-radius: 50%;
             background: var(--success);
             animation: pulse 2s infinite;
+            border: 1px solid white;
         }
         
         @keyframes pulse {
@@ -894,7 +1234,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(93, 64, 55, 0.8);
             z-index: 1000;
             align-items: center;
             justify-content: center;
@@ -912,7 +1252,20 @@
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            box-shadow: 0 25px 50px rgba(93, 64, 55, 0.3);
+            border: 3px solid var(--bee-yellow);
+            position: relative;
+        }
+        
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
+            border-radius: 16px 16px 0 0;
         }
         
         .modal-header {
@@ -925,6 +1278,7 @@
         .modal-title {
             font-size: 1.5rem;
             font-weight: 600;
+            color: var(--dark);
         }
         
         .close-modal {
@@ -933,6 +1287,11 @@
             font-size: 1.5rem;
             cursor: pointer;
             color: var(--gray);
+            transition: color 0.3s ease;
+        }
+        
+        .close-modal:hover {
+            color: var(--bee-orange);
         }
         
         .form-group {
@@ -943,14 +1302,23 @@
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
+            color: var(--dark);
         }
         
         .form-input, .form-select, .form-textarea {
             width: 100%;
             padding: 0.75rem;
-            border: 1px solid var(--gray-light);
+            border: 2px solid var(--bee-yellow);
             border-radius: 8px;
             font-size: 1rem;
+            background: var(--background);
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--bee-orange);
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
         }
         
         .form-textarea {
@@ -965,7 +1333,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(93, 64, 55, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -987,13 +1355,26 @@
             max-width: 600px;
             width: 90%;
             text-align: center;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 30px 60px rgba(93, 64, 55, 0.4);
             transform: translateY(20px);
             transition: transform 0.4s ease;
+            border: 4px solid var(--bee-yellow);
+            position: relative;
+            overflow: hidden;
         }
         
         .motivation-popup.active .popup-content {
             transform: translateY(0);
+        }
+        
+        .popup-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange), var(--bee-yellow));
         }
         
         .popup-logo {
@@ -1005,24 +1386,33 @@
         }
         
         .popup-logo-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--primary-light), var(--design));
-            border-radius: 15px;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: var(--bee-black);
             font-weight: bold;
-            font-size: 1.4rem;
+            font-size: 2rem;
+            border: 3px solid var(--bee-black);
+            position: relative;
+        }
+        
+        .popup-logo-icon::before {
+            content: '🐝';
+            position: absolute;
+            font-size: 2.5rem;
         }
         
         .popup-logo-text {
-            font-size: 2.2rem;
+            font-size: 2.5rem;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--primary-light), var(--design));
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(93, 64, 55, 0.2);
         }
         
         .popup-quote {
@@ -1032,19 +1422,38 @@
             color: var(--dark);
             line-height: 1.4;
             font-style: italic;
+            position: relative;
+        }
+        
+        .popup-quote::before, .popup-quote::after {
+            content: '"';
+            font-size: 3rem;
+            color: var(--bee-yellow);
+            position: absolute;
+            opacity: 0.5;
+        }
+        
+        .popup-quote::before {
+            top: -20px;
+            left: -30px;
+        }
+        
+        .popup-quote::after {
+            bottom: -40px;
+            right: -30px;
         }
         
         .popup-author {
             font-size: 1.1rem;
-            color: var(--primary);
+            color: var(--bee-orange);
             font-weight: 500;
             margin-bottom: 2rem;
         }
         
         .popup-btn {
-            background: linear-gradient(135deg, var(--primary), var(--design));
-            color: white;
-            border: none;
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
+            color: var(--bee-black);
+            border: 3px solid var(--bee-black);
             padding: 1rem 2.5rem;
             border-radius: 12px;
             font-weight: 600;
@@ -1055,7 +1464,7 @@
         
         .popup-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(67, 97, 238, 0.4);
+            box-shadow: 0 10px 25px rgba(255, 193, 7, 0.4);
         }
         
         /* Submissions & Team Sections */
@@ -1072,12 +1481,14 @@
             background: var(--background);
             border-radius: 12px;
             padding: 1.5rem;
-            border-left: 4px solid var(--primary);
+            border-left: 6px solid var(--bee-yellow);
             transition: transform 0.2s ease;
+            border: 1px solid var(--gray-light);
         }
         
         .submission-item:hover, .team-member-item:hover {
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.1);
         }
         
         .submission-header, .team-member-header {
@@ -1118,8 +1529,21 @@
             background: var(--card-bg);
             border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
             overflow-x: auto;
+            border: 2px solid var(--bee-yellow);
+            position: relative;
+        }
+        
+        .sessions-table::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
+            border-radius: 16px 16px 0 0;
         }
         
         .session-table {
@@ -1137,7 +1561,8 @@
         .session-table th {
             font-weight: 600;
             color: var(--dark);
-            background: var(--background);
+            background: var(--bee-yellow);
+            color: var(--bee-black);
         }
         
         .session-table tr:hover {
@@ -1151,13 +1576,19 @@
             top: 1rem;
             left: 1rem;
             z-index: 1000;
-            background: var(--primary);
-            color: white;
-            border: none;
+            background: var(--bee-yellow);
+            color: var(--bee-black);
+            border: 2px solid var(--bee-black);
             border-radius: 8px;
             padding: 0.75rem;
             font-size: 1.2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu-btn:hover {
+            background: var(--bee-orange);
+            transform: translateY(-2px);
         }
         
         /* Mobile Responsiveness */
@@ -1239,15 +1670,53 @@
             .session-table td {
                 padding: 0.5rem;
             }
+            
+            .popup-content {
+                padding: 2rem;
+            }
+            
+            .popup-quote {
+                font-size: 1.4rem;
+            }
+            
+            .login-logo {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+        
+        /* Bee Animation */
+        .bee-animation {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 2rem;
+            animation: fly 10s infinite linear;
+            z-index: 999;
+            opacity: 0.7;
+        }
+        
+        @keyframes fly {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-100px, -50px) rotate(90deg); }
+            50% { transform: translate(-200px, 0) rotate(180deg); }
+            75% { transform: translate(-100px, 50px) rotate(270deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
         }
     </style>
 </head>
 <body>
+    <!-- Honeycomb Background -->
+    <div class="honeycomb-bg"></div>
+    
+    <!-- Bee Animation -->
+    <div class="bee-animation">🐝</div>
+    
     <!-- Login Screen -->
     <div id="loginScreen" class="login-container">
         <div class="login-card">
             <div class="login-logo">
-                <div class="login-logo-icon">DH</div>
+                <div class="login-logo-icon"></div>
                 <div class="login-logo-text">DigiHive</div>
             </div>
             
@@ -1291,7 +1760,7 @@
         <div class="motivation-popup active" id="motivationPopup">
             <div class="popup-content">
                 <div class="popup-logo">
-                    <div class="popup-logo-icon">DH</div>
+                    <div class="popup-logo-icon"></div>
                     <div class="popup-logo-text">DigiHive</div>
                 </div>
                 <div class="popup-quote" id="popupQuote">"The right steps will always lead you to success"</div>
@@ -1304,7 +1773,7 @@
             <!-- Sidebar -->
             <div class="sidebar">
                 <div class="logo">
-                    <div class="logo-icon">DH</div>
+                    <div class="logo-icon"></div>
                     <div class="logo-text">DigiHive</div>
                 </div>
                 
@@ -1651,8 +2120,8 @@
                             <div class="section-title">Settings</div>
                         </div>
                         <div style="text-align: center; padding: 3rem;">
-                            <i class="fas fa-tools" style="font-size: 4rem; color: var(--gray); margin-bottom: 1rem;"></i>
-                            <h3 style="color: var(--gray-dark); margin-bottom: 0.5rem;">Settings Under Development</h3>
+                            <i class="fas fa-tools" style="font-size: 4rem; color: var(--bee-yellow); margin-bottom: 1rem;"></i>
+                            <h3 style="color: var(--dark); margin-bottom: 0.5rem;">Settings Under Development</h3>
                             <p style="color: var(--gray);">This section is currently being developed and will be available soon.</p>
                         </div>
                     </div>
@@ -1835,6 +2304,7 @@
         // - Real-time comments & notifications
         // - Team progress analytics
         // - Mobile-responsive design
+        // - Bee-themed design with honeycomb patterns
         //
         // DATA FLOW:
         // 1. User login -> localStorage session
