@@ -15,5 +15,14 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "keywords": [
+    "team",
+    "collaboration",
+    "dashboard",
+    "productivity",
+    "project-management"
+  ],
+  "author": "DigiHive Team",
+  "license": "MIT"
 }
