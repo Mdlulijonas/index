@@ -1068,8 +1068,8 @@
     </div>
 
     <script>
-        // API Base URL - Make sure this matches your server URL
-const API_BASE_URL = 'http://localhost:3000/api';
+       // In your frontend JavaScript, update the API base URL:
+const API_BASE_URL = window.location.origin + '/api';
 
 // Application State
 let currentUser = null;
