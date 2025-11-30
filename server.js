@@ -12,24 +12,40 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 
+// CORS configuration - Fix for frontend communication
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',') 
+      : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500'];
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+// Handle preflight requests
+app.options('*', cors());
+
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// CORS configuration
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000'],
-  credentials: true
-}));
-
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.RATE_LIMIT_MAX || 100, // limit each IP to 100 requests per windowMs
-  message: {
-    error: 'Too many requests from this IP, please try again later.'
-  }
+  windowMs: 15 * 60 * 1000,
+  max: process.env.RATE_LIMIT_MAX || 100,
+  message: { error: 'Too many requests from this IP, please try again later.' }
 });
 app.use(limiter);
 
@@ -49,8 +65,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secure-jwt-secret-chang
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// In-memory storage (replace with database in production)
-let users = [
+// Initialize users with pre-hashed password for 'admin'
+const initialUsers = [
   {
     id: '1',
     username: 'admin',
@@ -62,20 +78,8 @@ let users = [
   }
 ];
 
-let tasks = [
-  {
-    id: '1',
-    title: 'Welcome to DigiHive',
-    description: 'Get started with your team collaboration platform',
-    team: 'Development',
-    priority: 'Medium',
-    status: 'in-progress',
-    createdBy: 'admin',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
-
+let users = [...initialUsers];
+let tasks = [];
 let timeEntries = [];
 
 // Authentication middleware
@@ -96,127 +100,11 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Admin middleware
-const requireAdmin = (req, res, next) => {
-  if (!req.user || req.user.team !== 'Administrator') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-};
-
-// Monday.com API service
-class MondayService {
-  constructor(apiKey) {
-    this.apiKey = apiKey;
-    this.baseURL = 'https://api.monday.com/v2';
-    this.headers = {
-      'Authorization': this.apiKey,
-      'Content-Type': 'application/json'
-    };
-  }
-
-  async makeGraphQLQuery(query, variables = {}) {
-    try {
-      if (!this.apiKey) {
-        throw new Error('Monday.com API key not configured');
-      }
-
-      const response = await axios.post(this.baseURL, {
-        query,
-        variables
-      }, { 
-        headers: this.headers,
-        timeout: 10000
-      });
-
-      if (response.data.errors) {
-        console.error('Monday.com API errors:', response.data.errors);
-        throw new Error(response.data.errors[0]?.message || 'Monday.com API error');
-      }
-
-      return response.data.data;
-    } catch (error) {
-      console.error('Monday.com API error:', error.message);
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-      }
-      throw new Error(`Monday API error: ${error.message}`);
-    }
-  }
-
-  async getBoards() {
-    const query = `
-      query {
-        boards(limit: 10) {
-          id
-          name
-          description
-          board_kind
-          updated_at
-          items {
-            id
-            name
-          }
-        }
-      }
-    `;
-    return await this.makeGraphQLQuery(query);
-  }
-
-  async createItem(boardId, itemName, columnValues = {}) {
-    const columnValuesJSON = JSON.stringify(columnValues);
-    
-    const mutation = `
-      mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
-        create_item(board_id: $boardId, item_name: $itemName, column_values: $columnValues) {
-          id
-          name
-        }
-      }
-    `;
-
-    const variables = {
-      boardId: parseInt(boardId),
-      itemName,
-      columnValues: columnValuesJSON
-    };
-
-    return await this.makeGraphQLQuery(mutation, variables);
-  }
-
-  async getBoardItems(boardId) {
-    const query = `
-      query ($boardId: ID!) {
-        boards(ids: [$boardId]) {
-          id
-          name
-          items {
-            id
-            name
-            column_values {
-              id
-              title
-              value
-              text
-            }
-            updated_at
-            created_at
-          }
-        }
-      }
-    `;
-
-    const variables = { boardId: parseInt(boardId) };
-    return await this.makeGraphQLQuery(query, variables);
-  }
-}
-
-const mondayService = new MondayService(MONDAY_API_KEY);
-
-// Authentication routes
+// Authentication routes - FIXED
 app.post('/api/auth/register', async (req, res) => {
   try {
+    console.log('Registration attempt:', req.body);
+    
     const { username, password, team, adminCode } = req.body;
 
     // Validation
@@ -260,6 +148,7 @@ app.post('/api/auth/register', async (req, res) => {
     };
 
     users.push(user);
+    console.log('User registered successfully:', username);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -288,6 +177,8 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
+    console.log('Login attempt:', req.body);
+    
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -297,12 +188,14 @@ app.post('/api/auth/login', async (req, res) => {
     // Find user
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
     if (!user) {
+      console.log('User not found:', username);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
+      console.log('Invalid password for user:', username);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -323,6 +216,8 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
+
+    console.log('Login successful for user:', username);
 
     res.json({
       message: 'Login successful',
@@ -352,12 +247,10 @@ app.get('/api/tasks', authenticateToken, (req, res) => {
     const { limit, team } = req.query;
     let filteredTasks = tasks;
 
-    // Filter by team if specified
     if (team) {
       filteredTasks = filteredTasks.filter(task => task.team === team);
     }
 
-    // Apply limit if specified
     if (limit) {
       filteredTasks = filteredTasks.slice(0, parseInt(limit));
     }
@@ -371,15 +264,10 @@ app.get('/api/tasks', authenticateToken, (req, res) => {
 
 app.post('/api/tasks', authenticateToken, async (req, res) => {
   try {
-    const { title, description, team, priority, mondayBoardId } = req.body;
+    const { title, description, team, priority } = req.body;
 
-    // Validation
     if (!title || !description || !team) {
       return res.status(400).json({ error: 'Title, description, and team are required' });
-    }
-
-    if (title.length < 3) {
-      return res.status(400).json({ error: 'Title must be at least 3 characters long' });
     }
 
     const task = {
@@ -391,27 +279,10 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
       status: 'todo',
       createdBy: req.user.username,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      mondayBoardId: mondayBoardId || null
+      updatedAt: new Date().toISOString()
     };
 
     tasks.push(task);
-
-    // Sync to Monday.com if board ID provided and API key is available
-    if (mondayBoardId && MONDAY_API_KEY) {
-      try {
-        const columnValues = {
-          status: task.status,
-          priority: task.priority,
-          team: task.team
-        };
-
-        await mondayService.createItem(mondayBoardId, title, columnValues);
-      } catch (mondayError) {
-        console.error('Monday.com sync failed:', mondayError);
-        // Continue with task creation even if Monday.com sync fails
-      }
-    }
 
     res.status(201).json({
       message: 'Task created successfully',
@@ -419,97 +290,6 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Task creation error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Monday.com Integration Routes
-app.get('/api/monday/boards', authenticateToken, async (req, res) => {
-  try {
-    if (!MONDAY_API_KEY) {
-      return res.status(501).json({ error: 'Monday.com integration not configured' });
-    }
-
-    const boardsData = await mondayService.getBoards();
-    res.json(boardsData);
-  } catch (error) {
-    console.error('Error fetching boards:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/monday/items', authenticateToken, async (req, res) => {
-  try {
-    if (!MONDAY_API_KEY) {
-      return res.status(501).json({ error: 'Monday.com integration not configured' });
-    }
-
-    const { boardId, itemName, columnValues } = req.body;
-
-    if (!boardId || !itemName) {
-      return res.status(400).json({ error: 'Board ID and item name are required' });
-    }
-
-    const result = await mondayService.createItem(boardId, itemName, columnValues);
-    res.json(result);
-  } catch (error) {
-    console.error('Error creating item:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/monday/boards/:boardId/items', authenticateToken, async (req, res) => {
-  try {
-    if (!MONDAY_API_KEY) {
-      return res.status(501).json({ error: 'Monday.com integration not configured' });
-    }
-
-    const { boardId } = req.params;
-    const itemsData = await mondayService.getBoardItems(boardId);
-    res.json(itemsData);
-  } catch (error) {
-    console.error('Error fetching board items:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Time tracking routes
-app.post('/api/time-entries', authenticateToken, (req, res) => {
-  try {
-    const { taskId, duration, description } = req.body;
-
-    if (!taskId || !duration) {
-      return res.status(400).json({ error: 'Task ID and duration are required' });
-    }
-
-    const timeEntry = {
-      id: uuidv4(),
-      taskId,
-      userId: req.user.userId,
-      duration: parseInt(duration),
-      description: description || '',
-      date: new Date().toISOString(),
-      createdAt: new Date().toISOString()
-    };
-
-    timeEntries.push(timeEntry);
-
-    res.status(201).json({
-      message: 'Time entry created successfully',
-      timeEntry
-    });
-  } catch (error) {
-    console.error('Time entry creation error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.get('/api/time-entries', authenticateToken, (req, res) => {
-  try {
-    const userTimeEntries = timeEntries.filter(entry => entry.userId === req.user.userId);
-    res.json(userTimeEntries.slice(-10).reverse()); // Return last 10 entries
-  } catch (error) {
-    console.error('Get time entries error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -536,25 +316,6 @@ app.get('/api/stats', authenticateToken, (req, res) => {
   }
 });
 
-// Admin routes
-app.get('/api/admin/stats', authenticateToken, requireAdmin, (req, res) => {
-  try {
-    const stats = {
-      totalUsers: users.length,
-      onlineUsers: users.filter(u => u.isOnline).length,
-      totalTasks: tasks.length,
-      completedTasks: tasks.filter(t => t.status === 'done').length,
-      totalTimeEntries: timeEntries.length,
-      mondayIntegration: !!MONDAY_API_KEY
-    };
-
-    res.json(stats);
-  } catch (error) {
-    console.error('Get admin stats error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -562,19 +323,18 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     environment: NODE_ENV,
-    mondayIntegration: !!MONDAY_API_KEY
+    totalUsers: users.length,
+    totalTasks: tasks.length
   });
 });
 
-// Serve static files in production
-if (NODE_ENV === 'production') {
-  app.use(express.static('public'));
-  
-  // Serve frontend for all other routes
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Test endpoint to verify server is running
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'Server is running!',
+    timestamp: new Date().toISOString()
   });
-}
+});
 
 // Error handling middleware
 app.use((error, req, res, next) => {
@@ -582,15 +342,16 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// 404 handler for API routes
+// 404 handler
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 DigiHive server running on port ${PORT}`);
   console.log(`📊 Environment: ${NODE_ENV}`);
-  console.log(`🔗 Monday.com integration: ${MONDAY_API_KEY ? 'Enabled' : 'Disabled'}`);
-  console.log(`👤 Default admin credentials: admin / admin123`);
+  console.log(`🌐 CORS enabled for: ${process.env.ALLOWED_ORIGINS || 'http://localhost:3000, http://127.0.0.1:3000'}`);
+  console.log(`👤 Default admin credentials: username: "admin", password: "admin123"`);
   console.log(`🔑 Admin code: ${ADMIN_CODE}`);
+  console.log(`✅ Test the server: http://localhost:${PORT}/api/health`);
 });
