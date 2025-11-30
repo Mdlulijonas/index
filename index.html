@@ -3,42 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DigiHive Team Workstation</title>
+    <title>DigiHive Workspace</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary: #FFC107;
-            --primary-light: #FFD54F;
-            --primary-dark: #FF8F00;
-            --secondary: #795548;
-            --accent: #FF5722;
-            --success: #4CAF50;
-            --warning: #FF9800;
-            --error: #D32F2F;
-            --dark: #5D4037;
-            --gray-dark: #8D6E63;
-            --gray: #A1887F;
-            --gray-light: #EFEBE9;
-            --background: #FFFDE7;
-            --white: #FFFFFF;
-            --card-bg: #FFFDF7;
-            --sidebar-bg: #5D4037;
-            --sidebar-text: #FFECB3;
+            /* Honeycomb Color Palette */
+            --honey-yellow: #FFB347;
+            --honey-yellow-light: #FFD166;
+            --honey-yellow-dark: #E6A141;
+            --honeycomb-bg: #FFF9E6;
+            --honeycomb-dark: #2D2A26;
+            --honeycomb-card: #FFFFFF;
+            --honeycomb-accent: #FF9A3D;
+            --honeycomb-success: #8BC34A;
+            --honeycomb-warning: #FF9800;
+            --honeycomb-error: #F44336;
+            --honeycomb-text: #5D4037;
+            --honeycomb-text-light: #8D6E63;
+            --honeycomb-gray: #BCAAA4;
+            --honeycomb-gray-light: #EFEBE9;
             
-            /* Team Colors - Honeycomb inspired */
-            --dev: #FFB300;
-            --design: #FF8F00;
-            --marketing: #4CAF50;
-            --support: #009688;
+            /* Team Colors - Honeycomb Theme */
+            --dev: #FFB347;
+            --design: #FF9A3D;
+            --marketing: #8BC34A;
+            --support: #4FC3F7;
             --content: #FF7043;
-            --admin: #D84315;
-            
-            /* Bee Colors */
-            --bee-yellow: #FFC107;
-            --bee-black: #5D4037;
-            --bee-orange: #FF8F00;
-            --bee-brown: #795548;
+            --admin: #F44336;
+            --operations: #AB47BC;
+            --sales: #66BB6A;
         }
         
         * {
@@ -49,13 +43,10 @@
         }
         
         body {
-            background: var(--background);
-            color: var(--dark);
+            background: var(--honeycomb-bg);
+            color: var(--honeycomb-text);
             line-height: 1.6;
             overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255, 193, 7, 0.05) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(255, 193, 7, 0.05) 0%, transparent 20%);
         }
         
         /* Honeycomb Pattern Background */
@@ -67,9 +58,23 @@
             height: 100%;
             opacity: 0.03;
             background-image: 
-                radial-gradient(circle at 25% 25%, var(--bee-yellow) 2px, transparent 2px),
-                radial-gradient(circle at 75% 75%, var(--bee-orange) 2px, transparent 2px);
-            background-size: 100px 100px;
+                radial-gradient(circle at 25% 25%, var(--honey-yellow) 2px, transparent 2.5px),
+                radial-gradient(circle at 75% 75%, var(--honey-yellow) 2px, transparent 2.5px);
+            background-size: 60px 60px;
+            z-index: -1;
+        }
+        
+        /* Hexagon Pattern Overlay */
+        .hexagon-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 50% 50%, rgba(255, 179, 71, 0.1) 0%, transparent 20%),
+                repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 179, 71, 0.05) 50px, rgba(255, 179, 71, 0.05) 51px),
+                repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 179, 71, 0.05) 50px, rgba(255, 179, 71, 0.05) 51px);
             z-index: -1;
         }
         
@@ -79,42 +84,23 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
+            background: linear-gradient(135deg, var(--honey-yellow), var(--honey-yellow-dark));
             padding: 2rem;
             position: relative;
             overflow: hidden;
         }
         
-        .login-container::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 2%, transparent 2.5%),
-                radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.2) 1%, transparent 1.5%);
-            background-size: 100px 100px;
-            animation: float 20s infinite linear;
-        }
-        
-        @keyframes float {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            100% { transform: translate(-50px, -50px) rotate(360deg); }
-        }
-        
         .login-card {
-            background: white;
+            background: var(--honeycomb-card);
             border-radius: 20px;
             padding: 3rem;
-            box-shadow: 0 25px 50px rgba(93, 64, 55, 0.2);
+            box-shadow: 0 25px 50px rgba(45, 42, 38, 0.15);
             width: 100%;
             max-width: 450px;
             text-align: center;
             position: relative;
             z-index: 1;
-            border: 3px solid var(--bee-yellow);
+            border: 1px solid var(--honeycomb-gray-light);
         }
         
         .login-logo {
@@ -126,65 +112,64 @@
         }
         
         .login-logo-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
-            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--honey-yellow), var(--honey-yellow-dark));
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--bee-black);
+            color: white;
             font-weight: bold;
-            font-size: 2rem;
+            font-size: 1.8rem;
+            box-shadow: 0 8px 25px rgba(255, 179, 71, 0.3);
             position: relative;
-            border: 3px solid var(--bee-black);
-            box-shadow: 0 4px 15px rgba(93, 64, 55, 0.3);
+            overflow: hidden;
         }
         
         .login-logo-icon::before {
-            content: '';
+            content: "";
             position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 2px solid var(--bee-black);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
+            width: 150%;
+            height: 150%;
+            background: 
+                radial-gradient(circle, transparent 20%, var(--honey-yellow-light) 20%, var(--honey-yellow-light) 40%, transparent 40%),
+                radial-gradient(circle, transparent 20%, var(--honey-yellow-light) 20%, var(--honey-yellow-light) 40%, transparent 40%);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            opacity: 0.2;
         }
         
         .login-logo-text {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 2px 2px 4px rgba(93, 64, 55, 0.1);
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--honeycomb-dark);
         }
         
         .motivation-card {
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
-            color: var(--bee-black);
-            border-radius: 15px;
+            background: linear-gradient(135deg, var(--honey-yellow), var(--honey-yellow-dark));
+            color: white;
+            border-radius: 16px;
             padding: 1.5rem;
             margin-bottom: 2rem;
             text-align: left;
-            border: 2px solid var(--bee-black);
             position: relative;
             overflow: hidden;
         }
         
         .motivation-card::before {
-            content: '🐝';
+            content: "";
             position: absolute;
-            top: -10px;
-            right: 10px;
-            font-size: 2rem;
-            opacity: 0.3;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle, transparent 20%, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.1) 40%, transparent 40%),
+                radial-gradient(circle, transparent 20%, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.1) 40%, transparent 40%);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            opacity: 0.2;
         }
         
         .motivation-text {
@@ -197,90 +182,25 @@
         .motivation-author {
             font-size: 0.9rem;
             opacity: 0.9;
-            font-weight: 600;
         }
         
-        .form-group {
-            margin-bottom: 1rem;
-            text-align: left;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--dark);
-        }
-        
-        .form-input, .form-select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid var(--bee-yellow);
-            border-radius: 8px;
-            font-size: 1rem;
-            background: var(--background);
-            transition: border-color 0.3s ease;
-        }
-        
-        .form-input:focus, .form-select:focus {
-            outline: none;
-            border-color: var(--bee-orange);
-            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
-        }
-        
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            border: 2px solid;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-        }
-        
-        .btn-primary {
-            background: var(--bee-yellow);
-            color: var(--bee-black);
-            border-color: var(--bee-orange);
-        }
-        
-        .btn-primary:hover {
-            background: var(--bee-orange);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 143, 0, 0.3);
-        }
-        
-        .btn-outline {
-            background: transparent;
-            border-color: var(--bee-yellow);
-            color: var(--dark);
-        }
-        
-        .btn-outline:hover {
-            background: var(--bee-yellow);
-            color: var(--bee-black);
-        }
-        
-        /* Dashboard Styles */
+        /* Modern Dashboard Layout */
         .dashboard {
-            display: none;
+            display: flex;
             min-height: 100vh;
         }
         
+        /* Sidebar - Honeycomb Theme */
         .sidebar {
-            background: linear-gradient(135deg, var(--sidebar-bg), var(--bee-brown));
+            background: var(--honeycomb-dark);
             padding: 2rem 1.5rem;
             width: 280px;
             height: 100vh;
             overflow-y: auto;
-            box-shadow: 2px 0 15px rgba(93, 64, 55, 0.2);
+            box-shadow: 2px 0 15px rgba(0,0,0,0.1);
             position: fixed;
             z-index: 100;
             transition: transform 0.3s ease;
-            border-right: 3px solid var(--bee-yellow);
         }
         
         .logo {
@@ -292,24 +212,37 @@
         }
         
         .logo-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--honey-yellow), var(--honey-yellow-dark));
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--bee-black);
+            color: white;
             font-weight: bold;
-            font-size: 1.3rem;
-            border: 2px solid var(--bee-black);
+            font-size: 1.2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .logo-icon::before {
+            content: "";
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            background: 
+                radial-gradient(circle, transparent 20%, var(--honey-yellow-light) 20%, var(--honey-yellow-light) 40%, transparent 40%),
+                radial-gradient(circle, transparent 20%, var(--honey-yellow-light) 20%, var(--honey-yellow-light) 40%, transparent 40%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            opacity: 0.2;
         }
         
         .logo-text {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--bee-yellow);
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: white;
         }
         
         .nav-links {
@@ -326,55 +259,132 @@
             align-items: center;
             gap: 0.75rem;
             padding: 0.85rem 1rem;
-            color: var(--sidebar-text);
+            color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
-            border-radius: 10px;
+            border-radius: 8px;
             transition: all 0.3s ease;
-            opacity: 0.8;
-            border: 1px solid transparent;
         }
         
         .nav-links a:hover {
-            background: rgba(255, 193, 7, 0.2);
-            opacity: 1;
-            border-color: var(--bee-yellow);
-            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
         }
         
         .nav-links a.active {
-            background: var(--bee-yellow);
-            color: var(--bee-black);
-            opacity: 1;
-            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
-            font-weight: 600;
+            background: var(--honey-yellow);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 179, 71, 0.3);
         }
         
+        .nav-links i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        
+        .team-section {
+            margin-top: 2rem;
+        }
+        
+        .team-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1rem;
+            padding: 0 0.5rem;
+        }
+        
+        .team-members {
+            list-style: none;
+        }
+        
+        .team-member {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+        
+        .team-member:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .member-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .member-avatar.dev { background: var(--dev); }
+        .member-avatar.design { background: var(--design); }
+        .member-avatar.marketing { background: var(--marketing); }
+        .member-avatar.support { background: var(--support); }
+        .member-avatar.content { background: var(--content); }
+        .member-avatar.admin { background: var(--admin); }
+        .member-avatar.operations { background: var(--operations); }
+        .member-avatar.sales { background: var(--sales); }
+        
+        .member-info {
+            flex: 1;
+        }
+        
+        .member-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: white;
+        }
+        
+        .member-role {
+            font-size: 0.75rem;
+            color: var(--honeycomb-gray);
+        }
+        
+        .member-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--honeycomb-success);
+        }
+        
+        /* Main Content */
         .main-content {
             flex: 1;
             padding: 2.5rem 3rem;
             margin-left: 280px;
             width: calc(100% - 280px);
             transition: all 0.3s ease;
-            background: var(--background);
         }
         
+        /* Header */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 2.5rem;
-            padding: 1rem 0;
-            border-bottom: 2px solid var(--bee-yellow);
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--honeycomb-gray-light);
         }
         
         .welcome-message h1 {
             font-size: 2.2rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
-            color: var(--dark);
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--honeycomb-dark);
+        }
+        
+        .welcome-message p {
+            color: var(--honeycomb-text-light);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
         }
         
         .user-info {
@@ -383,61 +393,55 @@
             gap: 1.5rem;
         }
         
-        .user-avatar {
+        .notification {
+            position: relative;
+            background: var(--honeycomb-card);
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            background: var(--white);
-            padding: 0.5rem 1rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.1);
-            border: 2px solid var(--bee-yellow);
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            cursor: pointer;
+            border: 1px solid var(--honeycomb-gray-light);
         }
         
-        .member-avatar {
-            width: 36px;
-            height: 36px;
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--honeycomb-accent);
+            color: white;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 0.85rem;
-            border: 2px solid;
+            font-size: 0.7rem;
+            font-weight: 600;
         }
         
-        .member-avatar.dev { 
-            background: var(--dev);
-            border-color: #E65100;
-        }
-        .member-avatar.design { 
-            background: var(--design);
-            border-color: #EF6C00;
-        }
-        .member-avatar.marketing { 
-            background: var(--marketing);
-            border-color: #388E3C;
-        }
-        .member-avatar.support { 
-            background: var(--support);
-            border-color: #00695C;
-        }
-        .member-avatar.content { 
-            background: var(--content);
-            border-color: #D84315;
-        }
-        .member-avatar.admin { 
-            background: var(--admin);
-            border-color: #BF360C;
+        .user-avatar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--honeycomb-card);
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid var(--honeycomb-gray-light);
         }
         
+        /* Dashboard Grid */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
             gap: 1.5rem;
         }
         
+        /* Stats Cards */
         .stats-container {
             grid-column: span 12;
             display: grid;
@@ -447,26 +451,36 @@
         }
         
         .stat-card {
-            background: var(--card-bg);
-            border-radius: 16px;
+            background: var(--honeycomb-card);
+            border-radius: 12px;
             padding: 1.75rem;
-            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: 2px solid var(--bee-yellow);
+            border: 1px solid var(--honeycomb-gray-light);
             position: relative;
             overflow: hidden;
         }
         
         .stat-card::before {
-            content: '';
+            content: "";
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
+            top: -10px;
+            right: -10px;
+            width: 60px;
+            height: 60px;
+            background: 
+                radial-gradient(circle, transparent 20%, var(--honey-yellow-light) 20%, var(--honey-yellow-light) 40%, transparent 40%),
+                radial-gradient(circle, transparent 20%, var(--honey-yellow-light) 20%, var(--honey-yellow-light) 40%, transparent 40%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            opacity: 0.1;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
         
         .stat-header {
@@ -479,33 +493,33 @@
         .stat-icon {
             width: 48px;
             height: 48px;
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.4rem;
-            color: var(--bee-black);
-            border: 2px solid;
+            color: white;
         }
         
-        .stat-icon.overview { 
-            background: var(--bee-yellow);
-            border-color: var(--bee-orange);
-        }
+        .stat-icon.overview { background: var(--honey-yellow); }
+        .stat-icon.tasks { background: var(--design); }
+        .stat-icon.progress { background: var(--support); }
+        .stat-icon.team { background: var(--content); }
         
         .stat-value {
             font-size: 2.5rem;
             font-weight: 700;
             margin-bottom: 0.25rem;
-            color: var(--dark);
+            color: var(--honeycomb-dark);
         }
         
         .stat-label {
             font-size: 0.95rem;
-            color: var(--gray-dark);
+            color: var(--honeycomb-text-light);
             font-weight: 500;
         }
         
+        /* Main Sections */
         .dashboard-section {
             display: none;
         }
@@ -514,14 +528,14 @@
             display: block;
         }
         
+        /* Task Overview */
         .task-overview {
             grid-column: span 8;
-            background: var(--card-bg);
-            border-radius: 16px;
+            background: var(--honeycomb-card);
+            border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
-            border: 2px solid var(--bee-yellow);
-            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--honeycomb-gray-light);
         }
         
         .section-header {
@@ -534,23 +548,10 @@
         .section-title {
             font-size: 1.4rem;
             font-weight: 700;
-            color: var(--dark);
-            position: relative;
-            padding-left: 1rem;
+            color: var(--honeycomb-dark);
         }
         
-        .section-title::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 24px;
-            background: var(--bee-yellow);
-            border-radius: 2px;
-        }
-        
+        /* Task Display */
         .task-display {
             display: flex;
             flex-direction: column;
@@ -561,23 +562,45 @@
             padding-right: 0.5rem;
         }
         
+        .task-display::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .task-display::-webkit-scrollbar-track {
+            background: var(--honeycomb-gray-light);
+            border-radius: 3px;
+        }
+        
+        .task-display::-webkit-scrollbar-thumb {
+            background: var(--honey-yellow);
+            border-radius: 3px;
+        }
+        
         .task-item {
-            background: var(--background);
-            border-radius: 12px;
+            background: var(--honeycomb-bg);
+            border-radius: 10px;
             padding: 1.5rem;
-            border-left: 6px solid;
+            border-left: 4px solid;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            border: 1px solid var(--gray-light);
-            position: relative;
+            border: 1px solid var(--honeycomb-gray-light);
         }
         
-        .task-item.dev { 
-            border-left-color: var(--dev);
-            background: linear-gradient(135deg, #FFFDE7, #FFECB3);
+        .task-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
+        
+        .task-item.dev { border-left-color: var(--dev); }
+        .task-item.design { border-left-color: var(--design); }
+        .task-item.marketing { border-left-color: var(--marketing); }
+        .task-item.support { border-left-color: var(--support); }
+        .task-item.content { border-left-color: var(--content); }
+        .task-item.operations { border-left-color: var(--operations); }
+        .task-item.sales { border-left-color: var(--sales); }
+        .task-item.completed { opacity: 0.7; }
         
         .task-header {
             display: flex;
@@ -588,8 +611,13 @@
         .task-title {
             font-weight: 600;
             margin-bottom: 0.25rem;
-            color: var(--dark);
-            font-size: 1.2rem;
+            color: var(--honeycomb-dark);
+            font-size: 1.1rem;
+        }
+        
+        .task-due {
+            font-size: 0.9rem;
+            color: var(--honeycomb-text-light);
         }
         
         .task-priority {
@@ -597,25 +625,62 @@
             padding: 0.25rem 0.75rem;
             border-radius: 20px;
             font-weight: 500;
-            border: 1px solid;
         }
         
         .priority-high {
-            background: rgba(255, 152, 0, 0.15);
-            color: var(--warning);
-            border-color: rgba(255, 152, 0, 0.3);
+            background: rgba(244, 67, 54, 0.1);
+            color: var(--honeycomb-error);
+            border: 1px solid rgba(244, 67, 54, 0.2);
         }
         
         .priority-medium {
-            background: rgba(76, 175, 80, 0.15);
-            color: var(--success);
-            border-color: rgba(76, 175, 80, 0.3);
+            background: rgba(255, 152, 0, 0.1);
+            color: var(--honeycomb-warning);
+            border: 1px solid rgba(255, 152, 0, 0.2);
+        }
+        
+        .priority-low {
+            background: rgba(139, 195, 74, 0.1);
+            color: var(--honeycomb-success);
+            border: 1px solid rgba(139, 195, 74, 0.2);
         }
         
         .task-description {
-            color: var(--gray-dark);
+            color: var(--honeycomb-text-light);
             font-size: 0.95rem;
             line-height: 1.5;
+        }
+        
+        .task-role {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .role-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+        
+        .role-icon.dev { background: var(--dev); }
+        .role-icon.design { background: var(--design); }
+        .role-icon.marketing { background: var(--marketing); }
+        .role-icon.support { background: var(--support); }
+        .role-icon.content { background: var(--content); }
+        .role-icon.operations { background: var(--operations); }
+        .role-icon.sales { background: var(--sales); }
+        
+        .role-name {
+            font-size: 0.85rem;
+            color: var(--honeycomb-text-light);
+            font-weight: 500;
         }
         
         .task-actions {
@@ -625,6 +690,343 @@
             margin-top: 0.5rem;
         }
         
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .btn-primary {
+            background: var(--honey-yellow);
+            color: white;
+            border-color: var(--honey-yellow-dark);
+        }
+        
+        .btn-primary:hover {
+            background: var(--honey-yellow-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border-color: var(--honeycomb-gray);
+            color: var(--honeycomb-dark);
+        }
+        
+        .btn-outline:hover {
+            background: var(--honeycomb-gray-light);
+        }
+        
+        .btn-success {
+            background: var(--honeycomb-success);
+            color: white;
+            border-color: var(--honeycomb-success);
+        }
+        
+        .btn-success:hover {
+            background: #7cb342;
+            transform: translateY(-1px);
+        }
+        
+        /* Team Progress */
+        .team-progress {
+            grid-column: span 4;
+            background: var(--honeycomb-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--honeycomb-gray-light);
+        }
+        
+        .progress-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .progress-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .team-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .team-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .team-dot.dev { background: var(--dev); }
+        .team-dot.design { background: var(--design); }
+        .team-dot.marketing { background: var(--marketing); }
+        .team-dot.support { background: var(--support); }
+        .team-dot.content { background: var(--content); }
+        .team-dot.operations { background: var(--operations); }
+        .team-dot.sales { background: var(--sales); }
+        
+        .progress-percent {
+            font-weight: 600;
+            color: var(--honeycomb-dark);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: var(--honeycomb-gray-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-fill.dev { background: var(--dev); }
+        .progress-fill.design { background: var(--design); }
+        .progress-fill.marketing { background: var(--marketing); }
+        .progress-fill.support { background: var(--support); }
+        .progress-fill.content { background: var(--content); }
+        .progress-fill.operations { background: var(--operations); }
+        .progress-fill.sales { background: var(--sales); }
+        
+        /* Activity & Motivation Section */
+        .activity-section {
+            grid-column: span 4;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .motivation-card-dash {
+            background: linear-gradient(135deg, var(--honey-yellow), var(--honey-yellow-dark));
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .motivation-text-dash {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            font-style: italic;
+            line-height: 1.5;
+        }
+        
+        .motivation-author-dash {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .tips-card {
+            background: var(--honeycomb-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--honeycomb-gray-light);
+        }
+        
+        .tips-list {
+            list-style: none;
+        }
+        
+        .tips-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--honeycomb-gray-light);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .tips-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .tip-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--honey-yellow);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        
+        /* Comments Section */
+        .comments-section {
+            grid-column: span 8;
+            background: var(--honeycomb-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--honeycomb-gray-light);
+        }
+        
+        .comment-form {
+            margin-bottom: 1.5rem;
+        }
+        
+        .comment-input {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--honeycomb-gray-light);
+            border-radius: 8px;
+            resize: vertical;
+            min-height: 80px;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            background: var(--honeycomb-bg);
+            transition: border-color 0.3s ease;
+        }
+        
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--honey-yellow);
+            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.1);
+        }
+        
+        .comments-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        
+        .comments-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .comments-list::-webkit-scrollbar-track {
+            background: var(--honeycomb-gray-light);
+            border-radius: 3px;
+        }
+        
+        .comments-list::-webkit-scrollbar-thumb {
+            background: var(--honey-yellow);
+            border-radius: 3px;
+        }
+        
+        .comment {
+            padding: 1rem;
+            border-bottom: 1px solid var(--honeycomb-gray-light);
+            transition: background 0.3s ease;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background: var(--honeycomb-bg);
+        }
+        
+        .comment:hover {
+            background: var(--honeycomb-card);
+        }
+        
+        .comment:last-child {
+            border-bottom: none;
+        }
+        
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .comment-user {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .comment-time {
+            font-size: 0.8rem;
+            color: var(--honeycomb-gray);
+        }
+        
+        .comment-team {
+            font-size: 0.8rem;
+            color: var(--honeycomb-text-light);
+            background: var(--honeycomb-gray-light);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .comment-text {
+            color: var(--honeycomb-dark);
+            line-height: 1.5;
+        }
+        
+        .comment-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .btn-danger {
+            background: var(--honeycomb-error);
+            color: white;
+            border-color: var(--honeycomb-error);
+        }
+        
+        .btn-danger:hover {
+            background: #d32f2f;
+            transform: translateY(-1px);
+        }
+        
+        /* Online Status */
+        .online-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--honeycomb-success);
+            margin-top: 0.25rem;
+        }
+        
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--honeycomb-success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -632,7 +1034,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(93, 64, 55, 0.8);
+            background: rgba(45, 42, 38, 0.8);
             z-index: 1000;
             align-items: center;
             justify-content: center;
@@ -644,15 +1046,14 @@
         
         .modal-content {
             background: white;
-            border-radius: 16px;
+            border-radius: 12px;
             padding: 2rem;
             max-width: 500px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 25px 50px rgba(93, 64, 55, 0.3);
-            border: 3px solid var(--bee-yellow);
-            position: relative;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            border: 1px solid var(--honeycomb-gray-light);
         }
         
         .modal-header {
@@ -665,7 +1066,6 @@
         .modal-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: var(--dark);
         }
         
         .close-modal {
@@ -673,35 +1073,301 @@
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
-            color: var(--gray);
+            color: var(--honeycomb-gray);
             transition: color 0.3s ease;
         }
         
-        .form-textarea {
+        .close-modal:hover {
+            color: var(--honeycomb-dark);
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-input, .form-select, .form-textarea {
             width: 100%;
             padding: 0.75rem;
-            border: 2px solid var(--bee-yellow);
+            border: 1px solid var(--honeycomb-gray-light);
             border-radius: 8px;
             font-size: 1rem;
-            background: var(--background);
+            background: var(--honeycomb-bg);
             transition: border-color 0.3s ease;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--honey-yellow);
+            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.1);
+        }
+        
+        .form-textarea {
             resize: vertical;
             min-height: 100px;
         }
         
+        /* Motivational Popup */
+        .motivation-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(45, 42, 38, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .motivation-popup.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .popup-content {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            transform: translateY(20px);
+            transition: transform 0.4s ease;
+            border: 1px solid var(--honeycomb-gray-light);
+        }
+        
+        .motivation-popup.active .popup-content {
+            transform: translateY(0);
+        }
+        
+        .popup-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .popup-logo-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--honey-yellow), var(--honey-yellow-dark));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.8rem;
+        }
+        
+        .popup-logo-text {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--honeycomb-dark);
+        }
+        
+        .popup-quote {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--honeycomb-dark);
+            line-height: 1.4;
+            font-style: italic;
+        }
+        
+        .popup-author {
+            font-size: 1.1rem;
+            color: var(--honey-yellow);
+            font-weight: 500;
+            margin-bottom: 2rem;
+        }
+        
+        .popup-btn {
+            background: var(--honey-yellow);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+        
+        .popup-btn:hover {
+            background: var(--honey-yellow-dark);
+            transform: translateY(-2px);
+        }
+        
+        /* Submissions & Team Sections */
+        .submissions-list, .team-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        
+        .submission-item, .team-member-item {
+            background: var(--honeycomb-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            border-left: 4px solid var(--honey-yellow);
+            transition: transform 0.2s ease;
+            border: 1px solid var(--honeycomb-gray-light);
+        }
+        
+        .submission-item:hover, .team-member-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        .submission-header, .team-member-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .submission-title, .team-member-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--honeycomb-dark);
+        }
+        
+        .submission-meta, .team-member-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--honeycomb-text-light);
+        }
+        
+        .submission-content {
+            color: var(--honeycomb-text-light);
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+        
+        /* Admin Tools */
+        .admin-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .sessions-table {
+            background: var(--honeycomb-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow-x: auto;
+            border: 1px solid var(--honeycomb-gray-light);
+        }
+        
+        .session-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .session-table th,
+        .session-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--honeycomb-gray-light);
+        }
+        
+        .session-table th {
+            font-weight: 600;
+            color: var(--honeycomb-dark);
+            background: var(--honeycomb-gray-light);
+        }
+        
+        .session-table tr:hover {
+            background: var(--honeycomb-bg);
+        }
+        
+        /* Report Generator */
+        .report-generator {
+            background: var(--honeycomb-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--honeycomb-gray-light);
+            margin-bottom: 2rem;
+        }
+        
+        .report-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Task Management */
+        .task-management {
+            background: var(--honeycomb-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--honeycomb-gray-light);
+            margin-bottom: 2rem;
+        }
+        
+        .task-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .task-form-grid .form-group:last-child {
+            grid-column: span 2;
+        }
+        
+        /* Mobile Menu Button */
         .mobile-menu-btn {
             display: none;
             position: fixed;
             top: 1rem;
             left: 1rem;
             z-index: 1000;
-            background: var(--bee-yellow);
-            color: var(--bee-black);
-            border: 2px solid var(--bee-black);
+            background: var(--honey-yellow);
+            color: white;
+            border: none;
             border-radius: 8px;
             padding: 0.75rem;
             font-size: 1.2rem;
-            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu-btn:hover {
+            background: var(--honey-yellow-dark);
+        }
+        
+        /* Mobile Responsiveness */
+        @media (max-width: 1200px) {
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .task-overview, .team-progress, .comments-section, .activity-section {
+                grid-column: span 12;
+            }
         }
         
         @media (max-width: 1024px) {
@@ -740,12 +1406,66 @@
                 width: 100%;
                 justify-content: space-between;
             }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .task-actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .admin-tools {
+                grid-template-columns: 1fr;
+            }
+            
+            .session-table {
+                font-size: 0.8rem;
+            }
+            
+            .session-table th,
+            .session-table td {
+                padding: 0.5rem;
+            }
+            
+            .task-form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .task-form-grid .form-group:last-child {
+                grid-column: span 1;
+            }
+            
+            .popup-content {
+                padding: 2rem;
+            }
+            
+            .popup-quote {
+                font-size: 1.4rem;
+            }
+            
+            .login-logo {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Honeycomb Background -->
+    <!-- Honeycomb Pattern Background -->
     <div class="honeycomb-bg"></div>
+    <div class="hexagon-overlay"></div>
     
     <!-- Login Screen -->
     <div id="loginScreen" class="login-container">
@@ -759,22 +1479,22 @@
                 <div class="motivation-text" id="loginMotivation">
                     "Collaboration is the foundation of great achievements"
                 </div>
-                <div class="motivation-author">- Team DigiHive</div>
+                <div class="motivation-author">- DigiHive Workspace</div>
             </div>
             
             <form id="loginForm">
                 <div class="form-group">
                     <label class="form-label">Username</label>
-                    <input type="text" class="form-input" id="loginUsername" placeholder="Enter your username" required>
+                    <input type="text" class="form-input" id="loginUsername" placeholder="Enter your username as -admin" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
+                    <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password as -password" required>
                 </div>
                 
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem; padding: 0.75rem;">
-                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                    <i class="fas fa-sign-in-alt"></i> Login to Workspace
                 </button>
                 
                 <button type="button" class="btn btn-outline" style="width: 100%; padding: 0.75rem;" onclick="showRegisterModal()">
@@ -784,194 +1504,513 @@
         </div>
     </div>
 
-    <!-- Main Dashboard -->
-    <div id="dashboard" class="dashboard">
+    <!-- Main Dashboard (Hidden until login) -->
+    <div id="dashboard" style="display: none;">
         <!-- Mobile Menu Button -->
         <button class="mobile-menu-btn" onclick="toggleSidebar()">
             <i class="fas fa-bars"></i>
         </button>
         
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="logo">
-                <div class="logo-icon">DH</div>
-                <div class="logo-text">DigiHive</div>
+        <!-- Motivational Popup -->
+        <div class="motivation-popup active" id="motivationPopup">
+            <div class="popup-content">
+                <div class="popup-logo">
+                    <div class="popup-logo-icon">DH</div>
+                    <div class="popup-logo-text">DigiHive</div>
+                </div>
+                <div class="popup-quote" id="popupQuote">"Collaboration is the foundation of great achievements"</div>
+                <div class="popup-author" id="popupAuthor">- DigiHive Workspace</div>
+                <button class="popup-btn" id="popupBtn">Get Started</button>
             </div>
-            
-            <ul class="nav-links">
-                <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li><a href="#" onclick="showSection('tasks')"><i class="fas fa-tasks"></i> Tasks</a></li>
-                <li><a href="#" onclick="showSection('team')"><i class="fas fa-users"></i> Team</a></li>
-                <li><a href="#" onclick="showSection('analytics')"><i class="fas fa-chart-bar"></i> Analytics</a></li>
-                <li><a href="#" onclick="showSection('admin')"><i class="fas fa-tools"></i> Admin Tools</a></li>
-            </ul>
         </div>
         
-        <!-- Main Content -->
-        <div class="main-content">
-            <div class="header">
-                <div class="welcome-message">
-                    <h1 id="welcomeTitle">Welcome to DigiHive Workstation</h1>
-                    <p id="welcomeSubtitle">Track progress, submit work, and collaborate with your team</p>
+        <div class="dashboard">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="logo">
+                    <div class="logo-icon">DH</div>
+                    <div class="logo-text">DigiHive</div>
                 </div>
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <div class="member-avatar" id="userAvatar">US</div>
-                        <span id="userName">User</span>
-                    </div>
-                    <button class="btn btn-outline" onclick="logout()">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
+                
+                <ul class="nav-links">
+                    <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</a></li>
+                    <li><a href="#" onclick="showSection('tasks')"><i class="fas fa-tasks"></i> Tasks</a></li>
+                    <li><a href="#" onclick="showSection('submissions')"><i class="fas fa-file-upload"></i> Submissions</a></li>
+                    <li><a href="#" onclick="showSection('team')"><i class="fas fa-users"></i> Team</a></li>
+                    <li><a href="#" onclick="showSection('comments')"><i class="fas fa-comments"></i> Comments</a></li>
+                    <li><a href="#" onclick="showSection('reports')"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                    <li><a href="#" onclick="showSection('admin')"><i class="fas fa-tools"></i> Admin Tools</a></li>
+                </ul>
+                
+                <div class="team-section">
+                    <div class="team-title">ONLINE TEAM MEMBERS</div>
+                    <ul class="team-members" id="onlineMembers">
+                        <!-- Online members will be populated here -->
+                    </ul>
                 </div>
             </div>
             
-            <!-- Dashboard Section -->
-            <div id="dashboardSection" class="dashboard-section active">
-                <div class="dashboard-grid">
-                    <!-- Stats Cards -->
-                    <div class="stats-container">
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div>
-                                    <div class="stat-value" id="totalTasks">0</div>
-                                    <div class="stat-label">Active Tasks</div>
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="header">
+                    <div class="welcome-message">
+                        <h1 id="welcomeTitle">Welcome to DigiHive Workspace</h1>
+                        <p id="welcomeSubtitle">Track progress, submit work, and collaborate with your team</p>
+                    </div>
+                    <div class="user-info">
+                        <div class="notification">
+                            <i class="fas fa-bell"></i>
+                            <div class="notification-badge" id="notificationCount">0</div>
+                        </div>
+                        <div class="user-avatar">
+                            <div class="member-avatar" id="userAvatar">US</div>
+                            <span id="userName">User</span>
+                        </div>
+                        <button class="btn btn-outline" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Dashboard Section -->
+                <div id="dashboardSection" class="dashboard-section active">
+                    <div class="dashboard-grid">
+                        <!-- Stats Cards -->
+                        <div class="stats-container">
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-value" id="totalTasks">0</div>
+                                        <div class="stat-label">Active Tasks</div>
+                                    </div>
+                                    <div class="stat-icon overview">
+                                        <i class="fas fa-tasks"></i>
+                                    </div>
                                 </div>
-                                <div class="stat-icon overview">
-                                    <i class="fas fa-tasks"></i>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-value" id="completedTasks">0</div>
+                                        <div class="stat-label">Completed</div>
+                                    </div>
+                                    <div class="stat-icon tasks">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-value" id="overallProgress">0%</div>
+                                        <div class="stat-label">Overall Progress</div>
+                                    </div>
+                                    <div class="stat-icon progress">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-value" id="teamMembers">0</div>
+                                        <div class="stat-label">Team Members</div>
+                                    </div>
+                                    <div class="stat-icon team">
+                                        <i class="fas fa-users"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div>
-                                    <div class="stat-value" id="completedTasks">0</div>
-                                    <div class="stat-label">Completed</div>
+                        <!-- Task Overview -->
+                        <div class="task-overview">
+                            <div class="section-header">
+                                <div class="section-title">Current Tasks</div>
+                            </div>
+                            
+                            <div class="task-display" id="taskDisplay">
+                                <!-- Tasks will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Team Progress -->
+                        <div class="team-progress">
+                            <div class="section-header">
+                                <div class="section-title">Team Progress</div>
+                            </div>
+                            
+                            <div class="progress-bars" id="teamProgressBars">
+                                <!-- Progress bars will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Activity & Motivation Section -->
+                        <div class="activity-section">
+                            <div class="motivation-card-dash">
+                                <div class="motivation-text-dash" id="dailyMotivation">
+                                    "Collaboration is the foundation of great achievements"
                                 </div>
-                                <div class="stat-icon overview">
-                                    <i class="fas fa-check-circle"></i>
+                                <div class="motivation-author-dash" id="motivationAuthor">- DigiHive Workspace</div>
+                            </div>
+                            
+                            <div class="tips-card">
+                                <div class="section-header">
+                                    <div class="section-title">Productivity Tips</div>
+                                </div>
+                                
+                                <ul class="tips-list">
+                                    <li>
+                                        <div class="tip-icon"><i class="fas fa-check"></i></div>
+                                        <div>Break large tasks into smaller, manageable steps</div>
+                                    </li>
+                                    <li>
+                                        <div class="tip-icon"><i class="fas fa-clock"></i></div>
+                                        <div>Use the Pomodoro technique: 25 mins work, 5 mins break</div>
+                                    </li>
+                                    <li>
+                                        <div class="tip-icon"><i class="fas fa-bell"></i></div>
+                                        <div>Set clear daily goals and review them each morning</div>
+                                    </li>
+                                    <li>
+                                        <div class="tip-icon"><i class="fas fa-times"></i></div>
+                                        <div>Minimize distractions by turning off non-essential notifications</div>
+                                    </li>
+                                </ul>
+                                
+                                <div class="action-buttons">
+                                    <button class="btn btn-primary" onclick="showSubmissionModal()">
+                                        <i class="fas fa-file-upload"></i> Submit Work
+                                    </button>
+                                    <button class="btn btn-outline" onclick="showRegisterModal()">
+                                        <i class="fas fa-user-plus"></i> Add Team Member
+                                    </button>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div>
-                                    <div class="stat-value" id="teamMembers">0</div>
-                                    <div class="stat-label">Team Members</div>
-                                </div>
-                                <div class="stat-icon overview">
-                                    <i class="fas fa-users"></i>
+                        <!-- Comments Section -->
+                        <div class="comments-section">
+                            <div class="section-header">
+                                <div class="section-title">Team Comments</div>
+                                <div class="online-status">
+                                    <div class="status-dot"></div>
+                                    <span>Live Updates</span>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div>
-                                    <div class="stat-value" id="overallProgress">0%</div>
-                                    <div class="stat-label">Overall Progress</div>
-                                </div>
-                                <div class="stat-icon overview">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
+                            
+                            <div class="comment-form">
+                                <textarea class="comment-input" id="commentInput" placeholder="Share your thoughts, challenges, or updates with the team..."></textarea>
+                                <button class="btn btn-primary" onclick="postComment()">
+                                    <i class="fas fa-paper-plane"></i> Post Comment
+                                </button>
+                            </div>
+                            
+                            <div class="comments-list" id="commentsList">
+                                <!-- Comments will be populated here -->
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Task Overview -->
+                </div>
+                
+                <!-- Tasks Section -->
+                <div id="tasksSection" class="dashboard-section">
                     <div class="task-overview">
                         <div class="section-header">
-                            <div class="section-title">Recent Tasks</div>
-                            <button class="btn btn-primary" onclick="showTaskModal()">
-                                <i class="fas fa-plus"></i> Add Task
+                            <div class="section-title">All Tasks</div>
+                            <div>
+                                <button class="btn btn-outline" onclick="showSubmissionModal()">
+                                    <i class="fas fa-file-upload"></i> Submit Work
+                                </button>
+                                <button class="btn btn-primary" onclick="showTaskModal()" style="margin-left: 0.5rem;">
+                                    <i class="fas fa-plus"></i> Add Task
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="task-display" id="allTasksDisplay">
+                            <!-- All tasks will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submissions Section -->
+                <div id="submissionsSection" class="dashboard-section">
+                    <div class="task-overview">
+                        <div class="section-header">
+                            <div class="section-title">All Submissions</div>
+                            <button class="btn btn-primary" onclick="showSubmissionModal()">
+                                <i class="fas fa-plus"></i> New Submission
                             </button>
                         </div>
                         
-                        <div class="task-display" id="taskDisplay">
-                            <!-- Tasks will be populated here -->
+                        <div class="submissions-list" id="submissionsList">
+                            <!-- Submissions will be populated here -->
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Tasks Section -->
-            <div id="tasksSection" class="dashboard-section">
-                <div class="task-overview" style="grid-column: span 12;">
-                    <div class="section-header">
-                        <div class="section-title">All Tasks</div>
-                        <button class="btn btn-primary" onclick="showTaskModal()">
-                            <i class="fas fa-plus"></i> Add Task
+                
+                <!-- Team Section -->
+                <div id="teamSection" class="dashboard-section">
+                    <div class="task-overview">
+                        <div class="section-header">
+                            <div class="section-title">Team Members</div>
+                            <button class="btn btn-primary" onclick="showRegisterModal()">
+                                <i class="fas fa-user-plus"></i> Add Member
+                            </button>
+                        </div>
+                        
+                        <div class="team-list" id="teamList">
+                            <!-- Team members will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comments Section (Full) -->
+                <div id="commentsSection" class="dashboard-section">
+                    <div class="comments-section" style="grid-column: span 12;">
+                        <div class="section-header">
+                            <div class="section-title">Team Comments</div>
+                            <div class="online-status">
+                                <div class="status-dot"></div>
+                                <span>Live Updates</span>
+                            </div>
+                        </div>
+                        
+                        <div class="comment-form">
+                            <textarea class="comment-input" id="commentInputFull" placeholder="Share your thoughts, challenges, or updates with the team..."></textarea>
+                            <button class="btn btn-primary" onclick="postCommentFull()">
+                                <i class="fas fa-paper-plane"></i> Post Comment
+                            </button>
+                        </div>
+                        
+                        <div class="comments-list" id="commentsListFull">
+                            <!-- Comments will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reports Section -->
+                <div id="reportsSection" class="dashboard-section">
+                    <div class="report-generator">
+                        <div class="section-header">
+                            <div class="section-title">Monthly Reports</div>
+                        </div>
+                        
+                        <div class="report-options">
+                            <div class="form-group">
+                                <label class="form-label">Report Type</label>
+                                <select class="form-select" id="reportType">
+                                    <option value="team-performance">Team Performance</option>
+                                    <option value="task-progress">Task Progress</option>
+                                    <option value="user-activity">User Activity</option>
+                                    <option value="submissions">Work Submissions</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Month</label>
+                                <select class="form-select" id="reportMonth">
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Year</label>
+                                <select class="form-select" id="reportYear">
+                                    <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2026">2026</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Format</label>
+                                <select class="form-select" id="reportFormat">
+                                    <option value="pdf">PDF</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="csv">CSV</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="generateReport()" style="width: 100%;">
+                            <i class="fas fa-download"></i> Generate & Download Report
                         </button>
                     </div>
                     
-                    <div class="task-display" id="allTasksDisplay">
-                        <!-- All tasks will be populated here -->
+                    <!-- Report Preview -->
+                    <div class="task-overview">
+                        <div class="section-header">
+                            <div class="section-title">Report Preview</div>
+                        </div>
+                        <div id="reportPreview" style="padding: 2rem; text-align: center; color: var(--honeycomb-text-light);">
+                            <i class="fas fa-chart-bar" style="font-size: 3rem; margin-bottom: 1rem; color: var(--honeycomb-gray);"></i>
+                            <p>Select report options and generate to see preview</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Team Section -->
-            <div id="teamSection" class="dashboard-section">
-                <div class="task-overview" style="grid-column: span 12;">
-                    <div class="section-header">
-                        <div class="section-title">Team Members</div>
-                        <button class="btn btn-primary" onclick="showRegisterModal()">
-                            <i class="fas fa-user-plus"></i> Add Member
-                        </button>
+                
+                <!-- Admin Tools Section -->
+                <div id="adminSection" class="dashboard-section">
+                    <!-- Task Management -->
+                    <div class="task-management">
+                        <div class="section-header">
+                            <div class="section-title">Task Management</div>
+                            <button class="btn btn-primary" onclick="showTaskModal()">
+                                <i class="fas fa-plus"></i> Add New Task
+                            </button>
+                        </div>
+                        
+                        <form id="taskForm">
+                            <div class="task-form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Task Subject</label>
+                                    <input type="text" class="form-input" name="subject" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Assigned Team</label>
+                                    <select class="form-select" name="team" required>
+                                        <option value="">Select Team</option>
+                                        <option value="Development">Development</option>
+                                        <option value="Design">Design</option>
+                                        <option value="Marketing">Marketing</option>
+                                        <option value="Support">Support</option>
+                                        <option value="Content">Content</option>
+                                        <option value="Operations">Operations</option>
+                                        <option value="Sales">Sales</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" class="form-input" name="startDate" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Due Date</label>
+                                    <input type="date" class="form-input" name="endDate" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Priority</label>
+                                    <select class="form-select" name="priority" required>
+                                        <option value="Low">Low</option>
+                                        <option value="Medium" selected>Medium</option>
+                                        <option value="High">High</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" name="status" required>
+                                        <option value="planned">Planned</option>
+                                        <option value="in-progress" selected>In Progress</option>
+                                        <option value="completed">Completed</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Task Description</label>
+                                    <textarea class="form-textarea" name="description" placeholder="Describe the task in detail..." required></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Admin Code</label>
+                                    <input type="password" class="form-input" name="adminCode" required>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success" style="width: 100%;">
+                                <i class="fas fa-save"></i> Create Task
+                            </button>
+                        </form>
                     </div>
                     
-                    <div class="task-display" id="teamList">
-                        <!-- Team members will be populated here -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Analytics Section -->
-            <div id="analyticsSection" class="dashboard-section">
-                <div class="task-overview" style="grid-column: span 12;">
-                    <div class="section-header">
-                        <div class="section-title">Analytics Dashboard</div>
-                    </div>
-                    <div style="text-align: center; padding: 3rem;">
-                        <i class="fas fa-chart-bar" style="font-size: 4rem; color: var(--bee-yellow); margin-bottom: 1rem;"></i>
-                        <h3 style="color: var(--dark); margin-bottom: 0.5rem;">Analytics Coming Soon</h3>
-                        <p style="color: var(--gray);">Advanced analytics features are under development.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Admin Tools Section -->
-            <div id="adminSection" class="dashboard-section">
-                <div class="task-overview" style="grid-column: span 12;">
-                    <div class="section-header">
-                        <div class="section-title">Admin Tools</div>
-                    </div>
-                    
-                    <div class="stats-container">
+                    <!-- System Management -->
+                    <div class="admin-tools">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="adminCommentsCount">0</div>
+                                    <div class="stat-label">Total Comments</div>
+                                </div>
+                                <div class="stat-icon overview">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                            </div>
+                            <button class="btn btn-danger" onclick="showCleanupModal('comments')" style="width: 100%; margin-top: 1rem;">
+                                <i class="fas fa-trash"></i> Cleanup Old Comments
+                            </button>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="adminSubmissionsCount">0</div>
+                                    <div class="stat-label">Total Submissions</div>
+                                </div>
+                                <div class="stat-icon tasks">
+                                    <i class="fas fa-file-upload"></i>
+                                </div>
+                            </div>
+                            <button class="btn btn-danger" onclick="showCleanupModal('submissions')" style="width: 100%; margin-top: 1rem;">
+                                <i class="fas fa-trash"></i> Cleanup Old Submissions
+                            </button>
+                        </div>
+                        
                         <div class="stat-card">
                             <div class="stat-header">
                                 <div>
                                     <div class="stat-value" id="adminUsersCount">0</div>
                                     <div class="stat-label">Total Users</div>
                                 </div>
-                                <div class="stat-icon overview">
+                                <div class="stat-icon team">
                                     <i class="fas fa-users"></i>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div>
-                                    <div class="stat-value" id="adminTasksCount">0</div>
-                                    <div class="stat-label">Total Tasks</div>
-                                </div>
-                                <div class="stat-icon overview">
-                                    <i class="fas fa-tasks"></i>
-                                </div>
+                            <div class="online-status" style="margin-top: 1rem;">
+                                <div class="status-dot"></div>
+                                <span id="adminOnlineCount">0 Online Now</span>
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- User Sessions Table -->
+                    <div class="sessions-table">
+                        <div class="section-header">
+                            <div class="section-title">User Activity & Sessions</div>
+                        </div>
+                        <table class="session-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Team</th>
+                                    <th>Last Login</th>
+                                    <th>Last Logout</th>
+                                    <th>Status</th>
+                                    <th>Session Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessionsTableBody">
+                                <!-- Sessions will be populated here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -982,7 +2021,7 @@
     <div class="modal" id="registerModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Register New Team Member</h2>
+                <h2 class="modal-title">Add Team Member</h2>
                 <button class="close-modal" onclick="closeRegisterModal()">&times;</button>
             </div>
             
@@ -1006,38 +2045,36 @@
                         <option value="Design">Design</option>
                         <option value="Marketing">Marketing</option>
                         <option value="Support">Support</option>
+                        <option value="Content">Content</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Sales">Sales</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Admin Code (for admin registration)</label>
-                    <input type="password" class="form-input" name="adminCode">
+                    <label class="form-label">Admin Code</label>
+                    <input type="password" class="form-input" name="adminCode" required>
                 </div>
                 
                 <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    <i class="fas fa-user-plus"></i> Register Member
+                    <i class="fas fa-user-plus"></i> Add Team Member
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Task Modal -->
-    <div class="modal" id="taskModal">
+    <!-- Submission Modal -->
+    <div class="modal" id="submissionModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Create New Task</h2>
-                <button class="close-modal" onclick="closeTaskModal()">&times;</button>
+                <h2 class="modal-title">Submit Work</h2>
+                <button class="close-modal" onclick="closeSubmissionModal()">&times;</button>
             </div>
             
-            <form id="taskForm">
+            <form id="submissionForm" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label class="form-label">Task Title</label>
-                    <input type="text" class="form-input" name="title" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea class="form-textarea" name="description" required></textarea>
+                    <label class="form-label">Work Title</label>
+                    <input type="text" class="form-input" name="name" required>
                 </div>
                 
                 <div class="form-group">
@@ -1048,157 +2085,505 @@
                         <option value="Design">Design</option>
                         <option value="Marketing">Marketing</option>
                         <option value="Support">Support</option>
+                        <option value="Content">Content</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Sales">Sales</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Priority</label>
-                    <select class="form-select" name="priority" required>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                        <option value="Low">Low</option>
+                    <label class="form-label">Progress Report</label>
+                    <textarea class="form-textarea" name="progress" placeholder="Describe your progress and completed work..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Next Steps</label>
+                    <textarea class="form-textarea" name="plan" placeholder="Outline your plans for upcoming work..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Attachment (Optional, max 2MB)</label>
+                    <input type="file" class="form-input" name="attachment" accept=".pdf,.doc,.docx,.txt,.zip,.jpg,.png">
+                </div>
+                
+                <button type="submit" class="btn btn-success" style="width: 100%;">
+                    <i class="fas fa-paper-plane"></i> Submit Work
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Manage Task</h2>
+                <button class="close-modal" onclick="closeTaskModal()">&times;</button>
+            </div>
+            
+            <form id="taskModalForm">
+                <input type="hidden" id="taskId">
+                <div class="form-group">
+                    <label class="form-label">Task Subject</label>
+                    <input type="text" class="form-input" id="taskSubject" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Assigned Team</label>
+                    <select class="form-select" id="taskTeam" required>
+                        <option value="">Select Team</option>
+                        <option value="Development">Development</option>
+                        <option value="Design">Design</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Support">Support</option>
+                        <option value="Content">Content</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Sales">Sales</option>
                     </select>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    <i class="fas fa-plus"></i> Create Task
+                <div class="form-group">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" class="form-input" id="taskStartDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Due Date</label>
+                    <input type="date" class="form-input" id="taskEndDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <select class="form-select" id="taskPriority" required>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="taskStatus" required>
+                        <option value="planned">Planned</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Task Description</label>
+                    <textarea class="form-textarea" id="taskDescription" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Admin Code</label>
+                    <input type="password" class="form-input" id="taskAdminCode" required>
+                </div>
+                
+                <div class="form-group" style="display: flex; gap: 0.5rem;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="deleteTask()" style="flex: 1;">
+                        <i class="fas fa-trash"></i> Delete Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Comment Modal -->
+    <div class="modal" id="deleteCommentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Delete Comment</h2>
+                <button class="close-modal" onclick="closeDeleteCommentModal()">&times;</button>
+            </div>
+            
+            <form id="deleteCommentForm">
+                <input type="hidden" id="commentToDelete">
+                <div class="form-group">
+                    <label class="form-label">Admin Code</label>
+                    <input type="password" class="form-input" name="adminCode" required>
+                </div>
+                
+                <button type="submit" class="btn btn-danger" style="width: 100%;">
+                    <i class="fas fa-trash"></i> Delete Comment
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cleanup Modal -->
+    <div class="modal" id="cleanupModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="cleanupModalTitle">Cleanup Data</h2>
+                <button class="close-modal" onclick="closeCleanupModal()">&times;</button>
+            </div>
+            
+            <form id="cleanupForm">
+                <input type="hidden" id="cleanupType">
+                <div class="form-group">
+                    <label class="form-label">Delete data older than (days)</label>
+                    <input type="number" class="form-input" name="olderThan" value="30" min="1" max="365" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Admin Code</label>
+                    <input type="password" class="form-input" name="adminCode" required>
+                </div>
+                
+                <div class="form-group">
+                    <div class="stat-card" style="background: var(--honeycomb-warning); color: white;">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-value" id="itemsToDelete">0</div>
+                                <div class="stat-label">items will be deleted</div>
+                            </div>
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-danger" style="width: 100%;">
+                    <i class="fas fa-trash"></i> Confirm Cleanup
                 </button>
             </form>
         </div>
     </div>
 
     <script>
-        // Application State
-        let currentUser = null;
-        let authToken = null;
+        // =============================================
+        // DIGIHIVE WORKSPACE PLATFORM
+        // =============================================
+        // 
+        // HONEYCOMB-INSPIRED TEAM COLLABORATION PLATFORM
+        // Features:
+        // - Multi-team task management
+        // - Work submissions with file uploads
+        // - Real-time team communication
+        // - Monthly report generation
+        // - Advanced admin controls
+        // - Honeycomb design system
+        //
 
-        // API Base URL - Fixed for Railway deployment
-        const API_BASE_URL = '/api';
+        /**
+         * Main application state manager
+         * Handles user sessions, data caching, and UI state
+         */
+        class AppState {
+            constructor() {
+                this.currentUser = null;
+                this.users = [];
+                this.tasks = [];
+                this.comments = [];
+                this.submissions = [];
+                this.isInitialized = false;
+            }
+            
+            // Initialize application state
+            async initialize() {
+                if (this.isInitialized) return;
+                
+                try {
+                    await Promise.all([
+                        this.loadUsers(),
+                        this.loadTasks(),
+                        this.loadComments(),
+                        this.loadSubmissions()
+                    ]);
+                    this.isInitialized = true;
+                } catch (error) {
+                    console.error('Failed to initialize application state:', error);
+                }
+            }
+            
+            // Load users from API
+            async loadUsers() {
+                try {
+                    const response = await fetch('/api/users');
+                    this.users = await response.json();
+                } catch (error) {
+                    console.error('Error loading users:', error);
+                }
+            }
+            
+            // Load tasks from API
+            async loadTasks() {
+                try {
+                    const response = await fetch('/api/tasks');
+                    this.tasks = await response.json();
+                } catch (error) {
+                    console.error('Error loading tasks:', error);
+                }
+            }
+            
+            // Load comments from API
+            async loadComments() {
+                try {
+                    const response = await fetch('/api/comments');
+                    this.comments = await response.json();
+                } catch (error) {
+                    console.error('Error loading comments:', error);
+                }
+            }
+            
+            // Load submissions from API
+            async loadSubmissions() {
+                try {
+                    const response = await fetch('/api/submissions');
+                    this.submissions = await response.json();
+                } catch (error) {
+                    console.error('Error loading submissions:', error);
+                }
+            }
+        }
+
+        /**
+         * API service for all backend communications
+         * Implements error handling and request retries
+         */
+        class ApiService {
+            constructor() {
+                this.baseUrl = '/api';
+                this.retryAttempts = 3;
+            }
+            
+            async request(endpoint, options = {}) {
+                let lastError;
+                
+                for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
+                    try {
+                        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...options.headers
+                            },
+                            ...options
+                        });
+                        
+                        if (!response.ok) {
+                            const error = await response.json();
+                            throw new Error(error.error || `HTTP ${response.status}`);
+                        }
+                        
+                        return await response.json();
+                    } catch (error) {
+                        lastError = error;
+                        if (attempt < this.retryAttempts) {
+                            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                        }
+                    }
+                }
+                
+                throw lastError;
+            }
+            
+            async post(endpoint, data) {
+                return this.request(endpoint, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+            }
+            
+            async delete(endpoint, data) {
+                return this.request(endpoint, {
+                    method: 'DELETE',
+                    body: JSON.stringify(data)
+                });
+            }
+        }
+
+        // Application state and services
+        const appState = new AppState();
+        const apiService = new ApiService();
+
+        // DOM elements
+        const loginScreen = document.getElementById('loginScreen');
+        const dashboard = document.getElementById('dashboard');
+        const welcomeTitle = document.getElementById('welcomeTitle');
+        const welcomeSubtitle = document.getElementById('welcomeSubtitle');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+
+        // Motivational quotes - Universal professional quotes
+        const motivationalQuotes = [
+            {
+                text: "Collaboration is the foundation of great achievements",
+                author: "DigiHive Workspace"
+            },
+            {
+                text: "Productivity is never an accident. It is always the result of commitment to excellence",
+                author: "Paul J. Meyer"
+            },
+            {
+                text: "The way a team plays as a whole determines its success",
+                author: "Babe Ruth"
+            },
+            {
+                text: "Individual commitment to a group effort - that is what makes a team work",
+                author: "Vince Lombardi"
+            },
+            {
+                text: "Great things in business are never done by one person; they're done by a team of people",
+                author: "Steve Jobs"
+            },
+            {
+                text: "The strength of the team is each individual member. The strength of each member is the team",
+                author: "Phil Jackson"
+            },
+            {
+                text: "Coming together is a beginning. Keeping together is progress. Working together is success",
+                author: "Henry Ford"
+            }
+        ];
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DigiHive Frontend Initialized');
-            console.log('API Base URL:', API_BASE_URL);
-            
             // Check if user is already logged in
-            const savedToken = localStorage.getItem('digihive_token');
-            const savedUser = localStorage.getItem('digihive_user');
-            
-            if (savedToken && savedUser) {
-                authToken = savedToken;
-                currentUser = JSON.parse(savedUser);
+            const savedUser = localStorage.getItem('digihive_currentUser');
+            if (savedUser) {
+                appState.currentUser = JSON.parse(savedUser);
                 showDashboard();
-                loadDashboardData();
             } else {
                 showLogin();
             }
-            
-            // Set up form event listeners
+
+            // Set up login form
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            
+            // Set up register form
             document.getElementById('registerForm').addEventListener('submit', handleRegister);
+            
+            // Set up submission form
+            document.getElementById('submissionForm').addEventListener('submit', handleSubmission);
+            
+            // Set up task form
             document.getElementById('taskForm').addEventListener('submit', handleTaskCreate);
             
-            // Test server connection
-            testServerConnection();
+            // Set up task modal form
+            document.getElementById('taskModalForm').addEventListener('submit', handleTaskUpdate);
+            
+            // Set up delete comment form
+            document.getElementById('deleteCommentForm').addEventListener('submit', handleDeleteComment);
+            
+            // Set up cleanup form
+            document.getElementById('cleanupForm').addEventListener('submit', handleCleanup);
+            
+            // Initialize motivational popup
+            initMotivationalPopup();
+            
+            // Initialize application state
+            appState.initialize();
+            
+            // Set current month and year for reports
+            const now = new Date();
+            document.getElementById('reportMonth').value = now.getMonth() + 1;
+            document.getElementById('reportYear').value = now.getFullYear();
         });
 
-        // Test server connection
-        async function testServerConnection() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/health`);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                const data = await response.json();
-                console.log('Server connection test:', data);
-                showNotification('Connected to server successfully!', 'success');
-            } catch (error) {
-                console.error('Server connection failed:', error);
-                showNotification('Cannot connect to server. Please check if the backend is running.', 'error');
+        // Show login screen
+        function showLogin() {
+            loginScreen.style.display = 'flex';
+            dashboard.style.display = 'none';
+        }
+
+        // Show dashboard
+        function showDashboard() {
+            loginScreen.style.display = 'none';
+            dashboard.style.display = 'block';
+            
+            // Update welcome message
+            welcomeTitle.textContent = `Welcome back, ${appState.currentUser.username}!`;
+            welcomeSubtitle.textContent = `You are logged in as ${appState.currentUser.team}`;
+            userAvatar.textContent = appState.currentUser.username.substring(0, 2).toUpperCase();
+            userName.textContent = appState.currentUser.username;
+            
+            // Set user avatar color based on team
+            setUserAvatarColor(appState.currentUser.team);
+            
+            // Update user online status
+            updateUserStatus();
+            
+            // Load dashboard data
+            loadDashboardData();
+            
+            // Start real-time updates
+            startRealTimeUpdates();
+        }
+
+        // Set user avatar color based on team
+        function setUserAvatarColor(team) {
+            const avatar = document.getElementById('userAvatar');
+            avatar.className = 'member-avatar';
+            
+            switch(team) {
+                case 'Development':
+                    avatar.classList.add('dev');
+                    break;
+                case 'Design':
+                    avatar.classList.add('design');
+                    break;
+                case 'Marketing':
+                    avatar.classList.add('marketing');
+                    break;
+                case 'Support':
+                    avatar.classList.add('support');
+                    break;
+                case 'Content':
+                    avatar.classList.add('content');
+                    break;
+                case 'Operations':
+                    avatar.classList.add('operations');
+                    break;
+                case 'Sales':
+                    avatar.classList.add('sales');
+                    break;
+                case 'Administrator':
+                    avatar.classList.add('admin');
+                    break;
             }
         }
 
-        // API Helper Functions
-        async function apiRequest(endpoint, options = {}) {
-            const url = `${API_BASE_URL}${endpoint}`;
-            
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
-                ...options
-            };
-            
-            if (authToken) {
-                config.headers.Authorization = `Bearer ${authToken}`;
-            }
-            
-            if (config.body && typeof config.body === 'object') {
-                config.body = JSON.stringify(config.body);
-            }
-            
-            console.log(`API Request: ${options.method || 'GET'} ${url}`, config);
-            
-            try {
-                const response = await fetch(url, config);
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || `HTTP ${response.status}`);
-                }
-                
-                return data;
-            } catch (error) {
-                console.error('API request failed:', error);
-                showNotification(error.message, 'error');
-                throw error;
-            }
-        }
-
-        // Authentication Functions
+        // Handle login
         async function handleLogin(e) {
             e.preventDefault();
             
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             
-            if (!username || !password) {
-                showNotification('Please enter both username and password', 'error');
-                return;
-            }
-            
-            const loginBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = loginBtn.innerHTML;
-            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-            loginBtn.disabled = true;
-            
             try {
-                const data = await apiRequest('/auth/login', {
+                const response = await fetch('/api/users', {
                     method: 'POST',
-                    body: { username, password }
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        username: username,
+                        password: password
+                    })
                 });
                 
-                authToken = data.token;
-                currentUser = data.user;
-                
-                // Save to localStorage
-                localStorage.setItem('digihive_token', authToken);
-                localStorage.setItem('digihive_user', JSON.stringify(currentUser));
-                
-                showDashboard();
-                loadDashboardData();
-                showNotification('Login successful! Welcome back!', 'success');
-                
+                if (response.ok) {
+                    const user = await response.json();
+                    appState.currentUser = user;
+                    localStorage.setItem('digihive_currentUser', JSON.stringify(user));
+                    showDashboard();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Login failed');
+                }
             } catch (error) {
-                console.error('Login failed:', error);
-                // Don't show notification here as apiRequest already shows it
-            } finally {
-                loginBtn.innerHTML = originalText;
-                loginBtn.disabled = false;
+                console.error('Login error:', error);
+                alert('Network error during login');
             }
         }
 
+        // Handle register
         async function handleRegister(e) {
             e.preventDefault();
             const formData = new FormData(e.target);
@@ -1207,291 +2592,422 @@
                 username: formData.get('username'),
                 password: formData.get('password'),
                 team: formData.get('team'),
-                adminCode: formData.get('adminCode') || undefined
+                isOnline: false
             };
-            
-            const registerBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = registerBtn.innerHTML;
-            registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
-            registerBtn.disabled = true;
-            
+            const adminCode = formData.get('adminCode');
+
             try {
-                await apiRequest('/auth/register', {
+                const response = await fetch('/api/users', {
                     method: 'POST',
-                    body: userData
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'register',
+                        userData: userData,
+                        adminCode: adminCode
+                    })
                 });
                 
-                showNotification('User registered successfully! You can now login.', 'success');
-                closeRegisterModal();
-                e.target.reset();
-                
+                if (response.ok) {
+                    alert('Team member added successfully!');
+                    closeRegisterModal();
+                    e.target.reset();
+                    await appState.loadUsers();
+                    updateOnlineMembers();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Registration failed');
+                }
             } catch (error) {
-                console.error('Registration failed:', error);
-                // Don't show notification here as apiRequest already shows it
-            } finally {
-                registerBtn.innerHTML = originalText;
-                registerBtn.disabled = false;
+                console.error('Registration error:', error);
+                alert('Network error during registration');
             }
         }
 
+        // Handle submission
+        async function handleSubmission(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            // Add current user info
+            formData.append('member', appState.currentUser.username);
+            formData.append('fileType', 'Work Submission');
+            
+            try {
+                const response = await fetch('/api/submissions', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    alert('Work submitted successfully!');
+                    closeSubmissionModal();
+                    e.target.reset();
+                    await appState.loadSubmissions();
+                    renderSubmissions();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Submission failed');
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert('Network error during submission');
+            }
+        }
+
+        // Handle task creation
         async function handleTaskCreate(e) {
             e.preventDefault();
             const formData = new FormData(e.target);
             
             const taskData = {
-                title: formData.get('title'),
-                description: formData.get('description'),
+                subject: formData.get('subject'),
                 team: formData.get('team'),
-                priority: formData.get('priority')
+                startDate: formData.get('startDate'),
+                endDate: formData.get('endDate'),
+                description: formData.get('description'),
+                priority: formData.get('priority'),
+                status: formData.get('status')
             };
-            
+            const adminCode = formData.get('adminCode');
+
             try {
-                await apiRequest('/tasks', {
+                const response = await fetch('/api/tasks', {
                     method: 'POST',
-                    body: taskData
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'create',
+                        taskData: taskData,
+                        adminCode: adminCode
+                    })
                 });
                 
-                showNotification('Task created successfully!', 'success');
-                closeTaskModal();
-                e.target.reset();
-                
-                // Reload tasks data
-                loadTasksData();
-                loadDashboardData();
-                
+                if (response.ok) {
+                    alert('Task created successfully!');
+                    e.target.reset();
+                    await appState.loadTasks();
+                    renderAllTasks();
+                    renderDashboardTasks();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Task creation failed');
+                }
             } catch (error) {
-                console.error('Failed to create task:', error);
-                // Don't show notification here as apiRequest already shows it
+                console.error('Task creation error:', error);
+                alert('Network error during task creation');
             }
         }
 
-        // Data Loading Functions
-        async function loadDashboardData() {
-            try {
-                // Load stats
-                const stats = await apiRequest('/stats');
-                updateStats(stats);
-                
-                // Load recent tasks
-                const tasks = await apiRequest('/tasks?limit=5');
-                renderTasks(tasks, 'taskDisplay');
-                
-            } catch (error) {
-                console.error('Failed to load dashboard data:', error);
-            }
-        }
-
-        async function loadTasksData() {
-            try {
-                const tasks = await apiRequest('/tasks');
-                renderTasks(tasks, 'allTasksDisplay');
-            } catch (error) {
-                console.error('Failed to load tasks:', error);
-            }
-        }
-
-        async function loadTeamData() {
-            try {
-                const users = await apiRequest('/users');
-                renderTeam(users);
-            } catch (error) {
-                console.error('Failed to load team data:', error);
-            }
-        }
-
-        // UI Rendering Functions
-        function renderTasks(tasks, containerId) {
-            const container = document.getElementById(containerId);
+        // Handle task update
+        async function handleTaskUpdate(e) {
+            e.preventDefault();
             
-            if (!tasks || tasks.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 3rem; color: var(--gray);">
-                        <i class="fas fa-tasks" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                        <h3>No tasks yet</h3>
-                        <p>Create your first task to get started!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = '';
-            
-            tasks.forEach(task => {
-                const taskElement = createTaskElement(task);
-                container.appendChild(taskElement);
-            });
-        }
-
-        function createTaskElement(task) {
-            const taskElement = document.createElement('div');
-            taskElement.className = `task-item ${getTeamClass(task.team)}`;
-            
-            const priorityClass = task.priority === 'High' ? 'priority-high' : 'priority-medium';
-            
-            taskElement.innerHTML = `
-                <div class="task-header">
-                    <div>
-                        <div class="task-title">${task.title}</div>
-                        <div style="font-size: 0.9rem; color: var(--gray-dark);">
-                            <i class="fas fa-users"></i> ${task.team} Team
-                            <span style="margin-left: 1rem;">
-                                <i class="fas fa-user"></i> ${task.createdBy}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="task-priority ${priorityClass}">${task.priority}</div>
-                </div>
-                <div class="task-description">${task.description}</div>
-                <div class="task-actions">
-                    <button class="btn btn-outline" onclick="viewTaskDetails('${task.id}')">
-                        <i class="fas fa-eye"></i> View Details
-                    </button>
-                    <button class="btn btn-primary" onclick="startTask('${task.id}')">
-                        <i class="fas fa-play"></i> Start Task
-                    </button>
-                </div>
-            `;
-            
-            return taskElement;
-        }
-
-        function renderTeam(users) {
-            const container = document.getElementById('teamList');
-            
-            if (!users || users.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 3rem; color: var(--gray);">
-                        <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                        <h3>No team members</h3>
-                        <p>Register team members to get started!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = '';
-            
-            users.forEach(user => {
-                const userElement = document.createElement('div');
-                userElement.className = 'task-item';
-                
-                userElement.innerHTML = `
-                    <div class="task-header">
-                        <div>
-                            <div class="task-title">${user.username}</div>
-                            <div style="font-size: 0.9rem; color: var(--gray-dark);">
-                                <i class="fas fa-shield-alt"></i> ${user.team}
-                            </div>
-                        </div>
-                        <div class="member-avatar ${getTeamClass(user.team)}">
-                            ${user.username.substring(0, 2).toUpperCase()}
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: var(--gray-dark);">
-                        <div><i class="fas fa-calendar"></i> Joined: ${new Date(user.createdAt).toLocaleDateString()}</div>
-                        <div>
-                            <i class="fas fa-circle" style="color: ${user.isOnline ? '#4CAF50' : '#9E9E9E'}"></i> 
-                            ${user.isOnline ? 'Online' : 'Offline'}
-                        </div>
-                    </div>
-                `;
-                
-                container.appendChild(userElement);
-            });
-        }
-
-        function updateStats(stats) {
-            document.getElementById('totalTasks').textContent = stats.totalTasks || 0;
-            document.getElementById('completedTasks').textContent = stats.completedTasks || 0;
-            document.getElementById('teamMembers').textContent = stats.totalUsers || 0;
-            document.getElementById('overallProgress').textContent = stats.overallProgress || '0%';
-        }
-
-        // UI Helper Functions
-        function getTeamClass(team) {
-            const teamMap = {
-                'Development': 'dev',
-                'Design': 'design',
-                'Marketing': 'marketing',
-                'Support': 'support',
-                'Administrator': 'admin',
-                'Content': 'content'
+            const taskId = document.getElementById('taskId').value;
+            const taskData = {
+                subject: document.getElementById('taskSubject').value,
+                team: document.getElementById('taskTeam').value,
+                startDate: document.getElementById('taskStartDate').value,
+                endDate: document.getElementById('taskEndDate').value,
+                description: document.getElementById('taskDescription').value,
+                priority: document.getElementById('taskPriority').value,
+                status: document.getElementById('taskStatus').value
             };
-            return teamMap[team] || 'dev';
-        }
+            const adminCode = document.getElementById('taskAdminCode').value;
 
-        function showNotification(message, type = 'info') {
-            // Remove existing notifications
-            const existingNotifications = document.querySelectorAll('.notification-toast');
-            existingNotifications.forEach(notification => notification.remove());
-            
-            const toast = document.createElement('div');
-            toast.className = `notification-toast ${type}`;
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 1rem 1.5rem;
-                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#F44336' : '#2196F3'};
-                color: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
-                max-width: 300px;
-                word-wrap: break-word;
-                animation: slideIn 0.3s ease;
-            `;
-            
-            const icon = type === 'success' ? 'fa-check-circle' : 
-                         type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-            
-            toast.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas ${icon}"></i>
-                    <span>${message}</span>
-                </div>
-            `;
-            
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // Add CSS animations for notifications
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        function showLogin() {
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('dashboard').style.display = 'none';
-        }
-
-        function showDashboard() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'flex';
-            
-            if (currentUser) {
-                document.getElementById('welcomeTitle').textContent = `Welcome back, ${currentUser.username}!`;
-                document.getElementById('welcomeSubtitle').textContent = `You are logged in as ${currentUser.team}`;
-                document.getElementById('userName').textContent = currentUser.username;
-                document.getElementById('userAvatar').textContent = currentUser.username.substring(0, 2).toUpperCase();
-                document.getElementById('userAvatar').className = `member-avatar ${getTeamClass(currentUser.team)}`;
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'update',
+                        taskId: parseInt(taskId),
+                        taskData: taskData,
+                        adminCode: adminCode
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Task updated successfully!');
+                    closeTaskModal();
+                    await appState.loadTasks();
+                    renderAllTasks();
+                    renderDashboardTasks();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Task update failed');
+                }
+            } catch (error) {
+                console.error('Task update error:', error);
+                alert('Network error during task update');
             }
         }
 
+        // Handle delete comment
+        async function handleDeleteComment(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const commentId = document.getElementById('commentToDelete').value;
+            const adminCode = formData.get('adminCode');
+
+            try {
+                const response = await fetch('/api/comments', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        commentId: parseInt(commentId),
+                        adminCode: adminCode
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Comment deleted successfully!');
+                    closeDeleteCommentModal();
+                    e.target.reset();
+                    await appState.loadComments();
+                    renderComments();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to delete comment');
+                }
+            } catch (error) {
+                console.error('Delete comment error:', error);
+                alert('Network error while deleting comment');
+            }
+        }
+
+        // Handle cleanup
+        async function handleCleanup(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const type = document.getElementById('cleanupType').value;
+            const olderThan = formData.get('olderThan');
+            const adminCode = formData.get('adminCode');
+
+            try {
+                const endpoint = type === 'comments' ? '/api/comments/admin' : '/api/submissions/admin';
+                const response = await fetch(endpoint, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        olderThan: parseInt(olderThan),
+                        adminCode: adminCode
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(`${result.message}`);
+                    closeCleanupModal();
+                    e.target.reset();
+                    
+                    // Reload data
+                    await appState.loadComments();
+                    await appState.loadSubmissions();
+                    renderComments();
+                    renderSubmissions();
+                    updateAdminStats();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Cleanup failed');
+                }
+            } catch (error) {
+                console.error('Cleanup error:', error);
+                alert('Network error during cleanup');
+            }
+        }
+
+        // Show register modal
+        function showRegisterModal() {
+            document.getElementById('registerModal').classList.add('active');
+        }
+
+        // Close register modal
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.remove('active');
+        }
+
+        // Show submission modal
+        function showSubmissionModal() {
+            document.getElementById('submissionModal').classList.add('active');
+        }
+
+        // Close submission modal
+        function closeSubmissionModal() {
+            document.getElementById('submissionModal').classList.remove('active');
+        }
+
+        // Show task modal
+        function showTaskModal(taskId = null) {
+            if (taskId) {
+                // Edit existing task
+                const task = appState.tasks.find(t => t.id === taskId);
+                if (task) {
+                    document.getElementById('taskId').value = task.id;
+                    document.getElementById('taskSubject').value = task.subject;
+                    document.getElementById('taskTeam').value = task.team;
+                    document.getElementById('taskStartDate').value = task.startDate.split('T')[0];
+                    document.getElementById('taskEndDate').value = task.endDate.split('T')[0];
+                    document.getElementById('taskDescription').value = task.description;
+                    document.getElementById('taskPriority').value = task.priority;
+                    document.getElementById('taskStatus').value = task.status;
+                }
+            } else {
+                // Create new task
+                document.getElementById('taskId').value = '';
+                document.getElementById('taskModalForm').reset();
+            }
+            document.getElementById('taskModal').classList.add('active');
+        }
+
+        // Close task modal
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('active');
+        }
+
+        // Delete task
+        async function deleteTask() {
+            const taskId = document.getElementById('taskId').value;
+            const adminCode = document.getElementById('taskAdminCode').value;
+
+            if (!taskId) {
+                alert('No task selected for deletion');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this task?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        taskId: parseInt(taskId),
+                        adminCode: adminCode
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Task deleted successfully!');
+                    closeTaskModal();
+                    await appState.loadTasks();
+                    renderAllTasks();
+                    renderDashboardTasks();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to delete task');
+                }
+            } catch (error) {
+                console.error('Delete task error:', error);
+                alert('Network error while deleting task');
+            }
+        }
+
+        // Show delete comment modal
+        function showDeleteCommentModal(commentId) {
+            document.getElementById('commentToDelete').value = commentId;
+            document.getElementById('deleteCommentModal').classList.add('active');
+        }
+
+        // Close delete comment modal
+        function closeDeleteCommentModal() {
+            document.getElementById('deleteCommentModal').classList.remove('active');
+        }
+
+        // Show cleanup modal
+        function showCleanupModal(type) {
+            document.getElementById('cleanupType').value = type;
+            document.getElementById('cleanupModalTitle').textContent = `Cleanup ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            document.getElementById('cleanupModal').classList.add('active');
+            updateCleanupPreview(type);
+        }
+
+        // Close cleanup modal
+        function closeCleanupModal() {
+            document.getElementById('cleanupModal').classList.remove('active');
+        }
+
+        // Update cleanup preview
+        function updateCleanupPreview(type) {
+            const olderThan = document.querySelector('input[name="olderThan"]').value;
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - olderThan);
+            
+            let itemsToDelete = 0;
+            if (type === 'comments') {
+                itemsToDelete = appState.comments.filter(comment => 
+                    new Date(comment.timestamp) <= cutoffDate
+                ).length;
+            } else if (type === 'submissions') {
+                itemsToDelete = appState.submissions.filter(submission => 
+                    new Date(submission.timestamp) <= cutoffDate
+                ).length;
+            }
+            
+            document.getElementById('itemsToDelete').textContent = itemsToDelete;
+        }
+
+        // Generate report
+        async function generateReport() {
+            const reportType = document.getElementById('reportType').value;
+            const month = document.getElementById('reportMonth').value;
+            const year = document.getElementById('reportYear').value;
+            const format = document.getElementById('reportFormat').value;
+
+            try {
+                const response = await fetch('/api/reports/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: reportType,
+                        month: parseInt(month),
+                        year: parseInt(year),
+                        format: format
+                    })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `digihive-report-${reportType}-${year}-${month}.${format}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    alert('Report generated and downloaded successfully!');
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Report generation failed');
+                }
+            } catch (error) {
+                console.error('Report generation error:', error);
+                alert('Network error during report generation');
+            }
+        }
+
+        // Toggle sidebar on mobile
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Show section
         function showSection(section) {
             // Hide all sections
             document.querySelectorAll('.dashboard-section').forEach(sec => {
@@ -1507,71 +3023,733 @@
             });
             event.target.classList.add('active');
             
-            // Load section-specific data
+            // Close sidebar on mobile
+            if (window.innerWidth <= 1024) {
+                document.querySelector('.sidebar').classList.remove('active');
+            }
+            
+            // Load section data
             switch(section) {
+                case 'submissions':
+                    renderSubmissions();
+                    break;
                 case 'tasks':
-                    loadTasksData();
+                    renderAllTasks();
                     break;
                 case 'team':
-                    loadTeamData();
+                    renderTeam();
+                    break;
+                case 'comments':
+                    renderCommentsFull();
+                    break;
+                case 'reports':
+                    renderReportPreview();
+                    break;
+                case 'admin':
+                    renderAdminTools();
                     break;
                 case 'dashboard':
                     loadDashboardData();
                     break;
             }
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            await appState.initialize();
+            updateProgress();
+            updateOnlineMembers();
+            updateStats();
+            renderDashboardTasks();
+            renderTeamProgress();
+            renderComments();
+        }
+
+        // Render dashboard tasks
+        function renderDashboardTasks() {
+            const taskDisplay = document.getElementById('taskDisplay');
+            taskDisplay.innerHTML = '';
             
-            // Close sidebar on mobile
-            if (window.innerWidth <= 1024) {
-                document.querySelector('.sidebar').classList.remove('active');
+            // Show only first 5 tasks on dashboard
+            const displayTasks = appState.tasks.slice(0, 5);
+            
+            displayTasks.forEach(task => {
+                const taskElement = createTaskElement(task);
+                taskDisplay.appendChild(taskElement);
+            });
+        }
+
+        // Render all tasks
+        function renderAllTasks() {
+            const allTasksDisplay = document.getElementById('allTasksDisplay');
+            allTasksDisplay.innerHTML = '';
+            
+            appState.tasks.forEach(task => {
+                const taskElement = createTaskElement(task, true);
+                allTasksDisplay.appendChild(taskElement);
+            });
+        }
+
+        // Create task element
+        function createTaskElement(task, showAdminControls = false) {
+            const taskElement = document.createElement('div');
+            const teamClass = getTeamClass(task.team);
+            const priorityClass = `priority-${task.priority.toLowerCase()}`;
+            
+            taskElement.className = `task-item ${teamClass}`;
+            if (task.status === 'completed') {
+                taskElement.classList.add('completed');
+            }
+            
+            let adminControls = '';
+            if (showAdminControls && appState.currentUser.team === 'Administrator') {
+                adminControls = `
+                    <div class="task-actions">
+                        <button class="btn btn-outline" onclick="showTaskModal(${task.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-primary" onclick="startTask(${task.id})">
+                            <i class="fas fa-play"></i> Start
+                        </button>
+                    </div>
+                `;
+            } else {
+                adminControls = `
+                    <div class="task-actions">
+                        <button class="btn btn-outline" onclick="viewTaskDetails(${task.id})">View Details</button>
+                        <button class="btn btn-primary" onclick="startTask(${task.id})">Start Task</button>
+                    </div>
+                `;
+            }
+            
+            taskElement.innerHTML = `
+                <div class="task-header">
+                    <div>
+                        <div class="task-title">${task.subject}</div>
+                        <div class="task-due">Due: ${new Date(task.endDate).toLocaleDateString()}</div>
+                    </div>
+                    <div class="task-priority ${priorityClass}">${task.priority}</div>
+                </div>
+                <div class="task-description">
+                    ${task.description}
+                </div>
+                <div class="task-role">
+                    <div class="role-icon ${teamClass}">
+                        ${getTeamIcon(task.team)}
+                    </div>
+                    <div class="role-name">${task.team} Team • ${task.status}</div>
+                </div>
+                ${adminControls}
+            `;
+            
+            return taskElement;
+        }
+
+        // Get team class
+        function getTeamClass(team) {
+            switch(team) {
+                case 'Development': return 'dev';
+                case 'Design': return 'design';
+                case 'Marketing': return 'marketing';
+                case 'Support': return 'support';
+                case 'Content': return 'content';
+                case 'Operations': return 'operations';
+                case 'Sales': return 'sales';
+                case 'Administrator': return 'admin';
+                default: return 'dev';
             }
         }
 
-        function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
-            sidebar.classList.toggle('active');
+        // Get team icon
+        function getTeamIcon(team) {
+            switch(team) {
+                case 'Development': return '<i class="fas fa-code"></i>';
+                case 'Design': return '<i class="fas fa-palette"></i>';
+                case 'Marketing': return '<i class="fas fa-chart-line"></i>';
+                case 'Support': return '<i class="fas fa-headset"></i>';
+                case 'Content': return '<i class="fas fa-pen-nib"></i>';
+                case 'Operations': return '<i class="fas fa-cogs"></i>';
+                case 'Sales': return '<i class="fas fa-dollar-sign"></i>';
+                case 'Administrator': return '<i class="fas fa-cog"></i>';
+                default: return '<i class="fas fa-tasks"></i>';
+            }
         }
 
-        function showRegisterModal() {
-            document.getElementById('registerModal').classList.add('active');
-        }
-
-        function closeRegisterModal() {
-            document.getElementById('registerModal').classList.remove('active');
-        }
-
-        function showTaskModal() {
-            document.getElementById('taskModal').classList.add('active');
-        }
-
-        function closeTaskModal() {
-            document.getElementById('taskModal').classList.remove('active');
-        }
-
+        // View task details
         function viewTaskDetails(taskId) {
-            showNotification('Task details feature coming soon!', 'info');
+            const task = appState.tasks.find(t => t.id === taskId);
+            if (task) {
+                alert(`Task Details:\n\nSubject: ${task.subject}\nTeam: ${task.team}\nPriority: ${task.priority}\nStatus: ${task.status}\nDue: ${new Date(task.endDate).toLocaleDateString()}\n\nDescription: ${task.description}`);
+            }
         }
 
+        // Start task - redirects to submission
         function startTask(taskId) {
-            showNotification('Starting task timer...', 'info');
+            showSubmissionModal();
         }
 
-        function logout() {
-            // Clear local storage
-            localStorage.removeItem('digihive_token');
-            localStorage.removeItem('digihive_user');
+        // Render comments
+        function renderComments() {
+            const commentsList = document.getElementById('commentsList');
+            commentsList.innerHTML = '';
             
-            // Reset state
-            authToken = null;
-            currentUser = null;
+            // Show only recent comments on dashboard
+            const recentComments = appState.comments.slice(0, 5);
             
-            // Show login screen
-            showLogin();
-            
-            // Clear login form
-            document.getElementById('loginForm').reset();
-            
-            showNotification('Logged out successfully', 'info');
+            recentComments.forEach(comment => {
+                const commentElement = createCommentElement(comment);
+                commentsList.appendChild(commentElement);
+            });
         }
+
+        // Render comments for full comments section
+        function renderCommentsFull() {
+            const commentsListFull = document.getElementById('commentsListFull');
+            commentsListFull.innerHTML = '';
+            
+            appState.comments.forEach(comment => {
+                const commentElement = createCommentElement(comment, true);
+                commentsListFull.appendChild(commentElement);
+            });
+        }
+
+        // Create comment element
+        function createCommentElement(comment, showDelete = false) {
+            const commentElement = document.createElement('div');
+            commentElement.className = 'comment';
+            
+            let deleteButton = '';
+            if (showDelete && appState.currentUser.team === 'Administrator') {
+                deleteButton = `
+                    <div class="comment-actions">
+                        <button class="btn btn-danger" onclick="showDeleteCommentModal(${comment.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                `;
+            }
+            
+            commentElement.innerHTML = `
+                <div class="comment-header">
+                    <div class="comment-user">
+                        <div class="member-avatar ${getTeamClass(comment.team)}">${comment.username.substring(0, 2)}</div>
+                        ${comment.username}
+                        <span class="comment-team">${comment.team}</span>
+                    </div>
+                    <div class="comment-time">${new Date(comment.timestamp).toLocaleString()}</div>
+                </div>
+                <div class="comment-text">${comment.text}</div>
+                ${deleteButton}
+            `;
+            
+            return commentElement;
+        }
+
+        // Render submissions
+        function renderSubmissions() {
+            const submissionsList = document.getElementById('submissionsList');
+            submissionsList.innerHTML = '';
+            
+            appState.submissions.forEach(submission => {
+                const submissionElement = document.createElement('div');
+                submissionElement.className = 'submission-item';
+                
+                let downloadButton = '';
+                if (submission.attachment) {
+                    downloadButton = `<button class="btn btn-outline" onclick="downloadSubmission('${submission.attachment}', '${submission.originalFileName}')">
+                        <i class="fas fa-download"></i> Download
+                    </button>`;
+                }
+                
+                submissionElement.innerHTML = `
+                    <div class="submission-header">
+                        <div class="submission-title">${submission.name}</div>
+                        <div class="submission-meta">
+                            <span>By: ${submission.member}</span>
+                            <span>Team: ${submission.team}</span>
+                            <span>${new Date(submission.timestamp).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                    <div class="submission-content">
+                        <strong>Progress:</strong> ${submission.progress}
+                    </div>
+                    <div class="submission-content">
+                        <strong>Next Steps:</strong> ${submission.plan}
+                    </div>
+                    <div class="task-actions">
+                        ${downloadButton}
+                    </div>
+                `;
+                
+                submissionsList.appendChild(submissionElement);
+            });
+        }
+
+        // Render team
+        function renderTeam() {
+            const teamList = document.getElementById('teamList');
+            teamList.innerHTML = '';
+            
+            appState.users.forEach(user => {
+                const teamElement = document.createElement('div');
+                teamElement.className = 'team-member-item';
+                
+                teamElement.innerHTML = `
+                    <div class="team-member-header">
+                        <div class="team-member-name">${user.username}</div>
+                        <div class="team-member-meta">
+                            <span>${user.team}</span>
+                            <span class="online-status">
+                                <div class="status-dot" style="background: ${user.isOnline ? 'var(--honeycomb-success)' : 'var(--honeycomb-gray)'};"></div>
+                                <span>${user.isOnline ? 'Online' : 'Offline'}</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+                
+                teamList.appendChild(teamElement);
+            });
+        }
+
+        // Render team progress with real data
+        function renderTeamProgress() {
+            const teamProgressBars = document.getElementById('teamProgressBars');
+            teamProgressBars.innerHTML = '';
+            
+            const teams = ['Development', 'Design', 'Marketing', 'Support', 'Content', 'Operations', 'Sales'];
+            
+            teams.forEach(team => {
+                // Calculate real progress based on tasks
+                const teamTasks = appState.tasks.filter(task => task.team === team);
+                const completedTasks = teamTasks.filter(task => task.status === 'completed').length;
+                const totalTasks = teamTasks.length;
+                const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                
+                const progressElement = document.createElement('div');
+                progressElement.className = 'progress-item';
+                
+                progressElement.innerHTML = `
+                    <div class="progress-header">
+                        <div class="team-name">
+                            <div class="team-dot ${getTeamClass(team)}"></div>
+                            <span>${team}</span>
+                        </div>
+                        <div class="progress-percent">${progress}%</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${getTeamClass(team)}" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="progress-stats" style="font-size: 0.8rem; color: var(--honeycomb-gray); margin-top: 0.25rem;">
+                        ${completedTasks}/${totalTasks} tasks completed
+                    </div>
+                `;
+                
+                teamProgressBars.appendChild(progressElement);
+            });
+        }
+
+        // Render report preview
+        function renderReportPreview() {
+            const reportPreview = document.getElementById('reportPreview');
+            const reportType = document.getElementById('reportType').value;
+            const month = document.getElementById('reportMonth').value;
+            const year = document.getElementById('reportYear').value;
+            
+            let previewContent = '';
+            
+            switch(reportType) {
+                case 'team-performance':
+                    previewContent = `
+                        <h3>Team Performance Report Preview</h3>
+                        <p>Month: ${getMonthName(month)} ${year}</p>
+                        <p>This report will include:</p>
+                        <ul style="text-align: left; display: inline-block;">
+                            <li>Task completion rates by team</li>
+                            <li>Team productivity metrics</li>
+                            <li>Performance comparisons</li>
+                            <li>Recommendations for improvement</li>
+                        </ul>
+                    `;
+                    break;
+                case 'task-progress':
+                    previewContent = `
+                        <h3>Task Progress Report Preview</h3>
+                        <p>Month: ${getMonthName(month)} ${year}</p>
+                        <p>This report will include:</p>
+                        <ul style="text-align: left; display: inline-block;">
+                            <li>Overall task completion status</li>
+                            <li>Priority task tracking</li>
+                            <li>Upcoming deadlines</li>
+                            <li>Resource allocation analysis</li>
+                        </ul>
+                    `;
+                    break;
+                case 'user-activity':
+                    previewContent = `
+                        <h3>User Activity Report Preview</h3>
+                        <p>Month: ${getMonthName(month)} ${year}</p>
+                        <p>This report will include:</p>
+                        <ul style="text-align: left; display: inline-block;">
+                            <li>User login frequency and duration</li>
+                            <li>Task assignment and completion rates</li>
+                            <li>Submission activity</li>
+                            <li>Team collaboration metrics</li>
+                        </ul>
+                    `;
+                    break;
+                case 'submissions':
+                    previewContent = `
+                        <h3>Work Submissions Report Preview</h3>
+                        <p>Month: ${getMonthName(month)} ${year}</p>
+                        <p>This report will include:</p>
+                        <ul style="text-align: left; display: inline-block;">
+                            <li>Submission volume by team and user</li>
+                            <li>File type analysis</li>
+                            <li>Submission quality metrics</li>
+                            <li>Trend analysis over time</li>
+                        </ul>
+                    `;
+                    break;
+            }
+            
+            reportPreview.innerHTML = previewContent;
+        }
+
+        // Get month name from number
+        function getMonthName(monthNumber) {
+            const months = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+            return months[parseInt(monthNumber) - 1];
+        }
+
+        // Render admin tools
+        function renderAdminTools() {
+            updateAdminStats();
+            renderSessionsTable();
+        }
+
+        // Update admin stats
+        function updateAdminStats() {
+            document.getElementById('adminCommentsCount').textContent = appState.comments.length;
+            document.getElementById('adminSubmissionsCount').textContent = appState.submissions.length;
+            document.getElementById('adminUsersCount').textContent = appState.users.length;
+            document.getElementById('adminOnlineCount').textContent = `${appState.users.filter(u => u.isOnline).length} Online Now`;
+        }
+
+        // Render sessions table
+        function renderSessionsTable() {
+            const sessionsTableBody = document.getElementById('sessionsTableBody');
+            sessionsTableBody.innerHTML = '';
+            
+            appState.users.forEach(user => {
+                const sessionRow = document.createElement('tr');
+                
+                // Calculate session duration
+                let sessionDuration = 'N/A';
+                if (user.lastLogin) {
+                    const loginTime = new Date(user.lastLogin);
+                    const logoutTime = user.lastLogout ? new Date(user.lastLogout) : new Date();
+                    const duration = Math.round((logoutTime - loginTime) / (1000 * 60)); // minutes
+                    
+                    if (duration < 60) {
+                        sessionDuration = `${duration} min`;
+                    } else {
+                        sessionDuration = `${Math.round(duration / 60)} h ${duration % 60} min`;
+                    }
+                }
+                
+                sessionRow.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${user.team}</td>
+                    <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}</td>
+                    <td>${user.lastLogout ? new Date(user.lastLogout).toLocaleString() : 'Active'}</td>
+                    <td>
+                        <span class="online-status">
+                            <div class="status-dot" style="background: ${user.isOnline ? 'var(--honeycomb-success)' : 'var(--honeycomb-gray)'};"></div>
+                            <span>${user.isOnline ? 'Online' : 'Offline'}</span>
+                        </span>
+                    </td>
+                    <td>${sessionDuration}</td>
+                `;
+                
+                sessionsTableBody.appendChild(sessionRow);
+            });
+        }
+
+        // Post comment
+        async function postComment() {
+            const commentInput = document.getElementById('commentInput');
+            const text = commentInput.value.trim();
+            
+            if (!text) return;
+            
+            try {
+                const response = await fetch('/api/comments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: appState.currentUser.username,
+                        team: appState.currentUser.team,
+                        text: text
+                    })
+                });
+                
+                if (response.ok) {
+                    commentInput.value = '';
+                    await appState.loadComments();
+                    renderComments();
+                } else {
+                    alert('Failed to post comment');
+                }
+            } catch (error) {
+                console.error('Error posting comment:', error);
+                alert('Network error while posting comment');
+            }
+        }
+
+        // Post comment from full comments section
+        async function postCommentFull() {
+            const commentInput = document.getElementById('commentInputFull');
+            const text = commentInput.value.trim();
+            
+            if (!text) return;
+            
+            try {
+                const response = await fetch('/api/comments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: appState.currentUser.username,
+                        team: appState.currentUser.team,
+                        text: text
+                    })
+                });
+                
+                if (response.ok) {
+                    commentInput.value = '';
+                    await appState.loadComments();
+                    renderCommentsFull();
+                } else {
+                    alert('Failed to post comment');
+                }
+            } catch (error) {
+                console.error('Error posting comment:', error);
+                alert('Network error while posting comment');
+            }
+        }
+
+        // Download submission
+        function downloadSubmission(filename, originalName) {
+            window.open(`/api/submissions/download/${filename}`, '_blank');
+        }
+
+        // Update progress
+        function updateProgress() {
+            const completedTasks = appState.tasks.filter(task => task.status === 'completed').length;
+            const totalTasks = appState.tasks.length;
+            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            
+            document.getElementById('overallProgress').textContent = `${progress}%`;
+        }
+
+        // Update stats
+        function updateStats() {
+            const completedTasks = appState.tasks.filter(task => task.status === 'completed').length;
+            const totalTasks = appState.tasks.length;
+            
+            document.getElementById('totalTasks').textContent = totalTasks;
+            document.getElementById('completedTasks').textContent = completedTasks;
+            document.getElementById('teamMembers').textContent = appState.users.length;
+            
+            // Update notification count
+            document.getElementById('notificationCount').textContent = appState.tasks.filter(task => 
+                task.status !== 'completed' && new Date(task.endDate) < new Date()
+            ).length;
+        }
+
+        // Update online members
+        function updateOnlineMembers() {
+            const onlineMembersList = document.getElementById('onlineMembers');
+            onlineMembersList.innerHTML = '';
+            
+            const onlineUsers = appState.users.filter(user => user.isOnline);
+            
+            onlineUsers.forEach(user => {
+                const memberElement = document.createElement('li');
+                memberElement.className = 'team-member';
+                
+                memberElement.innerHTML = `
+                    <div class="member-avatar ${getTeamClass(user.team)}">${user.username.substring(0, 2)}</div>
+                    <div class="member-info">
+                        <div class="member-name">${user.username}</div>
+                        <div class="member-role">${user.team}</div>
+                        <div class="online-status">
+                            <div class="status-dot"></div>
+                            <span>Online</span>
+                        </div>
+                    </div>
+                    <div class="member-status"></div>
+                `;
+                
+                onlineMembersList.appendChild(memberElement);
+            });
+        }
+
+        // Update user status
+        async function updateUserStatus() {
+            if (!appState.currentUser) return;
+            
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'update',
+                        username: appState.currentUser.username,
+                        updates: { isOnline: true }
+                    })
+                });
+                
+                if (response.ok) {
+                    await appState.loadUsers();
+                    updateOnlineMembers();
+                }
+            } catch (error) {
+                console.error('Error updating user status:', error);
+            }
+        }
+
+        // Start real-time updates
+        function startRealTimeUpdates() {
+            // Update online users every 30 seconds
+            setInterval(async () => {
+                if (appState.currentUser) {
+                    await updateUserStatus();
+                    await appState.loadUsers();
+                    updateOnlineMembers();
+                    
+                    // Update admin section if active
+                    if (document.getElementById('adminSection').style.display === 'block') {
+                        updateAdminStats();
+                        renderSessionsTable();
+                    }
+                }
+            }, 30000);
+            
+            // Update comments and tasks every minute
+            setInterval(async () => {
+                if (appState.currentUser) {
+                    await appState.loadComments();
+                    await appState.loadTasks();
+                    updateStats();
+                    
+                    // Update comments if comments section is active
+                    if (document.getElementById('commentsSection').style.display === 'block') {
+                        renderCommentsFull();
+                    } else if (document.getElementById('dashboardSection').style.display === 'block') {
+                        renderComments();
+                    }
+                    
+                    // Update tasks if tasks section is active
+                    if (document.getElementById('tasksSection').style.display === 'block') {
+                        renderAllTasks();
+                    } else if (document.getElementById('dashboardSection').style.display === 'block') {
+                        renderDashboardTasks();
+                    }
+                }
+            }, 60000);
+        }
+
+        // Motivational popup
+        function initMotivationalPopup() {
+            const motivationPopup = document.getElementById('motivationPopup');
+            const popupBtn = document.getElementById('popupBtn');
+            const popupQuote = document.getElementById('popupQuote');
+            const popupAuthor = document.getElementById('popupAuthor');
+            const dailyMotivation = document.getElementById('dailyMotivation');
+            const motivationAuthor = document.getElementById('motivationAuthor');
+            const loginMotivation = document.getElementById('loginMotivation');
+            
+            // Set random quote (no repeats in sequence)
+            const usedIndices = new Set();
+            
+            function getRandomQuote() {
+                if (usedIndices.size === motivationalQuotes.length) {
+                    usedIndices.clear();
+                }
+                
+                let randomIndex;
+                do {
+                    randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+                } while (usedIndices.has(randomIndex));
+                
+                usedIndices.add(randomIndex);
+                return motivationalQuotes[randomIndex];
+            }
+            
+            function updateAllQuotes() {
+                const quote = getRandomQuote();
+                popupQuote.textContent = `"${quote.text}"`;
+                popupAuthor.textContent = `- ${quote.author}`;
+                dailyMotivation.textContent = `"${quote.text}"`;
+                motivationAuthor.textContent = `- ${quote.author}`;
+                loginMotivation.textContent = `"${quote.text}"`;
+            }
+            
+            // Set initial quotes
+            updateAllQuotes();
+            
+            // Rotate quotes every 15 seconds
+            setInterval(updateAllQuotes, 15000);
+            
+            // Close popup when button is clicked
+            popupBtn.addEventListener('click', function() {
+                motivationPopup.classList.remove('active');
+            });
+        }
+
+        // Logout
+        async function logout() {
+            if (appState.currentUser) {
+                try {
+                    await fetch('/api/users/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            username: appState.currentUser.username
+                        })
+                    });
+                } catch (error) {
+                    console.error('Error during logout API call:', error);
+                }
+            }
+            
+            appState.currentUser = null;
+            localStorage.removeItem('digihive_currentUser');
+            showLogin();
+        }
+
+        // Add event listeners for dynamic updates
+        document.querySelector('input[name="olderThan"]').addEventListener('input', function() {
+            const type = document.getElementById('cleanupType').value;
+            if (type) {
+                updateCleanupPreview(type);
+            }
+        });
+
+        document.getElementById('reportType').addEventListener('change', renderReportPreview);
+        document.getElementById('reportMonth').addEventListener('change', renderReportPreview);
+        document.getElementById('reportYear').addEventListener('change', renderReportPreview);
     </script>
 </body>
 </html>
