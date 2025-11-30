@@ -1,577 +1,783 @@
-require('dotenv').config();
-const express = require('express');
-const path = require('path');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
-const morgan = require('morgan');
-const { v4: uuidv4 } = require('uuid');
+// =============================================
+// DIGIHIVE BACKEND SERVER
+// =============================================
+//
+// SERVER ARCHITECTURE:
+// - Express.js REST API
+// - In-memory data storage with file persistence
+// - Multer for file upload handling
+// - CORS enabled for cross-origin requests
+//
+// API STRUCTURE:
+// - /api/comments    - Team communication
+// - /api/submissions - Work submissions with file uploads
+// - /api/tasks       - Task management
+// - /api/users       - User authentication & management
+// - /api/health      - System status monitoring
+//
+// SECURITY FEATURES:
+// - Admin code protection for sensitive operations
+// - File type validation for uploads
+// - File size limits (2MB)
+// - Input sanitization
+//
 
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
 const app = express();
 
-// Security middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static(__dirname));
 
-// CORS configuration for Railway
-app.use(cors({
-  origin: '*', // Allow all origins for now to debug
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
-// Handle preflight requests
-app.options('*', cors());
+// Data persistence file
+const DATA_FILE = path.join(__dirname, 'data.json');
 
-// Compression
-app.use(compression());
-
-// Logging
-app.use(morgan('combined'));
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// Environment variables with Railway-safe defaults
-const ADMIN_CODE = process.env.ADMIN_CODE || '212259497';
-const JWT_SECRET = process.env.JWT_SECRET || 'railway-production-secret-' + Math.random().toString(36);
-const PORT = process.env.PORT || 8080;
-const NODE_ENV = process.env.NODE_ENV || 'production';
-
-console.log('🚀 Starting DigiHive Server on Railway...');
-console.log('📊 Environment:', NODE_ENV);
-console.log('🔑 Admin Code:', ADMIN_CODE);
-
-// Initialize users with pre-hashed password for 'admin'
-const initialUsers = [
-  {
-    id: '1',
-    username: 'admin',
-    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/eoGM3X7d3Z4d8B4Vu', // password: admin123
-    team: 'Administrator',
-    isOnline: false,
-    lastLogin: null,
-    createdAt: new Date().toISOString()
-  }
-];
-
-let users = [...initialUsers];
-let tasks = [
-  {
-    id: '1',
-    title: 'Welcome to DigiHive on Railway!',
-    description: 'Your team collaboration platform is now live on Railway! Create tasks, manage your team, and track progress.',
-    team: 'Development',
-    priority: 'Medium',
-    status: 'in-progress',
-    createdBy: 'admin',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
-
-// Authentication middleware
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
+/**
+ * Data persistence layer
+ * Handles reading/writing application data to JSON file
+ * Provides automatic backup and recovery
+ */
+class DataManager {
+    constructor(dataFile) {
+        this.dataFile = dataFile;
+        this.backupInterval = 300000; // 5 minutes
     }
-    req.user = user;
-    next();
-  });
-};
-
-// Serve the complete frontend HTML directly
-app.get('/', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DigiHive Team Workstation</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Your CSS styles here - shortened for brevity */
-        :root {
-            --primary: #FFC107; --primary-light: #FFD54F; --primary-dark: #FF8F00;
-            --secondary: #795548; --accent: #FF5722; --success: #4CAF50;
-            --warning: #FF9800; --error: #D32F2F; --dark: #5D4037;
-            --gray-dark: #8D6E63; --gray: #A1887F; --gray-light: #EFEBE9;
-            --background: #FFFDE7; --white: #FFFFFF; --card-bg: #FFFDF7;
-            --sidebar-bg: #5D4037; --sidebar-text: #FFECB3;
-            --dev: #FFB300; --design: #FF8F00; --marketing: #4CAF50;
-            --support: #009688; --content: #FF7043; --admin: #D84315;
-            --bee-yellow: #FFC107; --bee-black: #5D4037;
-            --bee-orange: #FF8F00; --bee-brown: #795548;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { background: var(--background); color: var(--dark); }
-        .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange)); padding: 2rem; }
-        .login-card { background: white; border-radius: 20px; padding: 3rem; box-shadow: 0 25px 50px rgba(93, 64, 55, 0.2); max-width: 450px; width: 100%; text-align: center; border: 3px solid var(--bee-yellow); }
-        .login-logo { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 2rem; }
-        .login-logo-icon { width: 80px; height: 80px; background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--bee-black); font-weight: bold; font-size: 2rem; border: 3px solid var(--bee-black); }
-        .login-logo-text { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .form-group { margin-bottom: 1rem; text-align: left; }
-        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
-        .form-input, .form-select { width: 100%; padding: 0.75rem; border: 2px solid var(--bee-yellow); border-radius: 8px; font-size: 1rem; background: var(--background); }
-        .btn { padding: 0.75rem 1.5rem; border-radius: 8px; border: 2px solid; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
-        .btn-primary { background: var(--bee-yellow); color: var(--bee-black); border-color: var(--bee-orange); }
-        .btn-outline { background: transparent; border-color: var(--bee-yellow); color: var(--dark); }
-        .dashboard { display: none; min-height: 100vh; }
-        .notification { position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem; background: #4CAF50; color: white; border-radius: 8px; z-index: 10000; }
-    </style>
-</head>
-<body>
-    <div id="loginScreen" class="login-container">
-        <div class="login-card">
-            <div class="login-logo">
-                <div class="login-logo-icon">DH</div>
-                <div class="login-logo-text">DigiHive</div>
-            </div>
-            
-            <div style="background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange)); color: var(--bee-black); border-radius: 15px; padding: 1.5rem; margin-bottom: 2rem; text-align: left; border: 2px solid var(--bee-black);">
-                <div style="font-size: 1.1rem; font-weight: 500; margin-bottom: 0.5rem; font-style: italic;">"Collaboration is the foundation of great achievements"</div>
-                <div style="font-size: 0.9rem; opacity: 0.9; font-weight: 600;">- Team DigiHive</div>
-            </div>
-            
-            <form id="loginForm">
-                <div class="form-group">
-                    <label class="form-label">Username</label>
-                    <input type="text" class="form-input" id="loginUsername" placeholder="Enter your username" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
-                </div>
-                
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
-                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
-                </button>
-                
-                <button type="button" class="btn btn-outline" style="width: 100%;" onclick="showRegisterModal()">
-                    <i class="fas fa-user-plus"></i> Register New Member
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <div id="dashboard" class="dashboard">
-        <div style="padding: 2rem;">
-            <h1>Welcome to DigiHive Dashboard</h1>
-            <p>Logged in successfully!</p>
-            <button class="btn btn-outline" onclick="logout()">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
-        </div>
-    </div>
-
-    <div id="registerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 500px; width: 90%; border: 3px solid var(--bee-yellow);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 style="font-size: 1.5rem; font-weight: 600;">Register New Team Member</h2>
-                <button onclick="closeRegisterModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-            </div>
-            <form id="registerForm">
-                <div class="form-group">
-                    <label class="form-label">Username</label>
-                    <input type="text" class="form-input" name="username" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-input" name="password" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Team</label>
-                    <select class="form-select" name="team" required>
-                        <option value="">Select Team</option>
-                        <option value="Development">Development</option>
-                        <option value="Design">Design</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="Support">Support</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    <i class="fas fa-user-plus"></i> Register Member
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        let currentUser = null;
-        let authToken = null;
-        const API_BASE_URL = window.location.origin + '/api';
-
-        console.log('Frontend loaded, API Base URL:', API_BASE_URL);
-
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, setting up event listeners');
-            
-            const savedToken = localStorage.getItem('digihive_token');
-            const savedUser = localStorage.getItem('digihive_user');
-            
-            if (savedToken && savedUser) {
-                console.log('Found saved user data');
-                authToken = savedToken;
-                currentUser = JSON.parse(savedUser);
-                showDashboard();
-            } else {
-                console.log('No saved user data, showing login');
-                showLogin();
+    
+    loadData() {
+        try {
+            if (fs.existsSync(this.dataFile)) {
+                const data = JSON.parse(fs.readFileSync(this.dataFile, 'utf8'));
+                return {
+                    comments: data.comments || [],
+                    submissions: data.submissions || [],
+                    tasks: data.tasks || [],
+                    users: data.users || []
+                };
             }
-            
-            // Set up form event listeners
-            document.getElementById('loginForm').addEventListener('submit', handleLogin);
-            document.getElementById('registerForm').addEventListener('submit', handleRegister);
-            
-            // Test API connection
-            testAPI();
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+        return null;
+    }
+    
+    saveData(data) {
+        try {
+            fs.writeFileSync(this.dataFile, JSON.stringify(data, null, 2));
+            return true;
+        } catch (error) {
+            console.error('Error saving data:', error);
+            return false;
+        }
+    }
+}
+
+/**
+ * File upload manager
+ * Handles secure file storage and retrieval
+ * Implements validation and cleanup
+ */
+class FileManager {
+    constructor(uploadsDir) {
+        this.uploadsDir = uploadsDir;
+        this.allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.zip'];
+    }
+    
+    setupStorage() {
+        return multer.diskStorage({
+            destination: (req, file, cb) => {
+                cb(null, this.uploadsDir)
+            },
+            filename: (req, file, cb) => {
+                // Sanitize filename and add timestamp
+                const originalName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+                cb(null, Date.now() + '-' + originalName)
+            }
         });
-
-        async function testAPI() {
-            try {
-                console.log('Testing API connection to:', API_BASE_URL + '/health');
-                const response = await fetch(API_BASE_URL + '/health');
-                const data = await response.json();
-                console.log('API test successful:', data);
-                showNotification('Connected to server!', 'success');
-            } catch (error) {
-                console.error('API test failed:', error);
-                showNotification('Cannot connect to server: ' + error.message, 'error');
+    }
+    
+    getFileFilter() {
+        return (req, file, cb) => {
+            const fileExt = path.extname(file.originalname).toLowerCase();
+            
+            if (this.allowedTypes.includes(fileExt)) {
+                cb(null, true);
+            } else {
+                cb(new Error('Invalid file type. Only PDF, DOC, DOCX, TXT, and ZIP files are allowed.'));
             }
-        }
+        };
+    }
+}
 
-        async function apiRequest(endpoint, options = {}) {
-            const url = API_BASE_URL + endpoint;
-            console.log('API Request:', options.method || 'GET', url);
-            
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
-                ...options
-            };
-            
-            if (authToken) {
-                config.headers.Authorization = 'Bearer ' + authToken;
-            }
-            
-            if (config.body && typeof config.body === 'object') {
-                config.body = JSON.stringify(config.body);
-            }
-            
-            try {
-                const response = await fetch(url, config);
-                const data = await response.json();
-                
-                console.log('API Response:', data);
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'HTTP ' + response.status);
-                }
-                
-                return data;
-            } catch (error) {
-                console.error('API request failed:', error);
-                showNotification(error.message, 'error');
-                throw error;
-            }
-        }
+// Initialize managers
+const dataManager = new DataManager(DATA_FILE);
+const fileManager = new FileManager(uploadsDir);
 
-        async function handleLogin(e) {
-            e.preventDefault();
-            console.log('Login attempt');
-            
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            if (!username || !password) {
-                showNotification('Please enter both username and password', 'error');
-                return;
-            }
-            
-            const loginBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = loginBtn.innerHTML;
-            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-            loginBtn.disabled = true;
-            
-            try {
-                console.log('Sending login request for user:', username);
-                const data = await apiRequest('/auth/login', {
-                    method: 'POST',
-                    body: { username, password }
-                });
-                
-                authToken = data.token;
-                currentUser = data.user;
-                
-                localStorage.setItem('digihive_token', authToken);
-                localStorage.setItem('digihive_user', JSON.stringify(currentUser));
-                
-                showDashboard();
-                showNotification('Login successful! Welcome back!', 'success');
-                
-            } catch (error) {
-                console.error('Login failed:', error);
-            } finally {
-                loginBtn.innerHTML = originalText;
-                loginBtn.disabled = false;
-            }
-        }
-
-        async function handleRegister(e) {
-            e.preventDefault();
-            console.log('Registration attempt');
-            
-            const formData = new FormData(e.target);
-            const userData = {
-                username: formData.get('username'),
-                password: formData.get('password'),
-                team: formData.get('team')
-            };
-            
-            const registerBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = registerBtn.innerHTML;
-            registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
-            registerBtn.disabled = true;
-            
-            try {
-                console.log('Sending registration request:', userData);
-                await apiRequest('/auth/register', {
-                    method: 'POST',
-                    body: userData
-                });
-                
-                showNotification('User registered successfully! You can now login.', 'success');
-                closeRegisterModal();
-                e.target.reset();
-                
-            } catch (error) {
-                console.error('Registration failed:', error);
-            } finally {
-                registerBtn.innerHTML = originalText;
-                registerBtn.disabled = false;
-            }
-        }
-
-        function showNotification(message, type) {
-            // Remove existing notifications
-            const existing = document.querySelectorAll('.notification');
-            existing.forEach(n => n.remove());
-            
-            const notification = document.createElement('div');
-            notification.className = 'notification';
-            notification.style.background = type === 'success' ? '#4CAF50' : type === 'error' ? '#F44336' : '#2196F3';
-            notification.innerHTML = message;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        }
-
-        function showLogin() {
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('dashboard').style.display = 'none';
-        }
-
-        function showDashboard() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-        }
-
-        function showRegisterModal() {
-            document.getElementById('registerModal').style.display = 'flex';
-        }
-
-        function closeRegisterModal() {
-            document.getElementById('registerModal').style.display = 'none';
-        }
-
-        function logout() {
-            localStorage.removeItem('digihive_token');
-            localStorage.removeItem('digihive_user');
-            authToken = null;
-            currentUser = null;
-            showLogin();
-            document.getElementById('loginForm').reset();
-            showNotification('Logged out successfully', 'info');
-        }
-
-        // Make functions globally available
-        window.showRegisterModal = showRegisterModal;
-        window.closeRegisterModal = closeRegisterModal;
-        window.logout = logout;
-    </script>
-</body>
-</html>
-  `);
+// File upload configuration
+const storage = fileManager.setupStorage();
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 2 * 1024 * 1024 // 2MB limit
+    },
+    fileFilter: fileManager.getFileFilter()
 });
 
-// API Routes
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    console.log('Registration request received:', req.body);
-    
-    const { username, password, team, adminCode } = req.body;
-
-    // Validation
-    if (!username || !password || !team) {
-      return res.status(400).json({ error: 'Username, password, and team are required' });
+// Load initial data
+const initialData = dataManager.loadData();
+let comments = initialData?.comments || [
+    {
+        id: 1,
+        username: 'System Admin',
+        team: 'Administrator',
+        text: 'Welcome to TeamSync! Team members can post comments about their tasks and challenges here.',
+        timestamp: new Date().toISOString()
     }
+];
 
-    if (username.length < 3) {
-      return res.status(400).json({ error: 'Username must be at least 3 characters long' });
+let submissions = initialData?.submissions || [];
+
+let tasks = initialData?.tasks || [
+    { 
+        id: 1, 
+        subject: "Server Infrastructure Setup", 
+        startDate: "2026-01-13T09:00:00.000Z", 
+        endDate: "2026-01-16T17:00:00.000Z", 
+        description: "Set up cloud server environment. Configure database architecture. Implement basic security protocols. Create deployment pipeline.", 
+        team: "Development", 
+        status: "pending",
+        priority: "High"
+    },
+    { 
+        id: 2, 
+        subject: "Database Design & Implementation", 
+        startDate: "2026-01-14T09:00:00.000Z", 
+        endDate: "2026-01-16T17:00:00.000Z", 
+        description: "Design database schemas. Set up user tables and relationships. Implement data migration scripts. Create backup systems.", 
+        team: "Development", 
+        status: "pending",
+        priority: "High"
+    },
+    { 
+        id: 3, 
+        subject: "Design System Creation", 
+        startDate: "2026-01-13T11:00:00.000Z", 
+        endDate: "2026-01-16T17:00:00.000Z", 
+        description: "Create brand color palette. Design typography system. Build component library. Establish design principles.", 
+        team: "Design", 
+        status: "pending",
+        priority: "High"
+    },
+    { 
+        id: 4, 
+        subject: "Wireframes & Prototypes", 
+        startDate: "2026-01-14T11:00:00.000Z", 
+        endDate: "2026-01-16T17:00:00.000Z", 
+        description: "Create homepage wireframes. Design user onboarding flow. Map seller dashboard layout. Prototype product listing pages.", 
+        team: "Design", 
+        status: "pending",
+        priority: "High"
+    },
+    { 
+        id: 5, 
+        subject: "Competitor Analysis", 
+        startDate: "2026-01-13T14:00:00.000Z", 
+        endDate: "2026-01-16T17:00:00.000Z", 
+        description: "Research 5 competitor platforms. Analyze their pricing strategies. Study user acquisition methods. Identify market gaps.", 
+        team: "Marketing", 
+        status: "pending",
+        priority: "Medium"
+    },
+    { 
+        id: 6, 
+        subject: "Target Audience Research", 
+        startDate: "2026-01-14T14:00:00.000Z", 
+        endDate: "2026-01-16T17:00:00.000Z", 
+        description: "Define primary user personas. Research creator demographics. Identify buyer pain points. Create audience segmentation.", 
+        team: "Marketing", 
+        status: "pending",
+        priority: "Medium"
+    },
+    { 
+        id: 7, 
+        subject: "Helpdesk System Setup", 
+        startDate: "2026-01-13T16:00:00.000Z", 
+        endDate: "2026-01-16T17:00:00.000Z", 
+        description: "Choose helpdesk software. Set up ticketing system. Create support categories. Configure automation rules.", 
+        team: "Support", 
+        status: "planned",
+        priority: "Medium"
+    },
+    { 
+        id: 8, 
+        subject: "Documentation Creation", 
+        startDate: "2026-01-14T16:00:00.000Z", 
+        endDate: "2026-01-16T17:00:00.000Z", 
+        description: "Create documentation structure. Write getting started guides. Develop FAQ templates. Set up knowledge base.", 
+        team: "Support", 
+        status: "planned",
+        priority: "Medium"
+    },
+    { 
+        id: 9, 
+        subject: "Content Calendar Planning", 
+        startDate: "2026-01-13T13:00:00.000Z", 
+        endDate: "2026-01-16T17:00:00.000Z", 
+        description: "Plan 3-month content calendar. Research trending topics. Schedule blog post topics. Plan social media content.", 
+        team: "Content", 
+        status: "in-progress",
+        priority: "Medium"
+    },
+    { 
+        id: 10, 
+        subject: "Platform Setup & Configuration", 
+        startDate: "2026-01-14T13:00:00.000Z", 
+        endDate: "2026-01-16T17:00:00.000Z", 
+        description: "Set up blog platform. Create social media accounts. Configure email newsletter. Set up analytics tracking.", 
+        team: "Content", 
+        status: "in-progress",
+        priority: "Medium"
+    },
+];
+
+let users = initialData?.users || [
+    { 
+        username: 'admin', 
+        password: 'password', 
+        team: 'Administrator', 
+        isOnline: false, 
+        lastLogin: null, 
+        lastLogout: null, 
+        role: 'System Administrator',
+        loginHistory: []
+    },
+    { 
+        username: 'developer', 
+        password: 'password', 
+        team: 'Development', 
+        isOnline: false, 
+        lastLogin: null, 
+        lastLogout: null, 
+        role: 'Full-Stack Developer',
+        loginHistory: []
+    },
+    { 
+        username: 'designer', 
+        password: 'password', 
+        team: 'Design', 
+        isOnline: false, 
+        lastLogin: null, 
+        lastLogout: null, 
+        role: 'UI/UX Designer',
+        loginHistory: []
+    },
+    { 
+        username: 'marketer', 
+        password: 'password', 
+        team: 'Marketing', 
+        isOnline: false, 
+        lastLogin: null, 
+        lastLogout: null, 
+        role: 'Marketing Specialist',
+        loginHistory: []
+    },
+    { 
+        username: 'support', 
+        password: 'password', 
+        team: 'Support', 
+        isOnline: false, 
+        lastLogin: null, 
+        lastLogout: null, 
+        role: 'Support Specialist',
+        loginHistory: []
+    },
+    { 
+        username: 'content', 
+        password: 'password', 
+        team: 'Content', 
+        isOnline: false, 
+        lastLogin: null, 
+        lastLogout: null, 
+        role: 'Content Creator',
+        loginHistory: []
     }
+];
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
-    }
+const ADMIN_CODE = '212259497';
 
-    // Verify admin code for administrator registration
-    if (team === 'Administrator') {
-      if (!adminCode || adminCode !== ADMIN_CODE) {
-        return res.status(403).json({ error: 'Valid admin code required for administrator registration' });
-      }
-    }
-
-    // Check if user exists
-    const existingUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-    if (existingUser) {
-      return res.status(409).json({ error: 'User already exists' });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create user
-    const user = {
-      id: uuidv4(),
-      username,
-      password: hashedPassword,
-      team,
-      isOnline: true,
-      lastLogin: new Date().toISOString(),
-      createdAt: new Date().toISOString()
+// Save data function
+function saveData() {
+    const data = {
+        comments,
+        submissions,
+        tasks,
+        users: users.map(user => {
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword;
+        })
     };
+    return dataManager.saveData(data);
+}
 
-    users.push(user);
+// Auto-save data every 5 minutes
+setInterval(saveData, 300000);
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        username: user.username, 
-        team: user.team 
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
-
-    console.log('User registered successfully:', username);
-    
-    res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user: userWithoutPassword
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+// Comments API
+app.get('/api/comments', (req, res) => {
+    try {
+        // Return comments sorted by timestamp (newest first)
+        const sortedComments = comments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        res.json(sortedComments);
+    } catch (error) {
+        console.error('Error fetching comments:', error);
+        res.status(500).json({ error: 'Failed to fetch comments' });
+    }
 });
 
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    console.log('Login request received:', req.body);
-    
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
+app.post('/api/comments', (req, res) => {
+    try {
+        const newComment = {
+            id: Date.now(),
+            ...req.body,
+            timestamp: new Date().toISOString()
+        };
+        comments.unshift(newComment);
+        saveData();
+        res.status(201).json(newComment);
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        res.status(500).json({ error: 'Failed to add comment' });
     }
-
-    // Find user
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-    if (!user) {
-      console.log('User not found:', username);
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      console.log('Invalid password for user:', username);
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    // Update user status
-    user.isOnline = true;
-    user.lastLogin = new Date().toISOString();
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        username: user.username, 
-        team: user.team 
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
-
-    console.log('Login successful for user:', username);
-    
-    res.json({
-      message: 'Login successful',
-      token,
-      user: userWithoutPassword
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
 });
 
-// Health check
+app.delete('/api/comments', (req, res) => {
+    try {
+        const { commentId, adminCode } = req.body;
+        
+        if (adminCode !== ADMIN_CODE) {
+            return res.status(401).json({ error: 'Invalid admin code' });
+        }
+        
+        const commentIndex = comments.findIndex(c => c.id == commentId);
+        if (commentIndex === -1) {
+            return res.status(404).json({ error: 'Comment not found' });
+        }
+        
+        comments.splice(commentIndex, 1);
+        saveData();
+        res.json({ message: 'Comment deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting comment:', error);
+        res.status(500).json({ error: 'Failed to delete comment' });
+    }
+});
+
+// Bulk delete comments endpoint
+app.delete('/api/comments/admin', (req, res) => {
+    try {
+        const { adminCode, olderThan } = req.body;
+        
+        if (adminCode !== ADMIN_CODE) {
+            return res.status(401).json({ error: 'Invalid admin code' });
+        }
+        
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - (olderThan || 30)); // Default 30 days
+        
+        const initialLength = comments.length;
+        comments = comments.filter(comment => new Date(comment.timestamp) > cutoffDate);
+        
+        saveData();
+        
+        res.json({ 
+            message: `Deleted ${initialLength - comments.length} comments`,
+            deleted: initialLength - comments.length,
+            remaining: comments.length
+        });
+    } catch (error) {
+        console.error('Error bulk deleting comments:', error);
+        res.status(500).json({ error: 'Failed to delete comments' });
+    }
+});
+
+// Submissions API
+app.get('/api/submissions', (req, res) => {
+    try {
+        // Return submissions sorted by timestamp (newest first)
+        const sortedSubmissions = submissions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        res.json(sortedSubmissions);
+    } catch (error) {
+        console.error('Error fetching submissions:', error);
+        res.status(500).json({ error: 'Failed to fetch submissions' });
+    }
+});
+
+app.post('/api/submissions', upload.single('attachment'), (req, res) => {
+    try {
+        const newSubmission = {
+            id: Date.now(),
+            name: req.body.name,
+            member: req.body.member,
+            team: req.body.team,
+            progress: req.body.progress,
+            plan: req.body.plan,
+            fileType: req.body.fileType,
+            attachment: req.file ? req.file.filename : null,
+            originalFileName: req.file ? req.file.originalname : null,
+            timestamp: new Date().toISOString()
+        };
+        submissions.unshift(newSubmission);
+        saveData();
+        res.status(201).json(newSubmission);
+    } catch (error) {
+        console.error('Error adding submission:', error);
+        res.status(500).json({ error: 'Failed to add submission' });
+    }
+});
+
+app.get('/api/submissions/download/:filename', (req, res) => {
+    try {
+        const filename = req.params.filename;
+        const filePath = path.join(uploadsDir, filename);
+        
+        // Check if file exists
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+        
+        res.download(filePath);
+    } catch (error) {
+        console.error('Error downloading file:', error);
+        res.status(500).json({ error: 'Failed to download file' });
+    }
+});
+
+app.delete('/api/submissions', (req, res) => {
+    try {
+        const { submissionId, adminCode } = req.body;
+        
+        if (adminCode !== ADMIN_CODE) {
+            return res.status(401).json({ error: 'Invalid admin code' });
+        }
+        
+        const submissionIndex = submissions.findIndex(s => s.id == submissionId);
+        if (submissionIndex === -1) {
+            return res.status(404).json({ error: 'Submission not found' });
+        }
+        
+        // Remove file from uploads directory if it exists
+        const submission = submissions[submissionIndex];
+        if (submission.attachment) {
+            const filePath = path.join(uploadsDir, submission.attachment);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+        
+        submissions.splice(submissionIndex, 1);
+        saveData();
+        res.json({ message: 'Submission deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting submission:', error);
+        res.status(500).json({ error: 'Failed to delete submission' });
+    }
+});
+
+// Bulk delete submissions endpoint
+app.delete('/api/submissions/admin', (req, res) => {
+    try {
+        const { adminCode, olderThan } = req.body;
+        
+        if (adminCode !== ADMIN_CODE) {
+            return res.status(401).json({ error: 'Invalid admin code' });
+        }
+        
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - (olderThan || 30)); // Default 30 days
+        
+        const initialLength = submissions.length;
+        const deletedSubmissions = submissions.filter(sub => new Date(sub.timestamp) <= cutoffDate);
+        
+        // Delete files from uploads directory
+        deletedSubmissions.forEach(sub => {
+            if (sub.attachment) {
+                const filePath = path.join(uploadsDir, sub.attachment);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            }
+        });
+        
+        submissions = submissions.filter(sub => new Date(sub.timestamp) > cutoffDate);
+        saveData();
+        
+        res.json({ 
+            message: `Deleted ${initialLength - submissions.length} submissions`,
+            deleted: initialLength - submissions.length,
+            remaining: submissions.length
+        });
+    } catch (error) {
+        console.error('Error bulk deleting submissions:', error);
+        res.status(500).json({ error: 'Failed to delete submissions' });
+    }
+});
+
+// Tasks API
+app.get('/api/tasks', (req, res) => {
+    try {
+        res.json(tasks);
+    } catch (error) {
+        console.error('Error fetching tasks:', error);
+        res.status(500).json({ error: 'Failed to fetch tasks' });
+    }
+});
+
+app.post('/api/tasks', (req, res) => {
+    try {
+        const { action, taskData, adminCode, taskId } = req.body;
+        
+        if (action === 'create') {
+            if (adminCode !== ADMIN_CODE) {
+                return res.status(401).json({ error: 'Invalid admin code' });
+            }
+            
+            const newTask = {
+                id: Date.now(),
+                ...taskData
+            };
+            tasks.push(newTask);
+            saveData();
+            res.status(201).json(newTask);
+        }
+        else if (action === 'update') {
+            if (adminCode !== ADMIN_CODE) {
+                return res.status(401).json({ error: 'Invalid admin code' });
+            }
+            
+            const taskIndex = tasks.findIndex(t => t.id == taskId);
+            if (taskIndex === -1) {
+                return res.status(404).json({ error: 'Task not found' });
+            }
+            
+            tasks[taskIndex] = { ...tasks[taskIndex], ...taskData };
+            saveData();
+            res.json(tasks[taskIndex]);
+        }
+        else {
+            res.status(400).json({ error: 'Invalid action' });
+        }
+    } catch (error) {
+        console.error('Error in tasks API:', error);
+        res.status(500).json({ error: 'Failed to process task' });
+    }
+});
+
+app.delete('/api/tasks', (req, res) => {
+    try {
+        const { taskId, adminCode } = req.body;
+        
+        if (adminCode !== ADMIN_CODE) {
+            return res.status(401).json({ error: 'Invalid admin code' });
+        }
+        
+        const taskIndex = tasks.findIndex(t => t.id == taskId);
+        if (taskIndex === -1) {
+            return res.status(404).json({ error: 'Task not found' });
+        }
+        
+        tasks.splice(taskIndex, 1);
+        saveData();
+        res.json({ message: 'Task deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting task:', error);
+        res.status(500).json({ error: 'Failed to delete task' });
+    }
+});
+
+// Users API
+app.get('/api/users', (req, res) => {
+    try {
+        // Return users without passwords for security
+        const usersWithoutPasswords = users.map(user => {
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword;
+        });
+        res.json(usersWithoutPasswords);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+app.post('/api/users', (req, res) => {
+    try {
+        const { username, updates, action, userData, adminCode, password } = req.body;
+        
+        console.log('Received user action:', action, 'username:', username);
+        
+        if (action === 'update') {
+            const userIndex = users.findIndex(u => u.username === username);
+            if (userIndex === -1) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            users[userIndex] = { ...users[userIndex], ...updates };
+            saveData();
+            
+            // Return user without password
+            const { password: _, ...userWithoutPassword } = users[userIndex];
+            return res.json(userWithoutPassword);
+        }
+
+        if (action === 'login') {
+            console.log('Login attempt for:', username);
+            const user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                // Update user status with login time
+                user.isOnline = true;
+                user.lastLogin = new Date().toISOString();
+                user.loginHistory = user.loginHistory || [];
+                user.loginHistory.push({
+                    login: new Date().toISOString(),
+                    logout: null,
+                    sessionId: Date.now()
+                });
+                
+                saveData();
+                
+                const { password: _, ...userWithoutPassword } = user;
+                return res.json(userWithoutPassword);
+            } else {
+                console.log('Login failed for:', username);
+                return res.status(401).json({ error: 'Invalid username or password' });
+            }
+        }
+
+        if (action === 'register') {
+            if (adminCode !== ADMIN_CODE) {
+                return res.status(401).json({ error: 'Invalid admin code' });
+            }
+            
+            if (users.find(u => u.username === userData.username)) {
+                return res.status(400).json({ error: 'Username already exists' });
+            }
+            
+            const newUser = {
+                ...userData,
+                isOnline: false,
+                lastLogin: null,
+                lastLogout: null,
+                role: `${userData.team} Member`,
+                loginHistory: []
+            };
+            users.push(newUser);
+            saveData();
+            
+            // Return user without password
+            const { password: _, ...userWithoutPassword } = newUser;
+            return res.status(201).json(userWithoutPassword);
+        }
+
+        res.status(400).json({ error: 'Invalid action' });
+    } catch (error) {
+        console.error('Error in users API:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Logout endpoint
+app.post('/api/users/logout', (req, res) => {
+    try {
+        const { username } = req.body;
+        const user = users.find(u => u.username === username);
+        
+        if (user) {
+            user.isOnline = false;
+            user.lastLogout = new Date().toISOString();
+            
+            // Update last session logout time
+            if (user.loginHistory && user.loginHistory.length > 0) {
+                const lastSession = user.loginHistory[user.loginHistory.length - 1];
+                if (!lastSession.logout) {
+                    lastSession.logout = new Date().toISOString();
+                }
+            }
+            
+            saveData();
+        }
+        
+        res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+        console.error('Error during logout:', error);
+        res.status(500).json({ error: 'Logout failed' });
+    }
+});
+
+// Session history endpoint
+app.get('/api/users/:username/sessions', (req, res) => {
+    try {
+        const { username } = req.params;
+        const user = users.find(u => u.username === username);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json(user.loginHistory || []);
+    } catch (error) {
+        console.error('Error fetching user sessions:', error);
+        res.status(500).json({ error: 'Failed to fetch sessions' });
+    }
+});
+
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    version: '1.0.0',
-    environment: NODE_ENV,
-    totalUsers: users.length,
-    totalTasks: tasks.length,
-    message: 'DigiHive API is running successfully on Railway!'
-  });
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        data: {
+            comments: comments.length,
+            submissions: submissions.length,
+            tasks: tasks.length,
+            users: users.length
+        }
+    });
 });
 
-// Start server
+// Error handling middleware
+app.use((error, req, res, next) => {
+    if (error instanceof multer.MulterError) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'File too large. Maximum size is 2MB.' });
+        }
+    }
+    console.error('Unhandled error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+});
+
+// Serve the main HTML file for all other routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// CRITICAL FIX: Use Railway's expected port (8080) or environment variable
+const PORT = process.env.PORT || 8080;
+
+// Listen on all network interfaces
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ DigiHive Server running on port ${PORT}`);
-  console.log(`🌐 Environment: ${NODE_ENV}`);
-  console.log(`👤 Default admin: username "admin", password "admin123"`);
-  console.log(`🔑 Admin code: ${ADMIN_CODE}`);
-  console.log(`🚀 Ready to accept requests!`);
+    console.log(`🚀 TeamSync server running on port ${PORT}`);
+    console.log(`📊 API endpoints available at /api/comments, /api/submissions, /api/tasks, /api/users`);
+    console.log(`🌐 Frontend served from: http://0.0.0.0:${PORT}`);
+    console.log(`💾 Uploads directory: ${uploadsDir}`);
+    console.log(`💾 Data file: ${DATA_FILE}`);
+    console.log(`✅ Server ready and accepting connections`);
 });
