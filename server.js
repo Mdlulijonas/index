@@ -1,721 +1,596 @@
-// =============================================
-// DIGIHIVE BACKEND SERVER
-// =============================================
-//
-// SERVER ARCHITECTURE:
-// - Express.js REST API
-// - In-memory data storage with file persistence
-// - Multer for file upload handling
-// - CORS enabled for cross-origin requests
-//
-// API STRUCTURE:
-// - /api/comments    - Team communication
-// - /api/submissions - Work submissions with file uploads
-// - /api/tasks       - Task management
-// - /api/users       - User authentication & management
-// - /api/health      - System status monitoring
-//
-// SECURITY FEATURES:
-// - Admin code protection for sensitive operations
-// - File type validation for uploads
-// - File size limits (2MB)
-// - Input sanitization
-//
-
+require('dotenv').config();
 const express = require('express');
+const axios = require('axios');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const path = require('path');
-const multer = require('multer');
-const fs = require('fs');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const compression = require('compression');
+const morgan = require('morgan');
+const { v4: uuidv4 } = require('uuid');
+
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.static(__dirname));
+// Security middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+// CORS configuration
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true
+}));
 
-// Data persistence file
-const DATA_FILE = path.join(__dirname, 'data.json');
-
-/**
- * Data persistence layer
- * Handles reading/writing application data to JSON file
- * Provides automatic backup and recovery
- */
-class DataManager {
-    constructor(dataFile) {
-        this.dataFile = dataFile;
-        this.backupInterval = 300000; // 5 minutes
-    }
-    
-    loadData() {
-        try {
-            if (fs.existsSync(this.dataFile)) {
-                const data = JSON.parse(fs.readFileSync(this.dataFile, 'utf8'));
-                return {
-                    comments: data.comments || [],
-                    submissions: data.submissions || [],
-                    tasks: data.tasks || [],
-                    users: data.users || []
-                };
-            }
-        } catch (error) {
-            console.error('Error loading data:', error);
-        }
-        return null;
-    }
-    
-    saveData(data) {
-        try {
-            fs.writeFileSync(this.dataFile, JSON.stringify(data, null, 2));
-            return true;
-        } catch (error) {
-            console.error('Error saving data:', error);
-            return false;
-        }
-    }
-}
-
-/**
- * File upload manager
- * Handles secure file storage and retrieval
- * Implements validation and cleanup
- */
-class FileManager {
-    constructor(uploadsDir) {
-        this.uploadsDir = uploadsDir;
-        this.allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.zip'];
-    }
-    
-    setupStorage() {
-        return multer.diskStorage({
-            destination: (req, file, cb) => {
-                cb(null, this.uploadsDir)
-            },
-            filename: (req, file, cb) => {
-                // Sanitize filename and add timestamp
-                const originalName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-                cb(null, Date.now() + '-' + originalName)
-            }
-        });
-    }
-    
-    getFileFilter() {
-        return (req, file, cb) => {
-            const fileExt = path.extname(file.originalname).toLowerCase();
-            
-            if (this.allowedTypes.includes(fileExt)) {
-                cb(null, true);
-            } else {
-                cb(new Error('Invalid file type. Only PDF, DOC, DOCX, TXT, and ZIP files are allowed.'));
-            }
-        };
-    }
-}
-
-// Initialize managers
-const dataManager = new DataManager(DATA_FILE);
-const fileManager = new FileManager(uploadsDir);
-
-// File upload configuration
-const storage = fileManager.setupStorage();
-const upload = multer({ 
-    storage: storage,
-    limits: {
-        fileSize: 2 * 1024 * 1024 // 2MB limit
-    },
-    fileFilter: fileManager.getFileFilter()
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.RATE_LIMIT_MAX || 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: 'Too many requests from this IP, please try again later.'
+  }
 });
+app.use(limiter);
 
-// Load initial data
-const initialData = dataManager.loadData();
-let comments = initialData?.comments || [
-    {
-        id: 1,
-        username: 'System Admin',
-        team: 'Administrator',
-        text: 'Welcome to DigiHive! Team members can post comments about their tasks and challenges here.',
-        timestamp: new Date().toISOString()
+// Compression
+app.use(compression());
+
+// Logging
+app.use(morgan('combined'));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Environment variables
+const MONDAY_API_KEY = process.env.MONDAY_API_KEY;
+const ADMIN_CODE = process.env.ADMIN_CODE || '212259497';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secure-jwt-secret-change-in-production';
+const PORT = process.env.PORT || 3000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// In-memory storage (replace with database in production)
+let users = [
+  {
+    id: '1',
+    username: 'admin',
+    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/eoGM3X7d3Z4d8B4Vu', // password: admin123
+    team: 'Administrator',
+    isOnline: false,
+    lastLogin: null,
+    createdAt: new Date().toISOString()
+  }
+];
+
+let tasks = [
+  {
+    id: '1',
+    title: 'Welcome to DigiHive',
+    description: 'Get started with your team collaboration platform',
+    team: 'Development',
+    priority: 'Medium',
+    status: 'in-progress',
+    createdBy: 'admin',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+let timeEntries = [];
+
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
     }
-];
+    req.user = user;
+    next();
+  });
+};
 
-let submissions = initialData?.submissions || [];
+// Admin middleware
+const requireAdmin = (req, res, next) => {
+  if (!req.user || req.user.team !== 'Administrator') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+};
 
-let tasks = initialData?.tasks || [
-    { 
-        id: 1, 
-        subject: "Server Infrastructure Setup", 
-        startDate: "2026-01-13T09:00:00.000Z", 
-        endDate: "2026-01-16T17:00:00.000Z", 
-        description: "Set up cloud server environment. Configure database architecture. Implement basic security protocols. Create deployment pipeline.", 
-        team: "Full-Stack", 
-        status: "pending",
-        priority: "High"
-    },
-    { 
-        id: 2, 
-        subject: "Database Design & Implementation", 
-        startDate: "2026-01-14T09:00:00.000Z", 
-        endDate: "2026-01-16T17:00:00.000Z", 
-        description: "Design database schemas. Set up user tables and relationships. Implement data migration scripts. Create backup systems.", 
-        team: "Full-Stack", 
-        status: "pending",
-        priority: "High"
-    },
-    { 
-        id: 3, 
-        subject: "Design System Creation", 
-        startDate: "2026-01-13T11:00:00.000Z", 
-        endDate: "2026-01-16T17:00:00.000Z", 
-        description: "Create brand color palette. Design typography system. Build component library. Establish design principles.", 
-        team: "UI/UX", 
-        status: "pending",
-        priority: "High"
-    },
-    { 
-        id: 4, 
-        subject: "Wireframes & Prototypes", 
-        startDate: "2026-01-14T11:00:00.000Z", 
-        endDate: "2026-01-16T17:00:00.000Z", 
-        description: "Create homepage wireframes. Design user onboarding flow. Map seller dashboard layout. Prototype product listing pages.", 
-        team: "UI/UX", 
-        status: "pending",
-        priority: "High"
-    },
-    { 
-        id: 5, 
-        subject: "Competitor Analysis", 
-        startDate: "2026-01-13T14:00:00.000Z", 
-        endDate: "2026-01-16T17:00:00.000Z", 
-        description: "Research 5 competitor platforms. Analyze their pricing strategies. Study user acquisition methods. Identify market gaps.", 
-        team: "Marketing", 
-        status: "pending",
-        priority: "Medium"
-    },
-    { 
-        id: 6, 
-        subject: "Target Audience Research", 
-        startDate: "2026-01-14T14:00:00.000Z", 
-        endDate: "2026-01-16T17:00:00.000Z", 
-        description: "Define primary user personas. Research creator demographics. Identify buyer pain points. Create audience segmentation.", 
-        team: "Marketing", 
-        status: "pending",
-        priority: "Medium"
-    },
-    { 
-        id: 7, 
-        subject: "Helpdesk System Setup", 
-        startDate: "2026-01-13T16:00:00.000Z", 
-        endDate: "2026-01-16T17:00:00.000Z", 
-        description: "Choose helpdesk software. Set up ticketing system. Create support categories. Configure automation rules.", 
-        team: "Support", 
-        status: "planned",
-        priority: "Medium"
-    },
-    { 
-        id: 8, 
-        subject: "Documentation Creation", 
-        startDate: "2026-01-14T16:00:00.000Z", 
-        endDate: "2026-01-16T17:00:00.000Z", 
-        description: "Create documentation structure. Write getting started guides. Develop FAQ templates. Set up knowledge base.", 
-        team: "Support", 
-        status: "planned",
-        priority: "Medium"
-    },
-    { 
-        id: 9, 
-        subject: "Content Calendar Planning", 
-        startDate: "2026-01-13T13:00:00.000Z", 
-        endDate: "2026-01-16T17:00:00.000Z", 
-        description: "Plan 3-month content calendar. Research trending topics. Schedule blog post topics. Plan social media content.", 
-        team: "Content", 
-        status: "in-progress",
-        priority: "Medium"
-    },
-    { 
-        id: 10, 
-        subject: "Platform Setup & Configuration", 
-        startDate: "2026-01-14T13:00:00.000Z", 
-        endDate: "2026-01-16T17:00:00.000Z", 
-        description: "Set up blog platform. Create social media accounts. Configure email newsletter. Set up analytics tracking.", 
-        team: "Content", 
-        status: "in-progress",
-        priority: "Medium"
-    },
-];
-
-let users = initialData?.users || [
-    { 
-        username: 'admin', 
-        password: 'password', 
-        team: 'Administrator', 
-        isOnline: false, 
-        lastLogin: null, 
-        lastLogout: null, 
-        role: 'System Administrator',
-        loginHistory: []
-    },
-    { 
-        username: 'developer', 
-        password: 'password', 
-        team: 'Full-Stack', 
-        isOnline: false, 
-        lastLogin: null, 
-        lastLogout: null, 
-        role: 'Full-Stack Developer',
-        loginHistory: []
-    },
-    { 
-        username: 'designer', 
-        password: 'password', 
-        team: 'UI/UX', 
-        isOnline: false, 
-        lastLogin: null, 
-        lastLogout: null, 
-        role: 'UI/UX Designer',
-        loginHistory: []
-    },
-    { 
-        username: 'marketer', 
-        password: 'password', 
-        team: 'Marketing', 
-        isOnline: false, 
-        lastLogin: null, 
-        lastLogout: null, 
-        role: 'Marketing Specialist',
-        loginHistory: []
-    },
-    { 
-        username: 'support', 
-        password: 'password', 
-        team: 'Support', 
-        isOnline: false, 
-        lastLogin: null, 
-        lastLogout: null, 
-        role: 'Support Specialist',
-        loginHistory: []
-    },
-    { 
-        username: 'content', 
-        password: 'password', 
-        team: 'Content', 
-        isOnline: false, 
-        lastLogin: null, 
-        lastLogout: null, 
-        role: 'Content Creator',
-        loginHistory: []
-    }
-];
-
-const ADMIN_CODE = '212259497';
-
-// Save data function
-function saveData() {
-    const data = {
-        comments,
-        submissions,
-        tasks,
-        users: users.map(user => {
-            const { password, ...userWithoutPassword } = user;
-            return userWithoutPassword;
-        })
+// Monday.com API service
+class MondayService {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+    this.baseURL = 'https://api.monday.com/v2';
+    this.headers = {
+      'Authorization': this.apiKey,
+      'Content-Type': 'application/json'
     };
-    return dataManager.saveData(data);
+  }
+
+  async makeGraphQLQuery(query, variables = {}) {
+    try {
+      if (!this.apiKey) {
+        throw new Error('Monday.com API key not configured');
+      }
+
+      const response = await axios.post(this.baseURL, {
+        query,
+        variables
+      }, { 
+        headers: this.headers,
+        timeout: 10000
+      });
+
+      if (response.data.errors) {
+        console.error('Monday.com API errors:', response.data.errors);
+        throw new Error(response.data.errors[0]?.message || 'Monday.com API error');
+      }
+
+      return response.data.data;
+    } catch (error) {
+      console.error('Monday.com API error:', error.message);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+      }
+      throw new Error(`Monday API error: ${error.message}`);
+    }
+  }
+
+  async getBoards() {
+    const query = `
+      query {
+        boards(limit: 10) {
+          id
+          name
+          description
+          board_kind
+          updated_at
+          items {
+            id
+            name
+          }
+        }
+      }
+    `;
+    return await this.makeGraphQLQuery(query);
+  }
+
+  async createItem(boardId, itemName, columnValues = {}) {
+    const columnValuesJSON = JSON.stringify(columnValues);
+    
+    const mutation = `
+      mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
+        create_item(board_id: $boardId, item_name: $itemName, column_values: $columnValues) {
+          id
+          name
+        }
+      }
+    `;
+
+    const variables = {
+      boardId: parseInt(boardId),
+      itemName,
+      columnValues: columnValuesJSON
+    };
+
+    return await this.makeGraphQLQuery(mutation, variables);
+  }
+
+  async getBoardItems(boardId) {
+    const query = `
+      query ($boardId: ID!) {
+        boards(ids: [$boardId]) {
+          id
+          name
+          items {
+            id
+            name
+            column_values {
+              id
+              title
+              value
+              text
+            }
+            updated_at
+            created_at
+          }
+        }
+      }
+    `;
+
+    const variables = { boardId: parseInt(boardId) };
+    return await this.makeGraphQLQuery(query, variables);
+  }
 }
 
-// Auto-save data every 5 minutes
-setInterval(saveData, 300000);
+const mondayService = new MondayService(MONDAY_API_KEY);
 
-// Comments API
-app.get('/api/comments', (req, res) => {
-    try {
-        // Return comments sorted by timestamp (newest first)
-        const sortedComments = comments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        res.json(sortedComments);
-    } catch (error) {
-        console.error('Error fetching comments:', error);
-        res.status(500).json({ error: 'Failed to fetch comments' });
+// Authentication routes
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password, team, adminCode } = req.body;
+
+    // Validation
+    if (!username || !password || !team) {
+      return res.status(400).json({ error: 'Username, password, and team are required' });
     }
-});
 
-app.post('/api/comments', (req, res) => {
-    try {
-        const newComment = {
-            id: Date.now(),
-            ...req.body,
-            timestamp: new Date().toISOString()
-        };
-        comments.unshift(newComment);
-        saveData();
-        res.status(201).json(newComment);
-    } catch (error) {
-        console.error('Error adding comment:', error);
-        res.status(500).json({ error: 'Failed to add comment' });
+    if (username.length < 3) {
+      return res.status(400).json({ error: 'Username must be at least 3 characters long' });
     }
-});
 
-app.delete('/api/comments', (req, res) => {
-    try {
-        const { commentId, adminCode } = req.body;
-        
-        if (adminCode !== ADMIN_CODE) {
-            return res.status(401).json({ error: 'Invalid admin code' });
-        }
-        
-        const commentIndex = comments.findIndex(c => c.id == commentId);
-        if (commentIndex === -1) {
-            return res.status(404).json({ error: 'Comment not found' });
-        }
-        
-        comments.splice(commentIndex, 1);
-        saveData();
-        res.json({ message: 'Comment deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting comment:', error);
-        res.status(500).json({ error: 'Failed to delete comment' });
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
     }
-});
 
-// Bulk delete comments endpoint
-app.delete('/api/comments/admin', (req, res) => {
-    try {
-        const { adminCode, olderThan } = req.body;
-        
-        if (adminCode !== ADMIN_CODE) {
-            return res.status(401).json({ error: 'Invalid admin code' });
-        }
-        
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - (olderThan || 30)); // Default 30 days
-        
-        const initialLength = comments.length;
-        comments = comments.filter(comment => new Date(comment.timestamp) > cutoffDate);
-        
-        saveData();
-        
-        res.json({ 
-            message: `Deleted ${initialLength - comments.length} comments`,
-            deleted: initialLength - comments.length,
-            remaining: comments.length
-        });
-    } catch (error) {
-        console.error('Error bulk deleting comments:', error);
-        res.status(500).json({ error: 'Failed to delete comments' });
+    // Verify admin code for administrator registration
+    if (team === 'Administrator') {
+      if (!adminCode || adminCode !== ADMIN_CODE) {
+        return res.status(403).json({ error: 'Valid admin code required for administrator registration' });
+      }
     }
-});
 
-// Submissions API
-app.get('/api/submissions', (req, res) => {
-    try {
-        // Return submissions sorted by timestamp (newest first)
-        const sortedSubmissions = submissions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        res.json(sortedSubmissions);
-    } catch (error) {
-        console.error('Error fetching submissions:', error);
-        res.status(500).json({ error: 'Failed to fetch submissions' });
+    // Check if user exists
+    const existingUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (existingUser) {
+      return res.status(409).json({ error: 'User already exists' });
     }
-});
 
-app.post('/api/submissions', upload.single('attachment'), (req, res) => {
-    try {
-        const newSubmission = {
-            id: Date.now(),
-            name: req.body.name,
-            member: req.body.member,
-            team: req.body.team,
-            progress: req.body.progress,
-            plan: req.body.plan,
-            fileType: req.body.fileType,
-            attachment: req.file ? req.file.filename : null,
-            originalFileName: req.file ? req.file.originalname : null,
-            timestamp: new Date().toISOString()
-        };
-        submissions.unshift(newSubmission);
-        saveData();
-        res.status(201).json(newSubmission);
-    } catch (error) {
-        console.error('Error adding submission:', error);
-        res.status(500).json({ error: 'Failed to add submission' });
-    }
-});
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-app.get('/api/submissions/download/:filename', (req, res) => {
-    try {
-        const filename = req.params.filename;
-        const filePath = path.join(uploadsDir, filename);
-        
-        // Check if file exists
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ error: 'File not found' });
-        }
-        
-        res.download(filePath);
-    } catch (error) {
-        console.error('Error downloading file:', error);
-        res.status(500).json({ error: 'Failed to download file' });
-    }
-});
+    // Create user
+    const user = {
+      id: uuidv4(),
+      username,
+      password: hashedPassword,
+      team,
+      isOnline: true,
+      lastLogin: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
 
-app.delete('/api/submissions', (req, res) => {
-    try {
-        const { submissionId, adminCode } = req.body;
-        
-        if (adminCode !== ADMIN_CODE) {
-            return res.status(401).json({ error: 'Invalid admin code' });
-        }
-        
-        const submissionIndex = submissions.findIndex(s => s.id == submissionId);
-        if (submissionIndex === -1) {
-            return res.status(404).json({ error: 'Submission not found' });
-        }
-        
-        // Remove file from uploads directory if it exists
-        const submission = submissions[submissionIndex];
-        if (submission.attachment) {
-            const filePath = path.join(uploadsDir, submission.attachment);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-        }
-        
-        submissions.splice(submissionIndex, 1);
-        saveData();
-        res.json({ message: 'Submission deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting submission:', error);
-        res.status(500).json({ error: 'Failed to delete submission' });
-    }
-});
+    users.push(user);
 
-// Bulk delete submissions endpoint
-app.delete('/api/submissions/admin', (req, res) => {
-    try {
-        const { adminCode, olderThan } = req.body;
-        
-        if (adminCode !== ADMIN_CODE) {
-            return res.status(401).json({ error: 'Invalid admin code' });
-        }
-        
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - (olderThan || 30)); // Default 30 days
-        
-        const initialLength = submissions.length;
-        const deletedSubmissions = submissions.filter(sub => new Date(sub.timestamp) <= cutoffDate);
-        
-        // Delete files from uploads directory
-        deletedSubmissions.forEach(sub => {
-            if (sub.attachment) {
-                const filePath = path.join(uploadsDir, sub.attachment);
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
-                }
-            }
-        });
-        
-        submissions = submissions.filter(sub => new Date(sub.timestamp) > cutoffDate);
-        saveData();
-        
-        res.json({ 
-            message: `Deleted ${initialLength - submissions.length} submissions`,
-            deleted: initialLength - submissions.length,
-            remaining: submissions.length
-        });
-    } catch (error) {
-        console.error('Error bulk deleting submissions:', error);
-        res.status(500).json({ error: 'Failed to delete submissions' });
-    }
-});
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        username: user.username, 
+        team: user.team 
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
-// Tasks API
-app.get('/api/tasks', (req, res) => {
-    try {
-        res.json(tasks);
-    } catch (error) {
-        console.error('Error fetching tasks:', error);
-        res.status(500).json({ error: 'Failed to fetch tasks' });
-    }
-});
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = user;
 
-// Users API
-app.get('/api/users', (req, res) => {
-    try {
-        // Return users without passwords for security
-        const usersWithoutPasswords = users.map(user => {
-            const { password, ...userWithoutPassword } = user;
-            return userWithoutPassword;
-        });
-        res.json(usersWithoutPasswords);
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ error: 'Failed to fetch users' });
-    }
-});
-
-app.post('/api/users', (req, res) => {
-    try {
-        const { username, updates, action, userData, adminCode, password } = req.body;
-        
-        console.log('Received user action:', action, 'username:', username);
-        
-        if (action === 'update') {
-            const userIndex = users.findIndex(u => u.username === username);
-            if (userIndex === -1) {
-                return res.status(404).json({ error: 'User not found' });
-            }
-            users[userIndex] = { ...users[userIndex], ...updates };
-            saveData();
-            
-            // Return user without password
-            const { password: _, ...userWithoutPassword } = users[userIndex];
-            return res.json(userWithoutPassword);
-        }
-
-        if (action === 'login') {
-            console.log('Login attempt for:', username);
-            const user = users.find(u => u.username === username && u.password === password);
-            if (user) {
-                // Update user status with login time
-                user.isOnline = true;
-                user.lastLogin = new Date().toISOString();
-                user.loginHistory = user.loginHistory || [];
-                user.loginHistory.push({
-                    login: new Date().toISOString(),
-                    logout: null,
-                    sessionId: Date.now()
-                });
-                
-                saveData();
-                
-                const { password: _, ...userWithoutPassword } = user;
-                return res.json(userWithoutPassword);
-            } else {
-                console.log('Login failed for:', username);
-                return res.status(401).json({ error: 'Invalid username or password' });
-            }
-        }
-
-        if (action === 'register') {
-            if (adminCode !== ADMIN_CODE) {
-                return res.status(401).json({ error: 'Invalid admin code' });
-            }
-            
-            if (users.find(u => u.username === userData.username)) {
-                return res.status(400).json({ error: 'Username already exists' });
-            }
-            
-            const newUser = {
-                ...userData,
-                isOnline: false,
-                lastLogin: null,
-                lastLogout: null,
-                role: `${userData.team} Member`,
-                loginHistory: []
-            };
-            users.push(newUser);
-            saveData();
-            
-            // Return user without password
-            const { password: _, ...userWithoutPassword } = newUser;
-            return res.status(201).json(userWithoutPassword);
-        }
-
-        res.status(400).json({ error: 'Invalid action' });
-    } catch (error) {
-        console.error('Error in users API:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Logout endpoint
-app.post('/api/users/logout', (req, res) => {
-    try {
-        const { username } = req.body;
-        const user = users.find(u => u.username === username);
-        
-        if (user) {
-            user.isOnline = false;
-            user.lastLogout = new Date().toISOString();
-            
-            // Update last session logout time
-            if (user.loginHistory && user.loginHistory.length > 0) {
-                const lastSession = user.loginHistory[user.loginHistory.length - 1];
-                if (!lastSession.logout) {
-                    lastSession.logout = new Date().toISOString();
-                }
-            }
-            
-            saveData();
-        }
-        
-        res.json({ message: 'Logged out successfully' });
-    } catch (error) {
-        console.error('Error during logout:', error);
-        res.status(500).json({ error: 'Logout failed' });
-    }
-});
-
-// Session history endpoint
-app.get('/api/users/:username/sessions', (req, res) => {
-    try {
-        const { username } = req.params;
-        const user = users.find(u => u.username === username);
-        
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        
-        res.json(user.loginHistory || []);
-    } catch (error) {
-        console.error('Error fetching user sessions:', error);
-        res.status(500).json({ error: 'Failed to fetch sessions' });
-    }
-});
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
-        timestamp: new Date().toISOString(),
-        data: {
-            comments: comments.length,
-            submissions: submissions.length,
-            tasks: tasks.length,
-            users: users.length
-        }
+    res.status(201).json({
+      message: 'User registered successfully',
+      token,
+      user: userWithoutPassword
     });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    // Find user
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Update user status
+    user.isOnline = true;
+    user.lastLogin = new Date().toISOString();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        username: user.username, 
+        team: user.team 
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// User routes
+app.get('/api/users', authenticateToken, (req, res) => {
+  try {
+    const usersWithoutPasswords = users.map(({ password, ...user }) => user);
+    res.json(usersWithoutPasswords);
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Task routes
+app.get('/api/tasks', authenticateToken, (req, res) => {
+  try {
+    const { limit, team } = req.query;
+    let filteredTasks = tasks;
+
+    // Filter by team if specified
+    if (team) {
+      filteredTasks = filteredTasks.filter(task => task.team === team);
+    }
+
+    // Apply limit if specified
+    if (limit) {
+      filteredTasks = filteredTasks.slice(0, parseInt(limit));
+    }
+
+    res.json(filteredTasks);
+  } catch (error) {
+    console.error('Get tasks error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/tasks', authenticateToken, async (req, res) => {
+  try {
+    const { title, description, team, priority, mondayBoardId } = req.body;
+
+    // Validation
+    if (!title || !description || !team) {
+      return res.status(400).json({ error: 'Title, description, and team are required' });
+    }
+
+    if (title.length < 3) {
+      return res.status(400).json({ error: 'Title must be at least 3 characters long' });
+    }
+
+    const task = {
+      id: uuidv4(),
+      title,
+      description,
+      team,
+      priority: priority || 'Medium',
+      status: 'todo',
+      createdBy: req.user.username,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      mondayBoardId: mondayBoardId || null
+    };
+
+    tasks.push(task);
+
+    // Sync to Monday.com if board ID provided and API key is available
+    if (mondayBoardId && MONDAY_API_KEY) {
+      try {
+        const columnValues = {
+          status: task.status,
+          priority: task.priority,
+          team: task.team
+        };
+
+        await mondayService.createItem(mondayBoardId, title, columnValues);
+      } catch (mondayError) {
+        console.error('Monday.com sync failed:', mondayError);
+        // Continue with task creation even if Monday.com sync fails
+      }
+    }
+
+    res.status(201).json({
+      message: 'Task created successfully',
+      task
+    });
+  } catch (error) {
+    console.error('Task creation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Monday.com Integration Routes
+app.get('/api/monday/boards', authenticateToken, async (req, res) => {
+  try {
+    if (!MONDAY_API_KEY) {
+      return res.status(501).json({ error: 'Monday.com integration not configured' });
+    }
+
+    const boardsData = await mondayService.getBoards();
+    res.json(boardsData);
+  } catch (error) {
+    console.error('Error fetching boards:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/monday/items', authenticateToken, async (req, res) => {
+  try {
+    if (!MONDAY_API_KEY) {
+      return res.status(501).json({ error: 'Monday.com integration not configured' });
+    }
+
+    const { boardId, itemName, columnValues } = req.body;
+
+    if (!boardId || !itemName) {
+      return res.status(400).json({ error: 'Board ID and item name are required' });
+    }
+
+    const result = await mondayService.createItem(boardId, itemName, columnValues);
+    res.json(result);
+  } catch (error) {
+    console.error('Error creating item:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/monday/boards/:boardId/items', authenticateToken, async (req, res) => {
+  try {
+    if (!MONDAY_API_KEY) {
+      return res.status(501).json({ error: 'Monday.com integration not configured' });
+    }
+
+    const { boardId } = req.params;
+    const itemsData = await mondayService.getBoardItems(boardId);
+    res.json(itemsData);
+  } catch (error) {
+    console.error('Error fetching board items:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Time tracking routes
+app.post('/api/time-entries', authenticateToken, (req, res) => {
+  try {
+    const { taskId, duration, description } = req.body;
+
+    if (!taskId || !duration) {
+      return res.status(400).json({ error: 'Task ID and duration are required' });
+    }
+
+    const timeEntry = {
+      id: uuidv4(),
+      taskId,
+      userId: req.user.userId,
+      duration: parseInt(duration),
+      description: description || '',
+      date: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+
+    timeEntries.push(timeEntry);
+
+    res.status(201).json({
+      message: 'Time entry created successfully',
+      timeEntry
+    });
+  } catch (error) {
+    console.error('Time entry creation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/time-entries', authenticateToken, (req, res) => {
+  try {
+    const userTimeEntries = timeEntries.filter(entry => entry.userId === req.user.userId);
+    res.json(userTimeEntries.slice(-10).reverse()); // Return last 10 entries
+  } catch (error) {
+    console.error('Get time entries error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Stats routes
+app.get('/api/stats', authenticateToken, (req, res) => {
+  try {
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(task => task.status === 'done').length;
+    const overallProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    const stats = {
+      totalTasks,
+      completedTasks,
+      totalUsers: users.length,
+      onlineUsers: users.filter(u => u.isOnline).length,
+      overallProgress: `${overallProgress}%`
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Get stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin routes
+app.get('/api/admin/stats', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const stats = {
+      totalUsers: users.length,
+      onlineUsers: users.filter(u => u.isOnline).length,
+      totalTasks: tasks.length,
+      completedTasks: tasks.filter(t => t.status === 'done').length,
+      totalTimeEntries: timeEntries.length,
+      mondayIntegration: !!MONDAY_API_KEY
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Get admin stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    environment: NODE_ENV,
+    mondayIntegration: !!MONDAY_API_KEY
+  });
+});
+
+// Serve static files in production
+if (NODE_ENV === 'production') {
+  app.use(express.static('public'));
+  
+  // Serve frontend for all other routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-    if (error instanceof multer.MulterError) {
-        if (error.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ error: 'File too large. Maximum size is 2MB.' });
-        }
-    }
-    console.error('Unhandled error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  console.error('Unhandled error:', error);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
-// Serve the main HTML file for all other routes
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// Get port from environment variable (Render provides this)
-const PORT = process.env.PORT || 10000;
-
-// Listen on all network interfaces
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 DigiHive server running on port ${PORT}`);
-    console.log(`📊 API endpoints available at /api/comments, /api/submissions, /api/tasks, /api/users`);
-    console.log(`🌐 Frontend served from: http://0.0.0.0:${PORT}`);
-    console.log(`💾 Uploads directory: ${uploadsDir}`);
-    console.log(`💾 Data file: ${DATA_FILE}`);
-    console.log(`✅ Server ready and accepting connections`);
+app.listen(PORT, () => {
+  console.log(`🚀 DigiHive server running on port ${PORT}`);
+  console.log(`📊 Environment: ${NODE_ENV}`);
+  console.log(`🔗 Monday.com integration: ${MONDAY_API_KEY ? 'Enabled' : 'Disabled'}`);
+  console.log(`👤 Default admin credentials: admin / admin123`);
+  console.log(`🔑 Admin code: ${ADMIN_CODE}`);
 });
