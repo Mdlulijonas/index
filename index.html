@@ -200,13 +200,76 @@
             font-weight: 600;
         }
         
-        /* Modern Dashboard Layout */
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--bee-yellow);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: var(--background);
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--bee-orange);
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: 2px solid;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background: var(--bee-yellow);
+            color: var(--bee-black);
+            border-color: var(--bee-orange);
+        }
+        
+        .btn-primary:hover {
+            background: var(--bee-orange);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 143, 0, 0.3);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border-color: var(--bee-yellow);
+            color: var(--dark);
+        }
+        
+        .btn-outline:hover {
+            background: var(--bee-yellow);
+            color: var(--bee-black);
+        }
+        
+        /* Dashboard Styles */
         .dashboard {
-            display: flex;
+            display: none;
             min-height: 100vh;
         }
         
-        /* Sidebar - Bee Hive Theme */
         .sidebar {
             background: linear-gradient(135deg, var(--sidebar-bg), var(--bee-brown));
             padding: 2rem 1.5rem;
@@ -218,16 +281,6 @@
             z-index: 100;
             transition: transform 0.3s ease;
             border-right: 3px solid var(--bee-yellow);
-        }
-        
-        .sidebar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange), var(--bee-yellow));
         }
         
         .logo {
@@ -250,14 +303,6 @@
             font-weight: bold;
             font-size: 1.3rem;
             border: 2px solid var(--bee-black);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .logo-icon::before {
-            content: '🐝';
-            position: absolute;
-            font-size: 1.2rem;
         }
         
         .logo-text {
@@ -304,56 +349,49 @@
             font-weight: 600;
         }
         
-        .nav-links i {
-            width: 20px;
-            text-align: center;
-            font-size: 1.1rem;
+        .main-content {
+            flex: 1;
+            padding: 2.5rem 3rem;
+            margin-left: 280px;
+            width: calc(100% - 280px);
+            transition: all 0.3s ease;
+            background: var(--background);
         }
         
-        .team-section {
-            margin-top: 2rem;
-            position: relative;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2.5rem;
+            padding: 1rem 0;
+            border-bottom: 2px solid var(--bee-yellow);
         }
         
-        .team-section::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--bee-yellow), transparent);
+        .welcome-message h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
-        .team-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--bee-yellow);
-            margin-bottom: 1rem;
-            padding: 0 0.5rem;
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
         }
         
-        .team-members {
-            list-style: none;
-        }
-        
-        .team-member {
+        .user-avatar {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            transition: background 0.3s ease;
-            margin-bottom: 0.5rem;
-            border: 1px solid transparent;
-        }
-        
-        .team-member:hover {
-            background: rgba(255, 193, 7, 0.1);
-            border-color: var(--bee-yellow);
+            background: var(--white);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.1);
+            border: 2px solid var(--bee-yellow);
         }
         
         .member-avatar {
@@ -394,122 +432,12 @@
             border-color: #BF360C;
         }
         
-        .member-info {
-            flex: 1;
-        }
-        
-        .member-name {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--sidebar-text);
-        }
-        
-        .member-role {
-            font-size: 0.75rem;
-            color: var(--bee-yellow);
-            opacity: 0.8;
-        }
-        
-        .member-status {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--success);
-            border: 1px solid white;
-        }
-        
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            padding: 2.5rem 3rem;
-            margin-left: 280px;
-            width: calc(100% - 280px);
-            transition: all 0.3s ease;
-            background: var(--background);
-        }
-        
-        /* Header */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 2.5rem;
-            padding: 1rem 0;
-            border-bottom: 2px solid var(--bee-yellow);
-        }
-        
-        .welcome-message h1 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--dark);
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .welcome-message p {
-            color: var(--gray-dark);
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        
-        .notification {
-            position: relative;
-            background: var(--white);
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.1);
-            cursor: pointer;
-            border: 2px solid var(--bee-yellow);
-        }
-        
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--accent);
-            color: white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            font-weight: 600;
-            border: 2px solid white;
-        }
-        
-        .user-avatar {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            background: var(--white);
-            padding: 0.5rem 1rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.1);
-            border: 2px solid var(--bee-yellow);
-        }
-        
-        /* Dashboard Grid */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
             gap: 1.5rem;
         }
         
-        /* Stats Cards */
         .stats-container {
             grid-column: span 12;
             display: grid;
@@ -541,11 +469,6 @@
             background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
         }
         
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(93, 64, 55, 0.15);
-        }
-        
         .stat-header {
             display: flex;
             justify-content: space-between;
@@ -569,21 +492,6 @@
             background: var(--bee-yellow);
             border-color: var(--bee-orange);
         }
-        .stat-icon.tasks { 
-            background: var(--design);
-            border-color: var(--bee-orange);
-            color: white;
-        }
-        .stat-icon.progress { 
-            background: var(--support);
-            border-color: #00695C;
-            color: white;
-        }
-        .stat-icon.team { 
-            background: var(--content);
-            border-color: #D84315;
-            color: white;
-        }
         
         .stat-value {
             font-size: 2.5rem;
@@ -598,7 +506,6 @@
             font-weight: 500;
         }
         
-        /* Main Sections */
         .dashboard-section {
             display: none;
         }
@@ -607,7 +514,6 @@
             display: block;
         }
         
-        /* Task Overview */
         .task-overview {
             grid-column: span 8;
             background: var(--card-bg);
@@ -616,17 +522,6 @@
             box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
             border: 2px solid var(--bee-yellow);
             position: relative;
-        }
-        
-        .task-overview::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
-            border-radius: 16px 16px 0 0;
         }
         
         .section-header {
@@ -656,7 +551,6 @@
             border-radius: 2px;
         }
         
-        /* Task Display */
         .task-display {
             display: flex;
             flex-direction: column;
@@ -665,20 +559,6 @@
             max-height: 600px;
             overflow-y: auto;
             padding-right: 0.5rem;
-        }
-        
-        .task-display::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .task-display::-webkit-scrollbar-track {
-            background: var(--gray-light);
-            border-radius: 3px;
-        }
-        
-        .task-display::-webkit-scrollbar-thumb {
-            background: var(--bee-yellow);
-            border-radius: 3px;
         }
         
         .task-item {
@@ -694,43 +574,9 @@
             position: relative;
         }
         
-        .task-item::before {
-            content: '🐝';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            opacity: 0.3;
-            font-size: 1.2rem;
-        }
-        
-        .task-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(93, 64, 55, 0.15);
-        }
-        
         .task-item.dev { 
             border-left-color: var(--dev);
             background: linear-gradient(135deg, #FFFDE7, #FFECB3);
-        }
-        .task-item.design { 
-            border-left-color: var(--design);
-            background: linear-gradient(135deg, #FFF8E1, #FFE0B2);
-        }
-        .task-item.marketing { 
-            border-left-color: var(--marketing);
-            background: linear-gradient(135deg, #E8F5E8, #C8E6C9);
-        }
-        .task-item.support { 
-            border-left-color: var(--support);
-            background: linear-gradient(135deg, #E0F2F1, #B2DFDB);
-        }
-        .task-item.content { 
-            border-left-color: var(--content);
-            background: linear-gradient(135deg, #FBE9E7, #FFCCBC);
-        }
-        .task-item.completed { 
-            opacity: 0.7;
-            background: linear-gradient(135deg, #F5F5F5, #EEEEEE);
         }
         
         .task-header {
@@ -744,11 +590,6 @@
             margin-bottom: 0.25rem;
             color: var(--dark);
             font-size: 1.2rem;
-        }
-        
-        .task-due {
-            font-size: 0.9rem;
-            color: var(--gray-dark);
         }
         
         .task-priority {
@@ -777,37 +618,6 @@
             line-height: 1.5;
         }
         
-        .task-role {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        
-        .role-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 0.8rem;
-            border: 1px solid white;
-        }
-        
-        .role-icon.dev { background: var(--dev); }
-        .role-icon.design { background: var(--design); }
-        .role-icon.marketing { background: var(--marketing); }
-        .role-icon.support { background: var(--support); }
-        .role-icon.content { background: var(--content); }
-        
-        .role-name {
-            font-size: 0.85rem;
-            color: var(--gray-dark);
-            font-weight: 500;
-        }
-        
         .task-actions {
             display: flex;
             justify-content: flex-end;
@@ -815,418 +625,6 @@
             margin-top: 0.5rem;
         }
         
-        .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            border: 2px solid;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.85rem;
-        }
-        
-        .btn-primary {
-            background: var(--bee-yellow);
-            color: var(--bee-black);
-            border-color: var(--bee-orange);
-        }
-        
-        .btn-primary:hover {
-            background: var(--bee-orange);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 143, 0, 0.3);
-        }
-        
-        .btn-outline {
-            background: transparent;
-            border-color: var(--bee-yellow);
-            color: var(--dark);
-        }
-        
-        .btn-outline:hover {
-            background: var(--bee-yellow);
-            color: var(--bee-black);
-        }
-        
-        .btn-success {
-            background: var(--success);
-            color: white;
-            border-color: #388E3C;
-        }
-        
-        .btn-success:hover {
-            background: #3d8b40;
-            transform: translateY(-2px);
-        }
-        
-        /* Team Progress */
-        .team-progress {
-            grid-column: span 4;
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
-            border: 2px solid var(--bee-yellow);
-            position: relative;
-        }
-        
-        .team-progress::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
-            border-radius: 16px 16px 0 0;
-        }
-        
-        .progress-bars {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-        
-        .progress-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .team-name {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-        }
-        
-        .team-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            border: 2px solid white;
-        }
-        
-        .team-dot.dev { background: var(--dev); }
-        .team-dot.design { background: var(--design); }
-        .team-dot.marketing { background: var(--marketing); }
-        .team-dot.support { background: var(--support); }
-        .team-dot.content { background: var(--content); }
-        
-        .progress-percent {
-            font-weight: 600;
-            color: var(--dark);
-        }
-        
-        .progress-bar {
-            height: 8px;
-            background: var(--gray-light);
-            border-radius: 4px;
-            overflow: hidden;
-            border: 1px solid var(--gray-light);
-        }
-        
-        .progress-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.5s ease;
-            position: relative;
-        }
-        
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 2s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        
-        .progress-fill.dev { background: linear-gradient(90deg, var(--dev), #FFD54F); }
-        .progress-fill.design { background: linear-gradient(90deg, var(--design), #FFB74D); }
-        .progress-fill.marketing { background: linear-gradient(90deg, var(--marketing), #81C784); }
-        .progress-fill.support { background: linear-gradient(90deg, var(--support), #4DB6AC); }
-        .progress-fill.content { background: linear-gradient(90deg, var(--content), #FFAB91); }
-        
-        /* Activity & Motivation Section */
-        .activity-section {
-            grid-column: span 4;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-        
-        .motivation-card-dash {
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
-            color: var(--bee-black);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
-            border: 2px solid var(--bee-black);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .motivation-card-dash::before {
-            content: '🐝';
-            position: absolute;
-            bottom: -10px;
-            right: -10px;
-            font-size: 4rem;
-            opacity: 0.2;
-            transform: rotate(15deg);
-        }
-        
-        .motivation-text-dash {
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-bottom: 1rem;
-            font-style: italic;
-            line-height: 1.5;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .motivation-author-dash {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            font-weight: 600;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .tips-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
-            border: 2px solid var(--bee-yellow);
-            position: relative;
-        }
-        
-        .tips-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
-            border-radius: 16px 16px 0 0;
-        }
-        
-        .tips-list {
-            list-style: none;
-        }
-        
-        .tips-list li {
-            padding: 0.75rem 0;
-            border-bottom: 1px solid var(--gray-light);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        .tips-list li:last-child {
-            border-bottom: none;
-        }
-        
-        .tip-icon {
-            width: 24px;
-            height: 24px;
-            background: var(--bee-yellow);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--bee-black);
-            font-size: 0.8rem;
-            border: 1px solid var(--bee-orange);
-        }
-        
-        .action-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-        }
-        
-        /* Comments Section */
-        .comments-section {
-            grid-column: span 8;
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
-            border: 2px solid var(--bee-yellow);
-            position: relative;
-        }
-        
-        .comments-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
-            border-radius: 16px 16px 0 0;
-        }
-        
-        .comment-form {
-            margin-bottom: 1.5rem;
-        }
-        
-        .comment-input {
-            width: 100%;
-            padding: 1rem;
-            border: 2px solid var(--bee-yellow);
-            border-radius: 8px;
-            resize: vertical;
-            min-height: 80px;
-            margin-bottom: 1rem;
-            font-size: 0.95rem;
-            background: var(--background);
-            transition: border-color 0.3s ease;
-        }
-        
-        .comment-input:focus {
-            outline: none;
-            border-color: var(--bee-orange);
-            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
-        }
-        
-        .comments-list {
-            max-height: 400px;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-        
-        .comments-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .comments-list::-webkit-scrollbar-track {
-            background: var(--gray-light);
-            border-radius: 3px;
-        }
-        
-        .comments-list::-webkit-scrollbar-thumb {
-            background: var(--bee-yellow);
-            border-radius: 3px;
-        }
-        
-        .comment {
-            padding: 1rem;
-            border-bottom: 1px solid var(--gray-light);
-            transition: background 0.3s ease;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            background: var(--background);
-        }
-        
-        .comment:hover {
-            background: var(--card-bg);
-            transform: translateX(5px);
-        }
-        
-        .comment:last-child {
-            border-bottom: none;
-        }
-        
-        .comment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        
-        .comment-user {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-        }
-        
-        .comment-time {
-            font-size: 0.8rem;
-            color: var(--gray);
-        }
-        
-        .comment-team {
-            font-size: 0.8rem;
-            color: var(--gray-dark);
-            background: var(--gray-light);
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            border: 1px solid var(--gray);
-        }
-        
-        .comment-text {
-            color: var(--dark);
-            line-height: 1.5;
-        }
-        
-        .comment-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        
-        .btn-danger {
-            background: var(--error);
-            color: white;
-            border-color: #C62828;
-        }
-        
-        .btn-danger:hover {
-            background: #c62828;
-            transform: translateY(-2px);
-        }
-        
-        /* Online Status */
-        .online-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.8rem;
-            color: var(--success);
-            margin-top: 0.25rem;
-        }
-        
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--success);
-            animation: pulse 2s infinite;
-            border: 1px solid white;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -1257,17 +655,6 @@
             position: relative;
         }
         
-        .modal-content::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
-            border-radius: 16px 16px 0 0;
-        }
-        
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -1290,22 +677,7 @@
             transition: color 0.3s ease;
         }
         
-        .close-modal:hover {
-            color: var(--bee-orange);
-        }
-        
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--dark);
-        }
-        
-        .form-input, .form-select, .form-textarea {
+        .form-textarea {
             width: 100%;
             padding: 0.75rem;
             border: 2px solid var(--bee-yellow);
@@ -1313,263 +685,10 @@
             font-size: 1rem;
             background: var(--background);
             transition: border-color 0.3s ease;
-        }
-        
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none;
-            border-color: var(--bee-orange);
-            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
-        }
-        
-        .form-textarea {
             resize: vertical;
             min-height: 100px;
         }
         
-        /* Motivational Popup */
-        .motivation-popup {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(93, 64, 55, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .motivation-popup.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .popup-content {
-            background: white;
-            border-radius: 20px;
-            padding: 3rem;
-            max-width: 600px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 30px 60px rgba(93, 64, 55, 0.4);
-            transform: translateY(20px);
-            transition: transform 0.4s ease;
-            border: 4px solid var(--bee-yellow);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .motivation-popup.active .popup-content {
-            transform: translateY(0);
-        }
-        
-        .popup-content::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 6px;
-            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange), var(--bee-yellow));
-        }
-        
-        .popup-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .popup-logo-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--bee-black);
-            font-weight: bold;
-            font-size: 2rem;
-            border: 3px solid var(--bee-black);
-            position: relative;
-        }
-        
-        .popup-logo-icon::before {
-            content: '🐝';
-            position: absolute;
-            font-size: 2.5rem;
-        }
-        
-        .popup-logo-text {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 2px 2px 4px rgba(93, 64, 55, 0.2);
-        }
-        
-        .popup-quote {
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--dark);
-            line-height: 1.4;
-            font-style: italic;
-            position: relative;
-        }
-        
-        .popup-quote::before, .popup-quote::after {
-            content: '"';
-            font-size: 3rem;
-            color: var(--bee-yellow);
-            position: absolute;
-            opacity: 0.5;
-        }
-        
-        .popup-quote::before {
-            top: -20px;
-            left: -30px;
-        }
-        
-        .popup-quote::after {
-            bottom: -40px;
-            right: -30px;
-        }
-        
-        .popup-author {
-            font-size: 1.1rem;
-            color: var(--bee-orange);
-            font-weight: 500;
-            margin-bottom: 2rem;
-        }
-        
-        .popup-btn {
-            background: linear-gradient(135deg, var(--bee-yellow), var(--bee-orange));
-            color: var(--bee-black);
-            border: 3px solid var(--bee-black);
-            padding: 1rem 2.5rem;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 1.1rem;
-        }
-        
-        .popup-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(255, 193, 7, 0.4);
-        }
-        
-        /* Submissions & Team Sections */
-        .submissions-list, .team-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            max-height: 600px;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-        
-        .submission-item, .team-member-item {
-            background: var(--background);
-            border-radius: 12px;
-            padding: 1.5rem;
-            border-left: 6px solid var(--bee-yellow);
-            transition: transform 0.2s ease;
-            border: 1px solid var(--gray-light);
-        }
-        
-        .submission-item:hover, .team-member-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.1);
-        }
-        
-        .submission-header, .team-member-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-        
-        .submission-title, .team-member-name {
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: var(--dark);
-        }
-        
-        .submission-meta, .team-member-meta {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.85rem;
-            color: var(--gray-dark);
-        }
-        
-        .submission-content {
-            color: var(--gray-dark);
-            line-height: 1.5;
-            margin-bottom: 1rem;
-        }
-        
-        /* Admin Tools */
-        .admin-tools {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .sessions-table {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.1);
-            overflow-x: auto;
-            border: 2px solid var(--bee-yellow);
-            position: relative;
-        }
-        
-        .sessions-table::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--bee-yellow), var(--bee-orange));
-            border-radius: 16px 16px 0 0;
-        }
-        
-        .session-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .session-table th,
-        .session-table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--gray-light);
-        }
-        
-        .session-table th {
-            font-weight: 600;
-            color: var(--dark);
-            background: var(--bee-yellow);
-            color: var(--bee-black);
-        }
-        
-        .session-table tr:hover {
-            background: var(--background);
-        }
-        
-        /* Mobile Menu Button */
         .mobile-menu-btn {
             display: none;
             position: fixed;
@@ -1583,23 +702,6 @@
             padding: 0.75rem;
             font-size: 1.2rem;
             box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
-            transition: all 0.3s ease;
-        }
-        
-        .mobile-menu-btn:hover {
-            background: var(--bee-orange);
-            transform: translateY(-2px);
-        }
-        
-        /* Mobile Responsiveness */
-        @media (max-width: 1200px) {
-            .stats-container {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .task-overview, .team-progress, .comments-section, .activity-section {
-                grid-column: span 12;
-            }
         }
         
         @media (max-width: 1024px) {
@@ -1638,70 +740,6 @@
                 width: 100%;
                 justify-content: space-between;
             }
-            
-            .main-content {
-                padding: 1rem;
-            }
-            
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-            
-            .task-actions {
-                flex-direction: column;
-            }
-            
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .admin-tools {
-                grid-template-columns: 1fr;
-            }
-            
-            .session-table {
-                font-size: 0.8rem;
-            }
-            
-            .session-table th,
-            .session-table td {
-                padding: 0.5rem;
-            }
-            
-            .popup-content {
-                padding: 2rem;
-            }
-            
-            .popup-quote {
-                font-size: 1.4rem;
-            }
-            
-            .login-logo {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-        }
-        
-        /* Bee Animation */
-        .bee-animation {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            font-size: 2rem;
-            animation: fly 10s infinite linear;
-            z-index: 999;
-            opacity: 0.7;
-        }
-        
-        @keyframes fly {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            25% { transform: translate(-100px, -50px) rotate(90deg); }
-            50% { transform: translate(-200px, 0) rotate(180deg); }
-            75% { transform: translate(-100px, 50px) rotate(270deg); }
-            100% { transform: translate(0, 0) rotate(360deg); }
         }
     </style>
 </head>
@@ -1709,22 +747,19 @@
     <!-- Honeycomb Background -->
     <div class="honeycomb-bg"></div>
     
-    <!-- Bee Animation -->
-    <div class="bee-animation">🐝</div>
-    
     <!-- Login Screen -->
     <div id="loginScreen" class="login-container">
         <div class="login-card">
             <div class="login-logo">
-                <div class="login-logo-icon"></div>
+                <div class="login-logo-icon">DH</div>
                 <div class="login-logo-text">DigiHive</div>
             </div>
             
             <div class="motivation-card">
                 <div class="motivation-text" id="loginMotivation">
-                    "The right steps will always lead you to success"
+                    "Collaboration is the foundation of great achievements"
                 </div>
-                <div class="motivation-author">- Success Team DigiHive</div>
+                <div class="motivation-author">- Team DigiHive</div>
             </div>
             
             <form id="loginForm">
@@ -1749,380 +784,193 @@
         </div>
     </div>
 
-    <!-- Main Dashboard (Hidden until login) -->
-    <div id="dashboard" style="display: none;">
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="dashboard">
         <!-- Mobile Menu Button -->
         <button class="mobile-menu-btn" onclick="toggleSidebar()">
             <i class="fas fa-bars"></i>
         </button>
         
-        <!-- Motivational Popup -->
-        <div class="motivation-popup active" id="motivationPopup">
-            <div class="popup-content">
-                <div class="popup-logo">
-                    <div class="popup-logo-icon"></div>
-                    <div class="popup-logo-text">DigiHive</div>
-                </div>
-                <div class="popup-quote" id="popupQuote">"The right steps will always lead you to success"</div>
-                <div class="popup-author" id="popupAuthor">- Success Team DigiHive</div>
-                <button class="popup-btn" id="popupBtn">Let's Get Started!</button>
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">DH</div>
+                <div class="logo-text">DigiHive</div>
             </div>
+            
+            <ul class="nav-links">
+                <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="#" onclick="showSection('tasks')"><i class="fas fa-tasks"></i> Tasks</a></li>
+                <li><a href="#" onclick="showSection('team')"><i class="fas fa-users"></i> Team</a></li>
+                <li><a href="#" onclick="showSection('analytics')"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+                <li><a href="#" onclick="showSection('admin')"><i class="fas fa-tools"></i> Admin Tools</a></li>
+            </ul>
         </div>
         
-        <div class="dashboard">
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <div class="logo">
-                    <div class="logo-icon"></div>
-                    <div class="logo-text">DigiHive</div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <div class="welcome-message">
+                    <h1 id="welcomeTitle">Welcome to DigiHive Workstation</h1>
+                    <p id="welcomeSubtitle">Track progress, submit work, and collaborate with your team</p>
                 </div>
-                
-                <ul class="nav-links">
-                    <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</a></li>
-                    <li><a href="#" onclick="showSection('tasks')"><i class="fas fa-tasks"></i> Start Task</a></li>
-                    <li><a href="#" onclick="showSection('submissions')"><i class="fas fa-file-upload"></i> Submissions</a></li>
-                    <li><a href="#" onclick="showSection('team')"><i class="fas fa-users"></i> Team</a></li>
-                    <li><a href="#" onclick="showSection('comments')"><i class="fas fa-comments"></i> Comments</a></li>
-                    <li><a href="#" onclick="showSection('admin')"><i class="fas fa-tools"></i> Admin Tools</a></li>
-                    <li><a href="#" onclick="showSection('settings')"><i class="fas fa-cog"></i> Settings</a></li>
-                </ul>
-                
-                <div class="team-section">
-                    <div class="team-title">ONLINE TEAM MEMBERS</div>
-                    <ul class="team-members" id="onlineMembers">
-                        <!-- Online members will be populated here -->
-                    </ul>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <div class="member-avatar" id="userAvatar">US</div>
+                        <span id="userName">User</span>
+                    </div>
+                    <button class="btn btn-outline" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
                 </div>
             </div>
             
-            <!-- Main Content -->
-            <div class="main-content">
-                <div class="header">
-                    <div class="welcome-message">
-                        <h1 id="welcomeTitle">Welcome to DigiHive Workstation</h1>
-                        <p id="welcomeSubtitle">Track progress, submit work, and collaborate with your team</p>
+            <!-- Dashboard Section -->
+            <div id="dashboardSection" class="dashboard-section active">
+                <div class="dashboard-grid">
+                    <!-- Stats Cards -->
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="totalTasks">0</div>
+                                    <div class="stat-label">Active Tasks</div>
+                                </div>
+                                <div class="stat-icon overview">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="completedTasks">0</div>
+                                    <div class="stat-label">Completed</div>
+                                </div>
+                                <div class="stat-icon overview">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="teamMembers">0</div>
+                                    <div class="stat-label">Team Members</div>
+                                </div>
+                                <div class="stat-icon overview">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="overallProgress">0%</div>
+                                    <div class="stat-label">Overall Progress</div>
+                                </div>
+                                <div class="stat-icon overview">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="user-info">
-                        <div class="notification">
-                            <i class="fas fa-bell"></i>
-                            <div class="notification-badge" id="notificationCount">0</div>
+                    
+                    <!-- Task Overview -->
+                    <div class="task-overview">
+                        <div class="section-header">
+                            <div class="section-title">Recent Tasks</div>
+                            <button class="btn btn-primary" onclick="showTaskModal()">
+                                <i class="fas fa-plus"></i> Add Task
+                            </button>
                         </div>
-                        <div class="user-avatar">
-                            <div class="member-avatar" id="userAvatar">US</div>
-                            <span id="userName">User</span>
+                        
+                        <div class="task-display" id="taskDisplay">
+                            <!-- Tasks will be populated here -->
                         </div>
-                        <button class="btn btn-outline" onclick="logout()">
-                            <i class="fas fa-sign-out-alt"></i> Logout
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tasks Section -->
+            <div id="tasksSection" class="dashboard-section">
+                <div class="task-overview" style="grid-column: span 12;">
+                    <div class="section-header">
+                        <div class="section-title">All Tasks</div>
+                        <button class="btn btn-primary" onclick="showTaskModal()">
+                            <i class="fas fa-plus"></i> Add Task
                         </button>
                     </div>
-                </div>
-                
-                <!-- Dashboard Section -->
-                <div id="dashboardSection" class="dashboard-section active">
-                    <div class="dashboard-grid">
-                        <!-- Stats Cards -->
-                        <div class="stats-container">
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-value" id="totalTasks">0</div>
-                                        <div class="stat-label">Active Tasks</div>
-                                    </div>
-                                    <div class="stat-icon overview">
-                                        <i class="fas fa-tasks"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-value" id="completedTasks">0</div>
-                                        <div class="stat-label">Completed</div>
-                                    </div>
-                                    <div class="stat-icon tasks">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-value" id="overallProgress">0%</div>
-                                        <div class="stat-label">Overall Progress</div>
-                                    </div>
-                                    <div class="stat-icon progress">
-                                        <i class="fas fa-chart-line"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-value" id="teamMembers">0</div>
-                                        <div class="stat-label">Team Members</div>
-                                    </div>
-                                    <div class="stat-icon team">
-                                        <i class="fas fa-users"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Task Overview -->
-                        <div class="task-overview">
-                            <div class="section-header">
-                                <div class="section-title">This Week's Tasks</div>
-                            </div>
-                            
-                            <div class="task-display" id="taskDisplay">
-                                <!-- Tasks will be populated here -->
-                            </div>
-                        </div>
-                        
-                        <!-- Team Progress -->
-                        <div class="team-progress">
-                            <div class="section-header">
-                                <div class="section-title">Team Progress</div>
-                            </div>
-                            
-                            <div class="progress-bars" id="teamProgressBars">
-                                <!-- Progress bars will be populated here -->
-                            </div>
-                        </div>
-                        
-                        <!-- Activity & Motivation Section -->
-                        <div class="activity-section">
-                            <div class="motivation-card-dash">
-                                <div class="motivation-text-dash" id="dailyMotivation">
-                                    "The right steps will always lead you to success"
-                                </div>
-                                <div class="motivation-author-dash" id="motivationAuthor">- Success Team DigiHive</div>
-                            </div>
-                            
-                            <div class="tips-card">
-                                <div class="section-header">
-                                    <div class="section-title">Productivity Tips</div>
-                                </div>
-                                
-                                <ul class="tips-list">
-                                    <li>
-                                        <div class="tip-icon"><i class="fas fa-check"></i></div>
-                                        <div>Break large tasks into smaller, manageable steps</div>
-                                    </li>
-                                    <li>
-                                        <div class="tip-icon"><i class="fas fa-clock"></i></div>
-                                        <div>Use the Pomodoro technique: 25 mins work, 5 mins break</div>
-                                    </li>
-                                    <li>
-                                        <div class="tip-icon"><i class="fas fa-bell"></i></div>
-                                        <div>Set clear daily goals and review them each morning</div>
-                                    </li>
-                                    <li>
-                                        <div class="tip-icon"><i class="fas fa-times"></i></div>
-                                        <div>Minimize distractions by turning off non-essential notifications</div>
-                                    </li>
-                                </ul>
-                                
-                                <div class="action-buttons">
-                                    <button class="btn btn-primary" onclick="showSubmissionModal()">
-                                        <i class="fas fa-file-upload"></i> Submit Weekly Report
-                                    </button>
-                                    <button class="btn btn-outline" onclick="showRegisterModal()">
-                                        <i class="fas fa-user-plus"></i> Register New Member
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Comments Section -->
-                        <div class="comments-section">
-                            <div class="section-header">
-                                <div class="section-title">Team Comments</div>
-                                <div class="online-status">
-                                    <div class="status-dot"></div>
-                                    <span>Live Updates</span>
-                                </div>
-                            </div>
-                            
-                            <div class="comment-form">
-                                <textarea class="comment-input" id="commentInput" placeholder="Share your thoughts, challenges, or updates with the team..."></textarea>
-                                <button class="btn btn-primary" onclick="postComment()">
-                                    <i class="fas fa-paper-plane"></i> Post Comment
-                                </button>
-                            </div>
-                            
-                            <div class="comments-list" id="commentsList">
-                                <!-- Comments will be populated here -->
-                            </div>
-                        </div>
+                    
+                    <div class="task-display" id="allTasksDisplay">
+                        <!-- All tasks will be populated here -->
                     </div>
                 </div>
-                
-                <!-- Tasks Section -->
-                <div id="tasksSection" class="dashboard-section">
-                    <div class="task-overview">
-                        <div class="section-header">
-                            <div class="section-title">All Tasks</div>
-                            <button class="btn btn-primary" onclick="showSubmissionModal()">
-                                <i class="fas fa-file-upload"></i> Submit Report
-                            </button>
-                        </div>
-                        
-                        <div class="task-display" id="allTasksDisplay">
-                            <!-- All tasks will be populated here -->
-                        </div>
+            </div>
+            
+            <!-- Team Section -->
+            <div id="teamSection" class="dashboard-section">
+                <div class="task-overview" style="grid-column: span 12;">
+                    <div class="section-header">
+                        <div class="section-title">Team Members</div>
+                        <button class="btn btn-primary" onclick="showRegisterModal()">
+                            <i class="fas fa-user-plus"></i> Add Member
+                        </button>
+                    </div>
+                    
+                    <div class="task-display" id="teamList">
+                        <!-- Team members will be populated here -->
                     </div>
                 </div>
-                
-                <!-- Submissions Section -->
-                <div id="submissionsSection" class="dashboard-section">
-                    <div class="task-overview">
-                        <div class="section-header">
-                            <div class="section-title">All Submissions</div>
-                            <button class="btn btn-primary" onclick="showSubmissionModal()">
-                                <i class="fas fa-plus"></i> New Submission
-                            </button>
-                        </div>
-                        
-                        <div class="submissions-list" id="submissionsList">
-                            <!-- Submissions will be populated here -->
-                        </div>
+            </div>
+            
+            <!-- Analytics Section -->
+            <div id="analyticsSection" class="dashboard-section">
+                <div class="task-overview" style="grid-column: span 12;">
+                    <div class="section-header">
+                        <div class="section-title">Analytics Dashboard</div>
+                    </div>
+                    <div style="text-align: center; padding: 3rem;">
+                        <i class="fas fa-chart-bar" style="font-size: 4rem; color: var(--bee-yellow); margin-bottom: 1rem;"></i>
+                        <h3 style="color: var(--dark); margin-bottom: 0.5rem;">Analytics Coming Soon</h3>
+                        <p style="color: var(--gray);">Advanced analytics features are under development.</p>
                     </div>
                 </div>
-                
-                <!-- Team Section -->
-                <div id="teamSection" class="dashboard-section">
-                    <div class="task-overview">
-                        <div class="section-header">
-                            <div class="section-title">Team Members</div>
-                            <button class="btn btn-primary" onclick="showRegisterModal()">
-                                <i class="fas fa-user-plus"></i> Register Member
-                            </button>
-                        </div>
-                        
-                        <div class="team-list" id="teamList">
-                            <!-- Team members will be populated here -->
-                        </div>
+            </div>
+            
+            <!-- Admin Tools Section -->
+            <div id="adminSection" class="dashboard-section">
+                <div class="task-overview" style="grid-column: span 12;">
+                    <div class="section-header">
+                        <div class="section-title">Admin Tools</div>
                     </div>
-                </div>
-                
-                <!-- Comments Section (Full) -->
-                <div id="commentsSection" class="dashboard-section">
-                    <div class="comments-section" style="grid-column: span 12;">
-                        <div class="section-header">
-                            <div class="section-title">Team Comments</div>
-                            <div class="online-status">
-                                <div class="status-dot"></div>
-                                <span>Live Updates</span>
-                            </div>
-                        </div>
-                        
-                        <div class="comment-form">
-                            <textarea class="comment-input" id="commentInputFull" placeholder="Share your thoughts, challenges, or updates with the team..."></textarea>
-                            <button class="btn btn-primary" onclick="postCommentFull()">
-                                <i class="fas fa-paper-plane"></i> Post Comment
-                            </button>
-                        </div>
-                        
-                        <div class="comments-list" id="commentsListFull">
-                            <!-- Comments will be populated here -->
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Admin Tools Section -->
-                <div id="adminSection" class="dashboard-section">
-                    <div class="task-overview">
-                        <div class="section-header">
-                            <div class="section-title">Admin Tools</div>
-                        </div>
-                        
-                        <div class="admin-tools">
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-value" id="adminCommentsCount">0</div>
-                                        <div class="stat-label">Total Comments</div>
-                                    </div>
-                                    <div class="stat-icon overview">
-                                        <i class="fas fa-comments"></i>
-                                    </div>
+                    
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="adminUsersCount">0</div>
+                                    <div class="stat-label">Total Users</div>
                                 </div>
-                                <button class="btn btn-danger" onclick="showCleanupModal('comments')" style="width: 100%; margin-top: 1rem;">
-                                    <i class="fas fa-trash"></i> Cleanup Old Comments
-                                </button>
-                            </div>
-                            
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-value" id="adminSubmissionsCount">0</div>
-                                        <div class="stat-label">Total Submissions</div>
-                                    </div>
-                                    <div class="stat-icon tasks">
-                                        <i class="fas fa-file-upload"></i>
-                                    </div>
-                                </div>
-                                <button class="btn btn-danger" onclick="showCleanupModal('submissions')" style="width: 100%; margin-top: 1rem;">
-                                    <i class="fas fa-trash"></i> Cleanup Old Submissions
-                                </button>
-                            </div>
-                            
-                            <div class="stat-card">
-                                <div class="stat-header">
-                                    <div>
-                                        <div class="stat-value" id="adminUsersCount">0</div>
-                                        <div class="stat-label">Total Users</div>
-                                    </div>
-                                    <div class="stat-icon team">
-                                        <i class="fas fa-users"></i>
-                                    </div>
-                                </div>
-                                <div class="online-status" style="margin-top: 1rem;">
-                                    <div class="status-dot"></div>
-                                    <span id="adminOnlineCount">0 Online Now</span>
+                                <div class="stat-icon overview">
+                                    <i class="fas fa-users"></i>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- User Sessions Table -->
-                        <div class="section-header" style="margin-top: 2rem;">
-                            <div class="section-title">User Login History</div>
-                        </div>
-                        
-                        <div class="sessions-table">
-                            <table class="session-table">
-                                <thead>
-                                    <tr>
-                                        <th>Username</th>
-                                        <th>Team</th>
-                                        <th>Last Login</th>
-                                        <th>Last Logout</th>
-                                        <th>Status</th>
-                                        <th>Session Duration</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sessionsTableBody">
-                                    <!-- Sessions will be populated here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Settings Section -->
-                <div id="settingsSection" class="dashboard-section">
-                    <div class="task-overview">
-                        <div class="section-header">
-                            <div class="section-title">Settings</div>
-                        </div>
-                        <div style="text-align: center; padding: 3rem;">
-                            <i class="fas fa-tools" style="font-size: 4rem; color: var(--bee-yellow); margin-bottom: 1rem;"></i>
-                            <h3 style="color: var(--dark); margin-bottom: 0.5rem;">Settings Under Development</h3>
-                            <p style="color: var(--gray);">This section is currently being developed and will be available soon.</p>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="adminTasksCount">0</div>
+                                    <div class="stat-label">Total Tasks</div>
+                                </div>
+                                <div class="stat-icon overview">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2154,17 +1002,16 @@
                     <select class="form-select" name="team" required>
                         <option value="">Select Team</option>
                         <option value="Administrator">Administrator</option>
-                        <option value="Full-Stack">Full-Stack Development</option>
-                        <option value="UI/UX">UI/UX Design</option>
+                        <option value="Development">Development</option>
+                        <option value="Design">Design</option>
                         <option value="Marketing">Marketing</option>
                         <option value="Support">Support</option>
-                        <option value="Content">Content</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Admin Code</label>
-                    <input type="password" class="form-input" name="adminCode" required>
+                    <label class="form-label">Admin Code (for admin registration)</label>
+                    <input type="password" class="form-input" name="adminCode">
                 </div>
                 
                 <button type="submit" class="btn btn-primary" style="width: 100%;">
@@ -2174,411 +1021,111 @@
         </div>
     </div>
 
-    <!-- Submission Modal -->
-    <div class="modal" id="submissionModal">
+    <!-- Task Modal -->
+    <div class="modal" id="taskModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Submit Weekly Report</h2>
-                <button class="close-modal" onclick="closeSubmissionModal()">&times;</button>
+                <h2 class="modal-title">Create New Task</h2>
+                <button class="close-modal" onclick="closeTaskModal()">&times;</button>
             </div>
             
-            <form id="submissionForm" enctype="multipart/form-data">
+            <form id="taskForm">
                 <div class="form-group">
-                    <label class="form-label">Report Title</label>
-                    <input type="text" class="form-input" name="name" required>
+                    <label class="form-label">Task Title</label>
+                    <input type="text" class="form-input" name="title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" name="description" required></textarea>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Team</label>
                     <select class="form-select" name="team" required>
                         <option value="">Select Team</option>
-                        <option value="Administrator">Administrator</option>
-                        <option value="Full-Stack">Full-Stack Development</option>
-                        <option value="UI/UX">UI/UX Design</option>
+                        <option value="Development">Development</option>
+                        <option value="Design">Design</option>
                         <option value="Marketing">Marketing</option>
                         <option value="Support">Support</option>
-                        <option value="Content">Content</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Progress Report</label>
-                    <textarea class="form-textarea" name="progress" placeholder="Describe your progress this week..." required></textarea>
+                    <label class="form-label">Priority</label>
+                    <select class="form-select" name="priority" required>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Low">Low</option>
+                    </select>
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label">Next Week's Plan</label>
-                    <textarea class="form-textarea" name="plan" placeholder="Outline your plans for next week..." required></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Attachment (Optional, max 2MB)</label>
-                    <input type="file" class="form-input" name="attachment" accept=".pdf,.doc,.docx,.txt,.zip">
-                </div>
-                
-                <button type="submit" class="btn btn-success" style="width: 100%;">
-                    <i class="fas fa-paper-plane"></i> Submit Report
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Delete Comment Modal -->
-    <div class="modal" id="deleteCommentModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Delete Comment</h2>
-                <button class="close-modal" onclick="closeDeleteCommentModal()">&times;</button>
-            </div>
-            
-            <form id="deleteCommentForm">
-                <input type="hidden" id="commentToDelete">
-                <div class="form-group">
-                    <label class="form-label">Admin Code</label>
-                    <input type="password" class="form-input" name="adminCode" required>
-                </div>
-                
-                <button type="submit" class="btn btn-danger" style="width: 100%;">
-                    <i class="fas fa-trash"></i> Delete Comment
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Cleanup Modal -->
-    <div class="modal" id="cleanupModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="cleanupModalTitle">Cleanup Data</h2>
-                <button class="close-modal" onclick="closeCleanupModal()">&times;</button>
-            </div>
-            
-            <form id="cleanupForm">
-                <input type="hidden" id="cleanupType">
-                <div class="form-group">
-                    <label class="form-label">Delete data older than (days)</label>
-                    <input type="number" class="form-input" name="olderThan" value="30" min="1" max="365" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Admin Code</label>
-                    <input type="password" class="form-input" name="adminCode" required>
-                </div>
-                
-                <div class="form-group">
-                    <div class="stat-card" style="background: var(--warning); color: white;">
-                        <div class="stat-header">
-                            <div>
-                                <div class="stat-value" id="itemsToDelete">0</div>
-                                <div class="stat-label">items will be deleted</div>
-                            </div>
-                            <div class="stat-icon">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <button type="submit" class="btn btn-danger" style="width: 100%;">
-                    <i class="fas fa-trash"></i> Confirm Cleanup
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-plus"></i> Create Task
                 </button>
             </form>
         </div>
     </div>
 
     <script>
-        // =============================================
-        // DIGIHIVE TEAM COLLABORATION PLATFORM
-        // =============================================
-        // 
-        // ARCHITECTURE OVERVIEW:
-        // - Single Page Application with real-time updates
-        // - Modular component structure
-        // - RESTful API communication
-        // - Local storage for session management
-        //
-        // KEY FEATURES:
-        // - User authentication & role management
-        // - Task management & progress tracking
-        // - File uploads & submissions
-        // - Real-time comments & notifications
-        // - Team progress analytics
-        // - Mobile-responsive design
-        // - Bee-themed design with honeycomb patterns
-        //
-        // DATA FLOW:
-        // 1. User login -> localStorage session
-        // 2. Dashboard loads -> API calls for data
-        // 3. Real-time updates via periodic fetching
-        // 4. Form submissions -> API -> State update -> UI refresh
-        //
-
-        /**
-         * Main application state manager
-         * Handles user sessions, data caching, and UI state
-         */
-        class AppState {
-            constructor() {
-                this.currentUser = null;
-                this.users = [];
-                this.tasks = [];
-                this.comments = [];
-                this.submissions = [];
-                this.isInitialized = false;
-            }
-            
-            // Initialize application state
-            async initialize() {
-                if (this.isInitialized) return;
-                
-                try {
-                    await Promise.all([
-                        this.loadUsers(),
-                        this.loadTasks(),
-                        this.loadComments(),
-                        this.loadSubmissions()
-                    ]);
-                    this.isInitialized = true;
-                } catch (error) {
-                    console.error('Failed to initialize application state:', error);
-                }
-            }
-            
-            // Load users from API
-            async loadUsers() {
-                try {
-                    const response = await fetch('/api/users');
-                    this.users = await response.json();
-                } catch (error) {
-                    console.error('Error loading users:', error);
-                }
-            }
-            
-            // Load tasks from API
-            async loadTasks() {
-                try {
-                    const response = await fetch('/api/tasks');
-                    this.tasks = await response.json();
-                } catch (error) {
-                    console.error('Error loading tasks:', error);
-                }
-            }
-            
-            // Load comments from API
-            async loadComments() {
-                try {
-                    const response = await fetch('/api/comments');
-                    this.comments = await response.json();
-                } catch (error) {
-                    console.error('Error loading comments:', error);
-                }
-            }
-            
-            // Load submissions from API
-            async loadSubmissions() {
-                try {
-                    const response = await fetch('/api/submissions');
-                    this.submissions = await response.json();
-                } catch (error) {
-                    console.error('Error loading submissions:', error);
-                }
-            }
-        }
-
-        /**
-         * API service for all backend communications
-         * Implements error handling and request retries
-         */
-        class ApiService {
-            constructor() {
-                this.baseUrl = '/api';
-                this.retryAttempts = 3;
-            }
-            
-            async request(endpoint, options = {}) {
-                let lastError;
-                
-                for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
-                    try {
-                        const response = await fetch(`${this.baseUrl}${endpoint}`, {
-                            headers: {
-                                'Content-Type': 'application/json',
-                                ...options.headers
-                            },
-                            ...options
-                        });
-                        
-                        if (!response.ok) {
-                            const error = await response.json();
-                            throw new Error(error.error || `HTTP ${response.status}`);
-                        }
-                        
-                        return await response.json();
-                    } catch (error) {
-                        lastError = error;
-                        if (attempt < this.retryAttempts) {
-                            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-                        }
-                    }
-                }
-                
-                throw lastError;
-            }
-            
-            async post(endpoint, data) {
-                return this.request(endpoint, {
-                    method: 'POST',
-                    body: JSON.stringify(data)
-                });
-            }
-            
-            async delete(endpoint, data) {
-                return this.request(endpoint, {
-                    method: 'DELETE',
-                    body: JSON.stringify(data)
-                });
-            }
-        }
-
-        // Application state and services
-        const appState = new AppState();
-        const apiService = new ApiService();
-
-        // DOM elements
-        const loginScreen = document.getElementById('loginScreen');
-        const dashboard = document.getElementById('dashboard');
-        const welcomeTitle = document.getElementById('welcomeTitle');
-        const welcomeSubtitle = document.getElementById('welcomeSubtitle');
-        const userAvatar = document.getElementById('userAvatar');
-        const userName = document.getElementById('userName');
-
-        // Motivational quotes - NO REPEATS
-        const motivationalQuotes = [
-            {
-                text: "The right steps will always lead you to success",
-                author: "Success Team DigiHive"
-            },
-            {
-                text: "Your energy and focus today will build the foundation for tomorrow's achievements",
-                author: "Productivity Team DigiHive"
-            },
-            {
-                text: "Every line of code you write brings us closer to empowering creators worldwide",
-                author: "Development Team DigiHive"
-            },
-            {
-                text: "Your creativity and attention to detail make DigiHive exceptional",
-                author: "Design Team DigiHive"
-            },
-            {
-                text: "Collaboration multiplies our impact - together we achieve extraordinary results",
-                author: "Teamwork Champions DigiHive"
-            },
-            {
-                text: "Small consistent efforts lead to massive accomplishments over time",
-                author: "Consistency Crew DigiHive"
-            },
-            {
-                text: "Your unique perspective adds value that no one else can contribute",
-                author: "Innovation Team DigiHive"
-            },
-            {
-                text: "Challenges are opportunities in disguise - embrace them with enthusiasm",
-                author: "Growth Mindset DigiHive"
-            }
-        ];
-
+        // API Base URL - Update this to match your backend URL
+        const API_BASE_URL = 'http://localhost:3000/api';
+        
+        // Application State
+        let currentUser = null;
+        let authToken = null;
+        
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             // Check if user is already logged in
-            const savedUser = localStorage.getItem('digihive_currentUser');
-            if (savedUser) {
-                appState.currentUser = JSON.parse(savedUser);
+            const savedToken = localStorage.getItem('digihive_token');
+            const savedUser = localStorage.getItem('digihive_user');
+            
+            if (savedToken && savedUser) {
+                authToken = savedToken;
+                currentUser = JSON.parse(savedUser);
                 showDashboard();
-            } else {
-                showLogin();
+                loadDashboardData();
             }
-
-            // Set up login form
+            
+            // Set up form event listeners
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
-            
-            // Set up register form
             document.getElementById('registerForm').addEventListener('submit', handleRegister);
-            
-            // Set up submission form
-            document.getElementById('submissionForm').addEventListener('submit', handleSubmission);
-            
-            // Set up delete comment form
-            document.getElementById('deleteCommentForm').addEventListener('submit', handleDeleteComment);
-            
-            // Set up cleanup form
-            document.getElementById('cleanupForm').addEventListener('submit', handleCleanup);
-            
-            // Initialize motivational popup
-            initMotivationalPopup();
-            
-            // Initialize application state
-            appState.initialize();
+            document.getElementById('taskForm').addEventListener('submit', handleTaskCreate);
         });
-
-        // Show login screen
-        function showLogin() {
-            loginScreen.style.display = 'flex';
-            dashboard.style.display = 'none';
-        }
-
-        // Show dashboard
-        function showDashboard() {
-            loginScreen.style.display = 'none';
-            dashboard.style.display = 'block';
+        
+        // API Helper Functions
+        async function apiRequest(endpoint, options = {}) {
+            const url = `${API_BASE_URL}${endpoint}`;
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            };
             
-            // Update welcome message
-            welcomeTitle.textContent = `Welcome back, ${appState.currentUser.username}!`;
-            welcomeSubtitle.textContent = `You are logged in as ${appState.currentUser.team}`;
-            userAvatar.textContent = appState.currentUser.username.substring(0, 2).toUpperCase();
-            userName.textContent = appState.currentUser.username;
+            if (authToken) {
+                config.headers.Authorization = `Bearer ${authToken}`;
+            }
             
-            // Set user avatar color based on team
-            setUserAvatarColor(appState.currentUser.team);
-            
-            // Update user online status
-            updateUserStatus();
-            
-            // Load dashboard data
-            loadDashboardData();
-            
-            // Start real-time updates
-            startRealTimeUpdates();
-        }
-
-        // Set user avatar color based on team
-        function setUserAvatarColor(team) {
-            const avatar = document.getElementById('userAvatar');
-            avatar.className = 'member-avatar';
-            
-            switch(team) {
-                case 'Full-Stack':
-                    avatar.classList.add('dev');
-                    break;
-                case 'UI/UX':
-                    avatar.classList.add('design');
-                    break;
-                case 'Marketing':
-                    avatar.classList.add('marketing');
-                    break;
-                case 'Support':
-                    avatar.classList.add('support');
-                    break;
-                case 'Content':
-                    avatar.classList.add('content');
-                    break;
-                case 'Administrator':
-                    avatar.classList.add('admin');
-                    break;
+            try {
+                const response = await fetch(url, config);
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || `HTTP ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API request failed:', error);
+                showNotification(error.message, 'error');
+                throw error;
             }
         }
-
-        // Handle login
+        
+        // Authentication Functions
         async function handleLogin(e) {
             e.preventDefault();
             
@@ -2586,34 +1133,27 @@
             const password = document.getElementById('loginPassword').value;
             
             try {
-                const response = await fetch('/api/users', {
+                const data = await apiRequest('/auth/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'login',
-                        username: username,
-                        password: password
-                    })
+                    body: JSON.stringify({ username, password })
                 });
                 
-                if (response.ok) {
-                    const user = await response.json();
-                    appState.currentUser = user;
-                    localStorage.setItem('digihive_currentUser', JSON.stringify(user));
-                    showDashboard();
-                } else {
-                    const error = await response.json();
-                    alert(error.error || 'Login failed');
-                }
+                authToken = data.token;
+                currentUser = data.user;
+                
+                // Save to localStorage
+                localStorage.setItem('digihive_token', authToken);
+                localStorage.setItem('digihive_user', JSON.stringify(currentUser));
+                
+                showDashboard();
+                loadDashboardData();
+                showNotification('Login successful!', 'success');
+                
             } catch (error) {
-                console.error('Login error:', error);
-                alert('Network error during login');
+                showNotification('Login failed. Please check your credentials.', 'error');
             }
         }
-
-        // Handle register
+        
         async function handleRegister(e) {
             e.preventDefault();
             const formData = new FormData(e.target);
@@ -2622,219 +1162,231 @@
                 username: formData.get('username'),
                 password: formData.get('password'),
                 team: formData.get('team'),
-                isOnline: false
+                adminCode: formData.get('adminCode') || undefined
             };
-            const adminCode = formData.get('adminCode');
-
+            
             try {
-                const response = await fetch('/api/users', {
+                await apiRequest('/auth/register', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'register',
-                        userData: userData,
-                        adminCode: adminCode
-                    })
+                    body: JSON.stringify(userData)
                 });
                 
-                if (response.ok) {
-                    alert('User registered successfully!');
-                    closeRegisterModal();
-                    e.target.reset();
-                    await appState.loadUsers();
-                    updateOnlineMembers();
-                } else {
-                    const error = await response.json();
-                    alert(error.error || 'Registration failed');
+                showNotification('User registered successfully!', 'success');
+                closeRegisterModal();
+                e.target.reset();
+                
+                // Reload team data if on team section
+                if (document.getElementById('teamSection').style.display === 'block') {
+                    loadTeamData();
                 }
+                
             } catch (error) {
-                console.error('Registration error:', error);
-                alert('Network error during registration');
+                showNotification('Registration failed: ' + error.message, 'error');
             }
         }
-
-        // Handle submission
-        async function handleSubmission(e) {
+        
+        async function handleTaskCreate(e) {
             e.preventDefault();
             const formData = new FormData(e.target);
             
-            // Add current user info
-            formData.append('member', appState.currentUser.username);
-            formData.append('fileType', 'Report');
+            const taskData = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                team: formData.get('team'),
+                priority: formData.get('priority')
+            };
             
             try {
-                const response = await fetch('/api/submissions', {
+                await apiRequest('/tasks', {
                     method: 'POST',
-                    body: formData
+                    body: JSON.stringify(taskData)
                 });
                 
-                if (response.ok) {
-                    alert('Submission successful!');
-                    closeSubmissionModal();
-                    e.target.reset();
-                    await appState.loadSubmissions();
-                    renderSubmissions();
-                } else {
-                    const error = await response.json();
-                    alert(error.error || 'Submission failed');
-                }
+                showNotification('Task created successfully!', 'success');
+                closeTaskModal();
+                e.target.reset();
+                
+                // Reload tasks data
+                loadTasksData();
+                loadDashboardData();
+                
             } catch (error) {
-                console.error('Submission error:', error);
-                alert('Network error during submission');
+                showNotification('Failed to create task: ' + error.message, 'error');
             }
         }
-
-        // Handle delete comment
-        async function handleDeleteComment(e) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const commentId = document.getElementById('commentToDelete').value;
-            const adminCode = formData.get('adminCode');
-
+        
+        // Data Loading Functions
+        async function loadDashboardData() {
             try {
-                const response = await fetch('/api/comments', {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        commentId: parseInt(commentId),
-                        adminCode: adminCode
-                    })
-                });
+                // Load stats
+                const stats = await apiRequest('/stats');
+                updateStats(stats);
                 
-                if (response.ok) {
-                    alert('Comment deleted successfully!');
-                    closeDeleteCommentModal();
-                    e.target.reset();
-                    await appState.loadComments();
-                    renderComments();
-                } else {
-                    const error = await response.json();
-                    alert(error.error || 'Failed to delete comment');
-                }
+                // Load recent tasks
+                const tasks = await apiRequest('/tasks?limit=5');
+                renderTasks(tasks, 'taskDisplay');
+                
             } catch (error) {
-                console.error('Delete comment error:', error);
-                alert('Network error while deleting comment');
+                console.error('Failed to load dashboard data:', error);
             }
         }
-
-        // Handle cleanup
-        async function handleCleanup(e) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const type = document.getElementById('cleanupType').value;
-            const olderThan = formData.get('olderThan');
-            const adminCode = formData.get('adminCode');
-
+        
+        async function loadTasksData() {
             try {
-                const endpoint = type === 'comments' ? '/api/comments/admin' : '/api/submissions/admin';
-                const response = await fetch(endpoint, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        olderThan: parseInt(olderThan),
-                        adminCode: adminCode
-                    })
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    alert(`${result.message}`);
-                    closeCleanupModal();
-                    e.target.reset();
-                    
-                    // Reload data
-                    await appState.loadComments();
-                    await appState.loadSubmissions();
-                    renderComments();
-                    renderSubmissions();
-                    updateAdminStats();
-                } else {
-                    const error = await response.json();
-                    alert(error.error || 'Cleanup failed');
-                }
+                const tasks = await apiRequest('/tasks');
+                renderTasks(tasks, 'allTasksDisplay');
             } catch (error) {
-                console.error('Cleanup error:', error);
-                alert('Network error during cleanup');
+                console.error('Failed to load tasks:', error);
             }
         }
-
-        // Show register modal
-        function showRegisterModal() {
-            document.getElementById('registerModal').classList.add('active');
+        
+        async function loadTeamData() {
+            try {
+                const users = await apiRequest('/users');
+                renderTeam(users);
+            } catch (error) {
+                console.error('Failed to load team data:', error);
+            }
         }
-
-        // Close register modal
-        function closeRegisterModal() {
-            document.getElementById('registerModal').classList.remove('active');
+        
+        async function loadAdminData() {
+            try {
+                const stats = await apiRequest('/admin/stats');
+                document.getElementById('adminUsersCount').textContent = stats.totalUsers || 0;
+                document.getElementById('adminTasksCount').textContent = stats.totalTasks || 0;
+            } catch (error) {
+                console.error('Failed to load admin data:', error);
+            }
         }
-
-        // Show submission modal
-        function showSubmissionModal() {
-            document.getElementById('submissionModal').classList.add('active');
-        }
-
-        // Close submission modal
-        function closeSubmissionModal() {
-            document.getElementById('submissionModal').classList.remove('active');
-        }
-
-        // Show delete comment modal
-        function showDeleteCommentModal(commentId) {
-            document.getElementById('commentToDelete').value = commentId;
-            document.getElementById('deleteCommentModal').classList.add('active');
-        }
-
-        // Close delete comment modal
-        function closeDeleteCommentModal() {
-            document.getElementById('deleteCommentModal').classList.remove('active');
-        }
-
-        // Show cleanup modal
-        function showCleanupModal(type) {
-            document.getElementById('cleanupType').value = type;
-            document.getElementById('cleanupModalTitle').textContent = `Cleanup ${type.charAt(0).toUpperCase() + type.slice(1)}`;
-            document.getElementById('cleanupModal').classList.add('active');
-            updateCleanupPreview(type);
-        }
-
-        // Close cleanup modal
-        function closeCleanupModal() {
-            document.getElementById('cleanupModal').classList.remove('active');
-        }
-
-        // Update cleanup preview
-        function updateCleanupPreview(type) {
-            const olderThan = document.querySelector('input[name="olderThan"]').value;
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - olderThan);
+        
+        // UI Rendering Functions
+        function renderTasks(tasks, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
             
-            let itemsToDelete = 0;
-            if (type === 'comments') {
-                itemsToDelete = appState.comments.filter(comment => 
-                    new Date(comment.timestamp) <= cutoffDate
-                ).length;
-            } else if (type === 'submissions') {
-                itemsToDelete = appState.submissions.filter(submission => 
-                    new Date(submission.timestamp) <= cutoffDate
-                ).length;
+            if (!tasks || tasks.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--gray);">No tasks found</div>';
+                return;
             }
             
-            document.getElementById('itemsToDelete').textContent = itemsToDelete;
+            tasks.forEach(task => {
+                const taskElement = createTaskElement(task);
+                container.appendChild(taskElement);
+            });
         }
-
-        // Toggle sidebar on mobile
-        function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
-            sidebar.classList.toggle('active');
+        
+        function createTaskElement(task) {
+            const taskElement = document.createElement('div');
+            taskElement.className = `task-item ${getTeamClass(task.team)}`;
+            
+            const priorityClass = task.priority === 'High' ? 'priority-high' : 'priority-medium';
+            
+            taskElement.innerHTML = `
+                <div class="task-header">
+                    <div>
+                        <div class="task-title">${task.title}</div>
+                        <div style="font-size: 0.9rem; color: var(--gray-dark);">${task.team} Team</div>
+                    </div>
+                    <div class="task-priority ${priorityClass}">${task.priority}</div>
+                </div>
+                <div class="task-description">${task.description}</div>
+                <div class="task-actions">
+                    <button class="btn btn-outline" onclick="viewTaskDetails(${task.id})">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
+                </div>
+            `;
+            
+            return taskElement;
         }
-
-        // Show section
+        
+        function renderTeam(users) {
+            const container = document.getElementById('teamList');
+            container.innerHTML = '';
+            
+            if (!users || users.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--gray);">No team members found</div>';
+                return;
+            }
+            
+            users.forEach(user => {
+                const userElement = document.createElement('div');
+                userElement.className = 'task-item';
+                
+                userElement.innerHTML = `
+                    <div class="task-header">
+                        <div>
+                            <div class="task-title">${user.username}</div>
+                            <div style="font-size: 0.9rem; color: var(--gray-dark);">${user.team}</div>
+                        </div>
+                        <div class="member-avatar ${getTeamClass(user.team)}">${user.username.substring(0, 2).toUpperCase()}</div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: var(--gray-dark);">
+                        <div><i class="fas fa-calendar"></i> Joined: ${new Date(user.createdAt).toLocaleDateString()}</div>
+                        <div><i class="fas fa-circle" style="color: ${user.isOnline ? '#4CAF50' : '#9E9E9E'}"></i> ${user.isOnline ? 'Online' : 'Offline'}</div>
+                    </div>
+                `;
+                
+                container.appendChild(userElement);
+            });
+        }
+        
+        function updateStats(stats) {
+            document.getElementById('totalTasks').textContent = stats.totalTasks || 0;
+            document.getElementById('completedTasks').textContent = stats.completedTasks || 0;
+            document.getElementById('teamMembers').textContent = stats.totalUsers || 0;
+            document.getElementById('overallProgress').textContent = stats.overallProgress || '0%';
+        }
+        
+        // UI Helper Functions
+        function getTeamClass(team) {
+            switch(team) {
+                case 'Development': return 'dev';
+                case 'Design': return 'design';
+                case 'Marketing': return 'marketing';
+                case 'Support': return 'support';
+                case 'Administrator': return 'admin';
+                default: return 'dev';
+            }
+        }
+        
+        function showNotification(message, type = 'info') {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#F44336' : '#2196F3'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'flex';
+            
+            // Update user info
+            document.getElementById('welcomeTitle').textContent = `Welcome back, ${currentUser.username}!`;
+            document.getElementById('welcomeSubtitle').textContent = `You are logged in as ${currentUser.team}`;
+            document.getElementById('userName').textContent = currentUser.username;
+            document.getElementById('userAvatar').textContent = currentUser.username.substring(0, 2).toUpperCase();
+            document.getElementById('userAvatar').className = `member-avatar ${getTeamClass(currentUser.team)}`;
+        }
+        
         function showSection(section) {
             // Hide all sections
             document.querySelectorAll('.dashboard-section').forEach(sec => {
@@ -2850,630 +1402,72 @@
             });
             event.target.classList.add('active');
             
-            // Close sidebar on mobile
-            if (window.innerWidth <= 1024) {
-                document.querySelector('.sidebar').classList.remove('active');
-            }
-            
-            // Load section data
+            // Load section-specific data
             switch(section) {
-                case 'submissions':
-                    renderSubmissions();
-                    break;
                 case 'tasks':
-                    renderAllTasks();
+                    loadTasksData();
                     break;
                 case 'team':
-                    renderTeam();
-                    break;
-                case 'comments':
-                    renderCommentsFull();
+                    loadTeamData();
                     break;
                 case 'admin':
-                    renderAdminTools();
+                    loadAdminData();
                     break;
                 case 'dashboard':
                     loadDashboardData();
                     break;
             }
-        }
-
-        // Load dashboard data
-        async function loadDashboardData() {
-            await appState.initialize();
-            updateProgress();
-            updateOnlineMembers();
-            updateStats();
-            renderDashboardTasks();
-            renderTeamProgress();
-            renderComments();
-        }
-
-        // Render dashboard tasks
-        function renderDashboardTasks() {
-            const taskDisplay = document.getElementById('taskDisplay');
-            taskDisplay.innerHTML = '';
             
-            // Show only first 5 tasks on dashboard
-            const displayTasks = appState.tasks.slice(0, 5);
-            
-            displayTasks.forEach(task => {
-                const taskElement = createTaskElement(task);
-                taskDisplay.appendChild(taskElement);
-            });
-        }
-
-        // Render all tasks
-        function renderAllTasks() {
-            const allTasksDisplay = document.getElementById('allTasksDisplay');
-            allTasksDisplay.innerHTML = '';
-            
-            appState.tasks.forEach(task => {
-                const taskElement = createTaskElement(task);
-                allTasksDisplay.appendChild(taskElement);
-            });
-        }
-
-        // Create task element
-        function createTaskElement(task) {
-            const taskElement = document.createElement('div');
-            const teamClass = getTeamClass(task.team);
-            const priorityClass = task.priority === 'High' ? 'priority-high' : 'priority-medium';
-            
-            taskElement.className = `task-item ${teamClass}`;
-            if (task.status === 'completed') {
-                taskElement.classList.add('completed');
-            }
-            
-            taskElement.innerHTML = `
-                <div class="task-header">
-                    <div>
-                        <div class="task-title">${task.subject}</div>
-                        <div class="task-due">Due: ${new Date(task.endDate).toLocaleDateString()}</div>
-                    </div>
-                    <div class="task-priority ${priorityClass}">${task.priority || 'Medium'}</div>
-                </div>
-                <div class="task-description">
-                    ${task.description}
-                </div>
-                <div class="task-role">
-                    <div class="role-icon ${teamClass}">
-                        ${getTeamIcon(task.team)}
-                    </div>
-                    <div class="role-name">${task.team} Team</div>
-                </div>
-                <div class="task-actions">
-                    <button class="btn btn-outline" onclick="viewTaskDetails(${task.id})">View Details</button>
-                    <button class="btn btn-primary" onclick="startTask(${task.id})">Start Task</button>
-                </div>
-            `;
-            
-            return taskElement;
-        }
-
-        // Get team class
-        function getTeamClass(team) {
-            switch(team) {
-                case 'Full-Stack': return 'dev';
-                case 'UI/UX': return 'design';
-                case 'Marketing': return 'marketing';
-                case 'Support': return 'support';
-                case 'Content': return 'content';
-                case 'Administrator': return 'admin';
-                default: return 'dev';
+            // Close sidebar on mobile
+            if (window.innerWidth <= 1024) {
+                document.querySelector('.sidebar').classList.remove('active');
             }
         }
-
-        // Get team icon
-        function getTeamIcon(team) {
-            switch(team) {
-                case 'Full-Stack': return '<i class="fas fa-code"></i>';
-                case 'UI/UX': return '<i class="fas fa-palette"></i>';
-                case 'Marketing': return '<i class="fas fa-chart-line"></i>';
-                case 'Support': return '<i class="fas fa-headset"></i>';
-                case 'Content': return '<i class="fas fa-pen-nib"></i>';
-                case 'Administrator': return '<i class="fas fa-cog"></i>';
-                default: return '<i class="fas fa-tasks"></i>';
-            }
+        
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
         }
-
-        // View task details
+        
+        function showRegisterModal() {
+            document.getElementById('registerModal').classList.add('active');
+        }
+        
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.remove('active');
+        }
+        
+        function showTaskModal() {
+            document.getElementById('taskModal').classList.add('active');
+        }
+        
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('active');
+        }
+        
         function viewTaskDetails(taskId) {
-            const task = appState.tasks.find(t => t.id === taskId);
-            if (task) {
-                // Prompt for admin code to add details
-                const adminCode = prompt('Enter admin code to add task details:');
-                if (adminCode === '212259497') {
-                    const newDetails = prompt('Enter additional task details:');
-                    if (newDetails) {
-                        alert('Task details updated! (This would be saved to the database in a real application)');
-                    }
-                } else {
-                    alert('Invalid admin code');
-                }
-            }
+            // In a real implementation, this would show a detailed task view
+            showNotification('Task details feature coming soon!', 'info');
         }
-
-        // Start task - redirects to submission
-        function startTask(taskId) {
-            showSubmissionModal();
+        
+        function logout() {
+            // Clear local storage
+            localStorage.removeItem('digihive_token');
+            localStorage.removeItem('digihive_user');
+            
+            // Reset state
+            authToken = null;
+            currentUser = null;
+            
+            // Show login screen
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'flex';
+            
+            // Clear login form
+            document.getElementById('loginForm').reset();
+            
+            showNotification('Logged out successfully', 'info');
         }
-
-        // Render comments
-        function renderComments() {
-            const commentsList = document.getElementById('commentsList');
-            commentsList.innerHTML = '';
-            
-            // Show only recent comments on dashboard
-            const recentComments = appState.comments.slice(0, 5);
-            
-            recentComments.forEach(comment => {
-                const commentElement = createCommentElement(comment);
-                commentsList.appendChild(commentElement);
-            });
-        }
-
-        // Render comments for full comments section
-        function renderCommentsFull() {
-            const commentsListFull = document.getElementById('commentsListFull');
-            commentsListFull.innerHTML = '';
-            
-            appState.comments.forEach(comment => {
-                const commentElement = createCommentElement(comment, true);
-                commentsListFull.appendChild(commentElement);
-            });
-        }
-
-        // Create comment element
-        function createCommentElement(comment, showDelete = false) {
-            const commentElement = document.createElement('div');
-            commentElement.className = 'comment';
-            
-            let deleteButton = '';
-            if (showDelete && appState.currentUser.team === 'Administrator') {
-                deleteButton = `
-                    <div class="comment-actions">
-                        <button class="btn btn-danger" onclick="showDeleteCommentModal(${comment.id})">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
-                `;
-            }
-            
-            commentElement.innerHTML = `
-                <div class="comment-header">
-                    <div class="comment-user">
-                        <div class="member-avatar ${getTeamClass(comment.team)}">${comment.username.substring(0, 2)}</div>
-                        ${comment.username}
-                        <span class="comment-team">${comment.team}</span>
-                    </div>
-                    <div class="comment-time">${new Date(comment.timestamp).toLocaleString()}</div>
-                </div>
-                <div class="comment-text">${comment.text}</div>
-                ${deleteButton}
-            `;
-            
-            return commentElement;
-        }
-
-        // Render submissions
-        function renderSubmissions() {
-            const submissionsList = document.getElementById('submissionsList');
-            submissionsList.innerHTML = '';
-            
-            appState.submissions.forEach(submission => {
-                const submissionElement = document.createElement('div');
-                submissionElement.className = 'submission-item';
-                
-                let downloadButton = '';
-                if (submission.attachment) {
-                    downloadButton = `<button class="btn btn-outline" onclick="downloadSubmission('${submission.attachment}', '${submission.originalFileName}')">
-                        <i class="fas fa-download"></i> Download
-                    </button>`;
-                }
-                
-                submissionElement.innerHTML = `
-                    <div class="submission-header">
-                        <div class="submission-title">${submission.name}</div>
-                        <div class="submission-meta">
-                            <span>By: ${submission.member}</span>
-                            <span>Team: ${submission.team}</span>
-                            <span>${new Date(submission.timestamp).toLocaleDateString()}</span>
-                        </div>
-                    </div>
-                    <div class="submission-content">
-                        <strong>Progress:</strong> ${submission.progress}
-                    </div>
-                    <div class="submission-content">
-                        <strong>Next Week's Plan:</strong> ${submission.plan}
-                    </div>
-                    <div class="task-actions">
-                        ${downloadButton}
-                    </div>
-                `;
-                
-                submissionsList.appendChild(submissionElement);
-            });
-        }
-
-        // Render team
-        function renderTeam() {
-            const teamList = document.getElementById('teamList');
-            teamList.innerHTML = '';
-            
-            appState.users.forEach(user => {
-                const teamElement = document.createElement('div');
-                teamElement.className = 'team-member-item';
-                
-                teamElement.innerHTML = `
-                    <div class="team-member-header">
-                        <div class="team-member-name">${user.username}</div>
-                        <div class="team-member-meta">
-                            <span>${user.team}</span>
-                            <span class="online-status">
-                                <div class="status-dot" style="background: ${user.isOnline ? 'var(--success)' : 'var(--gray)'};"></div>
-                                <span>${user.isOnline ? 'Online' : 'Offline'}</span>
-                            </span>
-                        </div>
-                    </div>
-                `;
-                
-                teamList.appendChild(teamElement);
-            });
-        }
-
-        // Render team progress with real data
-        function renderTeamProgress() {
-            const teamProgressBars = document.getElementById('teamProgressBars');
-            teamProgressBars.innerHTML = '';
-            
-            const teams = ['Full-Stack', 'UI/UX', 'Marketing', 'Support', 'Content'];
-            
-            teams.forEach(team => {
-                // Calculate real progress based on tasks
-                const teamTasks = appState.tasks.filter(task => task.team === team);
-                const completedTasks = teamTasks.filter(task => task.status === 'completed').length;
-                const totalTasks = teamTasks.length;
-                const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-                
-                const progressElement = document.createElement('div');
-                progressElement.className = 'progress-item';
-                
-                progressElement.innerHTML = `
-                    <div class="progress-header">
-                        <div class="team-name">
-                            <div class="team-dot ${getTeamClass(team)}"></div>
-                            <span>${team}</span>
-                        </div>
-                        <div class="progress-percent">${progress}%</div>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill ${getTeamClass(team)}" style="width: ${progress}%"></div>
-                    </div>
-                    <div class="progress-stats" style="font-size: 0.8rem; color: var(--gray); margin-top: 0.25rem;">
-                        ${completedTasks}/${totalTasks} tasks completed
-                    </div>
-                `;
-                
-                teamProgressBars.appendChild(progressElement);
-            });
-        }
-
-        // Render admin tools
-        function renderAdminTools() {
-            updateAdminStats();
-            renderSessionsTable();
-        }
-
-        // Update admin stats
-        function updateAdminStats() {
-            document.getElementById('adminCommentsCount').textContent = appState.comments.length;
-            document.getElementById('adminSubmissionsCount').textContent = appState.submissions.length;
-            document.getElementById('adminUsersCount').textContent = appState.users.length;
-            document.getElementById('adminOnlineCount').textContent = `${appState.users.filter(u => u.isOnline).length} Online Now`;
-        }
-
-        // Render sessions table
-        function renderSessionsTable() {
-            const sessionsTableBody = document.getElementById('sessionsTableBody');
-            sessionsTableBody.innerHTML = '';
-            
-            appState.users.forEach(user => {
-                const sessionRow = document.createElement('tr');
-                
-                // Calculate session duration
-                let sessionDuration = 'N/A';
-                if (user.lastLogin) {
-                    const loginTime = new Date(user.lastLogin);
-                    const logoutTime = user.lastLogout ? new Date(user.lastLogout) : new Date();
-                    const duration = Math.round((logoutTime - loginTime) / (1000 * 60)); // minutes
-                    
-                    if (duration < 60) {
-                        sessionDuration = `${duration} min`;
-                    } else {
-                        sessionDuration = `${Math.round(duration / 60)} h ${duration % 60} min`;
-                    }
-                }
-                
-                sessionRow.innerHTML = `
-                    <td>${user.username}</td>
-                    <td>${user.team}</td>
-                    <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}</td>
-                    <td>${user.lastLogout ? new Date(user.lastLogout).toLocaleString() : 'Active'}</td>
-                    <td>
-                        <span class="online-status">
-                            <div class="status-dot" style="background: ${user.isOnline ? 'var(--success)' : 'var(--gray)'};"></div>
-                            <span>${user.isOnline ? 'Online' : 'Offline'}</span>
-                        </span>
-                    </td>
-                    <td>${sessionDuration}</td>
-                `;
-                
-                sessionsTableBody.appendChild(sessionRow);
-            });
-        }
-
-        // Post comment
-        async function postComment() {
-            const commentInput = document.getElementById('commentInput');
-            const text = commentInput.value.trim();
-            
-            if (!text) return;
-            
-            try {
-                const response = await fetch('/api/comments', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username: appState.currentUser.username,
-                        team: appState.currentUser.team,
-                        text: text
-                    })
-                });
-                
-                if (response.ok) {
-                    commentInput.value = '';
-                    await appState.loadComments();
-                    renderComments();
-                } else {
-                    alert('Failed to post comment');
-                }
-            } catch (error) {
-                console.error('Error posting comment:', error);
-                alert('Network error while posting comment');
-            }
-        }
-
-        // Post comment from full comments section
-        async function postCommentFull() {
-            const commentInput = document.getElementById('commentInputFull');
-            const text = commentInput.value.trim();
-            
-            if (!text) return;
-            
-            try {
-                const response = await fetch('/api/comments', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username: appState.currentUser.username,
-                        team: appState.currentUser.team,
-                        text: text
-                    })
-                });
-                
-                if (response.ok) {
-                    commentInput.value = '';
-                    await appState.loadComments();
-                    renderCommentsFull();
-                } else {
-                    alert('Failed to post comment');
-                }
-            } catch (error) {
-                console.error('Error posting comment:', error);
-                alert('Network error while posting comment');
-            }
-        }
-
-        // Download submission
-        function downloadSubmission(filename, originalName) {
-            window.open(`/api/submissions/download/${filename}`, '_blank');
-        }
-
-        // Update progress
-        function updateProgress() {
-            const completedTasks = appState.tasks.filter(task => task.status === 'completed').length;
-            const totalTasks = appState.tasks.length;
-            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-            
-            document.getElementById('overallProgress').textContent = `${progress}%`;
-        }
-
-        // Update stats
-        function updateStats() {
-            const completedTasks = appState.tasks.filter(task => task.status === 'completed').length;
-            const totalTasks = appState.tasks.length;
-            
-            document.getElementById('totalTasks').textContent = totalTasks;
-            document.getElementById('completedTasks').textContent = completedTasks;
-            document.getElementById('teamMembers').textContent = appState.users.length;
-            
-            // Update notification count
-            document.getElementById('notificationCount').textContent = appState.tasks.filter(task => 
-                task.status !== 'completed' && new Date(task.endDate) < new Date()
-            ).length;
-        }
-
-        // Update online members
-        function updateOnlineMembers() {
-            const onlineMembersList = document.getElementById('onlineMembers');
-            onlineMembersList.innerHTML = '';
-            
-            const onlineUsers = appState.users.filter(user => user.isOnline);
-            
-            onlineUsers.forEach(user => {
-                const memberElement = document.createElement('li');
-                memberElement.className = 'team-member';
-                
-                memberElement.innerHTML = `
-                    <div class="member-avatar ${getTeamClass(user.team)}">${user.username.substring(0, 2)}</div>
-                    <div class="member-info">
-                        <div class="member-name">${user.username}</div>
-                        <div class="member-role">${user.team}</div>
-                        <div class="online-status">
-                            <div class="status-dot"></div>
-                            <span>Online</span>
-                        </div>
-                    </div>
-                    <div class="member-status"></div>
-                `;
-                
-                onlineMembersList.appendChild(memberElement);
-            });
-        }
-
-        // Update user status
-        async function updateUserStatus() {
-            if (!appState.currentUser) return;
-            
-            try {
-                const response = await fetch('/api/users', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'update',
-                        username: appState.currentUser.username,
-                        updates: { isOnline: true }
-                    })
-                });
-                
-                if (response.ok) {
-                    await appState.loadUsers();
-                    updateOnlineMembers();
-                }
-            } catch (error) {
-                console.error('Error updating user status:', error);
-            }
-        }
-
-        // Start real-time updates
-        function startRealTimeUpdates() {
-            // Update online users every 30 seconds
-            setInterval(async () => {
-                if (appState.currentUser) {
-                    await updateUserStatus();
-                    await appState.loadUsers();
-                    updateOnlineMembers();
-                    
-                    // Update admin section if active
-                    if (document.getElementById('adminSection').style.display === 'block') {
-                        updateAdminStats();
-                        renderSessionsTable();
-                    }
-                }
-            }, 30000);
-            
-            // Update comments and tasks every minute
-            setInterval(async () => {
-                if (appState.currentUser) {
-                    await appState.loadComments();
-                    await appState.loadTasks();
-                    updateStats();
-                    
-                    // Update comments if comments section is active
-                    if (document.getElementById('commentsSection').style.display === 'block') {
-                        renderCommentsFull();
-                    } else if (document.getElementById('dashboardSection').style.display === 'block') {
-                        renderComments();
-                    }
-                }
-            }, 60000);
-        }
-
-        // Motivational popup
-        function initMotivationalPopup() {
-            const motivationPopup = document.getElementById('motivationPopup');
-            const popupBtn = document.getElementById('popupBtn');
-            const popupQuote = document.getElementById('popupQuote');
-            const popupAuthor = document.getElementById('popupAuthor');
-            const dailyMotivation = document.getElementById('dailyMotivation');
-            const motivationAuthor = document.getElementById('motivationAuthor');
-            const loginMotivation = document.getElementById('loginMotivation');
-            
-            // Set random quote (no repeats in sequence)
-            const usedIndices = new Set();
-            
-            function getRandomQuote() {
-                if (usedIndices.size === motivationalQuotes.length) {
-                    usedIndices.clear();
-                }
-                
-                let randomIndex;
-                do {
-                    randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
-                } while (usedIndices.has(randomIndex));
-                
-                usedIndices.add(randomIndex);
-                return motivationalQuotes[randomIndex];
-            }
-            
-            function updateAllQuotes() {
-                const quote = getRandomQuote();
-                popupQuote.textContent = `"${quote.text}"`;
-                popupAuthor.textContent = `- ${quote.author}`;
-                dailyMotivation.textContent = `"${quote.text}"`;
-                motivationAuthor.textContent = `- ${quote.author}`;
-                loginMotivation.textContent = `"${quote.text}"`;
-            }
-            
-            // Set initial quotes
-            updateAllQuotes();
-            
-            // Rotate quotes every 15 seconds
-            setInterval(updateAllQuotes, 15000);
-            
-            // Close popup when button is clicked
-            popupBtn.addEventListener('click', function() {
-                motivationPopup.classList.remove('active');
-            });
-        }
-
-        // Logout
-        async function logout() {
-            if (appState.currentUser) {
-                try {
-                    await fetch('/api/users/logout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            username: appState.currentUser.username
-                        })
-                    });
-                } catch (error) {
-                    console.error('Error during logout API call:', error);
-                }
-            }
-            
-            appState.currentUser = null;
-            localStorage.removeItem('digihive_currentUser');
-            showLogin();
-        }
-
-        // Add event listener for cleanup preview updates
-        document.querySelector('input[name="olderThan"]').addEventListener('input', function() {
-            const type = document.getElementById('cleanupType').value;
-            if (type) {
-                updateCleanupPreview(type);
-            }
-        });
     </script>
 </body>
 </html>
