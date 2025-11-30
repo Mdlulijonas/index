@@ -5,7 +5,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const morgan = require('morgan');
 const { v4: uuidv4 } = require('uuid');
@@ -14,26 +13,24 @@ const app = express();
 
 // Security middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// CORS configuration for production
+// CORS configuration for Railway
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
+    // Allow all origins in production for Railway
     const allowedOrigins = [
       'http://localhost:3000', 
       'http://127.0.0.1:3000',
       'http://localhost:5500',
       'http://127.0.0.1:5500',
-      // Add your production domain here
-      process.env.PRODUCTION_URL
-    ].filter(Boolean);
+      // Railway domains
+      '.railway.app',
+      '.up.railway.app'
+    ];
     
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    if (!origin || allowedOrigins.some(allowed => origin.includes(allowed))) {
       callback(null, true);
     } else {
       console.log('Blocked by CORS:', origin);
@@ -48,14 +45,6 @@ app.use(cors({
 // Handle preflight requests
 app.options('*', cors());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: process.env.RATE_LIMIT_MAX || 100,
-  message: { error: 'Too many requests from this IP, please try again later.' }
-});
-app.use('/api/', limiter);
-
 // Compression
 app.use(compression());
 
@@ -65,11 +54,15 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Environment variables with defaults
+// Environment variables with Railway-safe defaults
 const ADMIN_CODE = process.env.ADMIN_CODE || '212259497';
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production-' + Date.now();
+const JWT_SECRET = process.env.JWT_SECRET || 'railway-production-secret-' + Math.random().toString(36);
 const PORT = process.env.PORT || 3000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const NODE_ENV = process.env.NODE_ENV || 'production';
+
+console.log('🚀 Starting DigiHive Server on Railway...');
+console.log('📊 Environment:', NODE_ENV);
+console.log('🔑 Admin Code:', ADMIN_CODE);
 
 // Initialize users with pre-hashed password for 'admin'
 const initialUsers = [
@@ -88,8 +81,8 @@ let users = [...initialUsers];
 let tasks = [
   {
     id: '1',
-    title: 'Welcome to DigiHive',
-    description: 'Get started with your team collaboration platform. Create tasks, manage your team, and track progress.',
+    title: 'Welcome to DigiHive on Railway!',
+    description: 'Your team collaboration platform is now live on Railway! Create tasks, manage your team, and track progress.',
     team: 'Development',
     priority: 'Medium',
     status: 'in-progress',
@@ -109,7 +102,6 @@ let tasks = [
     updatedAt: new Date().toISOString()
   }
 ];
-let timeEntries = [];
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
@@ -129,37 +121,12 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Serve static files in production
-if (NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'public')));
-  
-  // Serve frontend for all other routes
-  app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  });
-} else {
-  // Development route
-  app.get('/', (req, res) => {
-    res.json({ 
-      message: 'DigiHive API Server',
-      version: '1.0.0',
-      environment: NODE_ENV,
-      endpoints: {
-        auth: '/api/auth',
-        tasks: '/api/tasks',
-        users: '/api/users',
-        health: '/api/health'
-      },
-      documentation: 'See /api/health for more info'
-    });
-  });
-}
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Authentication routes
+// API Routes
 app.post('/api/auth/register', async (req, res) => {
   try {
-    console.log('Registration attempt:', { ...req.body, password: '***' });
-    
     const { username, password, team, adminCode } = req.body;
 
     // Validation
@@ -203,7 +170,6 @@ app.post('/api/auth/register', async (req, res) => {
     };
 
     users.push(user);
-    console.log('User registered successfully:', username);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -232,8 +198,6 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    console.log('Login attempt:', { ...req.body, password: '***' });
-    
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -243,14 +207,12 @@ app.post('/api/auth/login', async (req, res) => {
     // Find user
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
     if (!user) {
-      console.log('User not found:', username);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      console.log('Invalid password for user:', username);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -271,8 +233,6 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
-
-    console.log('Login successful for user:', username);
 
     res.json({
       message: 'Login successful',
@@ -380,34 +340,20 @@ app.get('/api/health', (req, res) => {
     environment: NODE_ENV,
     totalUsers: users.length,
     totalTasks: tasks.length,
-    endpoints: {
-      'POST /api/auth/register': 'Register new user',
-      'POST /api/auth/login': 'User login',
-      'GET /api/tasks': 'Get tasks (requires auth)',
-      'POST /api/tasks': 'Create task (requires auth)',
-      'GET /api/users': 'Get users (requires auth)',
-      'GET /api/stats': 'Get statistics (requires auth)'
-    }
+    message: 'DigiHive API is running successfully on Railway!'
   });
 });
 
-// Error handling middleware
-app.use((error, req, res, next) => {
-  console.error('Unhandled error:', error);
-  res.status(500).json({ error: 'Internal server error' });
-});
-
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
+// Serve frontend for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 DigiHive server running on port ${PORT}`);
-  console.log(`📊 Environment: ${NODE_ENV}`);
-  console.log(`👤 Default admin credentials: username: "admin", password: "admin123"`);
+  console.log(`✅ DigiHive Server running on port ${PORT}`);
+  console.log(`🌐 Environment: ${NODE_ENV}`);
+  console.log(`👤 Default admin: username "admin", password "admin123"`);
   console.log(`🔑 Admin code: ${ADMIN_CODE}`);
-  console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🏠 Frontend: http://localhost:${PORT}/`);
+  console.log(`🚀 Ready to accept requests!`);
 });
