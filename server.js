@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const axios = require('axios');
+const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
@@ -12,19 +12,31 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 
-// CORS configuration - Fix for frontend communication
+// Security middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false
+}));
+
+// CORS configuration for production
 app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    const allowedOrigins = process.env.ALLOWED_ORIGINS 
-      ? process.env.ALLOWED_ORIGINS.split(',') 
-      : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500'];
+    const allowedOrigins = [
+      'http://localhost:3000', 
+      'http://127.0.0.1:3000',
+      'http://localhost:5500',
+      'http://127.0.0.1:5500',
+      // Add your production domain here
+      process.env.PRODUCTION_URL
+    ].filter(Boolean);
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       callback(null, true);
     } else {
+      console.log('Blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -36,18 +48,13 @@ app.use(cors({
 // Handle preflight requests
 app.options('*', cors());
 
-// Security middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
-
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.RATE_LIMIT_MAX || 100,
   message: { error: 'Too many requests from this IP, please try again later.' }
 });
-app.use(limiter);
+app.use('/api/', limiter);
 
 // Compression
 app.use(compression());
@@ -58,10 +65,9 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Environment variables
-const MONDAY_API_KEY = process.env.MONDAY_API_KEY;
+// Environment variables with defaults
 const ADMIN_CODE = process.env.ADMIN_CODE || '212259497';
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secure-jwt-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production-' + Date.now();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
@@ -79,7 +85,30 @@ const initialUsers = [
 ];
 
 let users = [...initialUsers];
-let tasks = [];
+let tasks = [
+  {
+    id: '1',
+    title: 'Welcome to DigiHive',
+    description: 'Get started with your team collaboration platform. Create tasks, manage your team, and track progress.',
+    team: 'Development',
+    priority: 'Medium',
+    status: 'in-progress',
+    createdBy: 'admin',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    title: 'Setup Your Team',
+    description: 'Add your team members and assign them to different departments',
+    team: 'Administrator',
+    priority: 'High',
+    status: 'todo',
+    createdBy: 'admin',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
 let timeEntries = [];
 
 // Authentication middleware
@@ -100,10 +129,36 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Authentication routes - FIXED
+// Serve static files in production
+if (NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'public')));
+  
+  // Serve frontend for all other routes
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+} else {
+  // Development route
+  app.get('/', (req, res) => {
+    res.json({ 
+      message: 'DigiHive API Server',
+      version: '1.0.0',
+      environment: NODE_ENV,
+      endpoints: {
+        auth: '/api/auth',
+        tasks: '/api/tasks',
+        users: '/api/users',
+        health: '/api/health'
+      },
+      documentation: 'See /api/health for more info'
+    });
+  });
+}
+
+// Authentication routes
 app.post('/api/auth/register', async (req, res) => {
   try {
-    console.log('Registration attempt:', req.body);
+    console.log('Registration attempt:', { ...req.body, password: '***' });
     
     const { username, password, team, adminCode } = req.body;
 
@@ -177,7 +232,7 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    console.log('Login attempt:', req.body);
+    console.log('Login attempt:', { ...req.body, password: '***' });
     
     const { username, password } = req.body;
 
@@ -324,15 +379,15 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     environment: NODE_ENV,
     totalUsers: users.length,
-    totalTasks: tasks.length
-  });
-});
-
-// Test endpoint to verify server is running
-app.get('/api/test', (req, res) => {
-  res.json({ 
-    message: 'Server is running!',
-    timestamp: new Date().toISOString()
+    totalTasks: tasks.length,
+    endpoints: {
+      'POST /api/auth/register': 'Register new user',
+      'POST /api/auth/login': 'User login',
+      'GET /api/tasks': 'Get tasks (requires auth)',
+      'POST /api/tasks': 'Create task (requires auth)',
+      'GET /api/users': 'Get users (requires auth)',
+      'GET /api/stats': 'Get statistics (requires auth)'
+    }
   });
 });
 
@@ -342,16 +397,17 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// 404 handler
+// 404 handler for API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
+// Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 DigiHive server running on port ${PORT}`);
   console.log(`📊 Environment: ${NODE_ENV}`);
-  console.log(`🌐 CORS enabled for: ${process.env.ALLOWED_ORIGINS || 'http://localhost:3000, http://127.0.0.1:3000'}`);
   console.log(`👤 Default admin credentials: username: "admin", password: "admin123"`);
   console.log(`🔑 Admin code: ${ADMIN_CODE}`);
-  console.log(`✅ Test the server: http://localhost:${PORT}/api/health`);
+  console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
+  console.log(`🏠 Frontend: http://localhost:${PORT}/`);
 });
