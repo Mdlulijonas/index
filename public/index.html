@@ -1068,502 +1068,510 @@
     </div>
 
     <script>
-       // In your frontend JavaScript, update the API base URL:
-const API_BASE_URL = window.location.origin + '/api';
+        // Application State
+        let currentUser = null;
+        let authToken = null;
 
-// Application State
-let currentUser = null;
-let authToken = null;
+        // API Base URL - Fixed for Railway deployment
+        const API_BASE_URL = '/api';
 
-// Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DigiHive Frontend Initialized');
-    
-    // Check if user is already logged in
-    const savedToken = localStorage.getItem('digihive_token');
-    const savedUser = localStorage.getItem('digihive_user');
-    
-    if (savedToken && savedUser) {
-        authToken = savedToken;
-        currentUser = JSON.parse(savedUser);
-        showDashboard();
-        loadDashboardData();
-    } else {
-        showLogin();
-    }
-    
-    // Set up form event listeners
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
-    document.getElementById('registerForm').addEventListener('submit', handleRegister);
-    document.getElementById('taskForm').addEventListener('submit', handleTaskCreate);
-    
-    // Test server connection
-    testServerConnection();
-});
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DigiHive Frontend Initialized');
+            console.log('API Base URL:', API_BASE_URL);
+            
+            // Check if user is already logged in
+            const savedToken = localStorage.getItem('digihive_token');
+            const savedUser = localStorage.getItem('digihive_user');
+            
+            if (savedToken && savedUser) {
+                authToken = savedToken;
+                currentUser = JSON.parse(savedUser);
+                showDashboard();
+                loadDashboardData();
+            } else {
+                showLogin();
+            }
+            
+            // Set up form event listeners
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('registerForm').addEventListener('submit', handleRegister);
+            document.getElementById('taskForm').addEventListener('submit', handleTaskCreate);
+            
+            // Test server connection
+            testServerConnection();
+        });
 
-// Test server connection
-async function testServerConnection() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/health`);
-        const data = await response.json();
-        console.log('Server connection test:', data);
-    } catch (error) {
-        console.error('Server connection failed:', error);
-        showNotification('Cannot connect to server. Make sure the backend is running on port 3000.', 'error');
-    }
-}
-
-// API Helper Functions
-async function apiRequest(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
-    
-    const config = {
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        },
-        ...options
-    };
-    
-    if (authToken) {
-        config.headers.Authorization = `Bearer ${authToken}`;
-    }
-    
-    console.log(`API Request: ${options.method || 'GET'} ${url}`);
-    
-    try {
-        const response = await fetch(url, config);
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || `HTTP ${response.status}`);
+        // Test server connection
+        async function testServerConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Server connection test:', data);
+                showNotification('Connected to server successfully!', 'success');
+            } catch (error) {
+                console.error('Server connection failed:', error);
+                showNotification('Cannot connect to server. Please check if the backend is running.', 'error');
+            }
         }
-        
-        return data;
-    } catch (error) {
-        console.error('API request failed:', error);
-        showNotification(error.message, 'error');
-        throw error;
-    }
-}
 
-// Authentication Functions
-async function handleLogin(e) {
-    e.preventDefault();
-    
-    const username = document.getElementById('loginUsername').value;
-    const password = document.getElementById('loginPassword').value;
-    
-    if (!username || !password) {
-        showNotification('Please enter both username and password', 'error');
-        return;
-    }
-    
-    const loginBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = loginBtn.innerHTML;
-    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-    loginBtn.disabled = true;
-    
-    try {
-        const data = await apiRequest('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ username, password })
-        });
-        
-        authToken = data.token;
-        currentUser = data.user;
-        
-        // Save to localStorage
-        localStorage.setItem('digihive_token', authToken);
-        localStorage.setItem('digihive_user', JSON.stringify(currentUser));
-        
-        showDashboard();
-        loadDashboardData();
-        showNotification('Login successful! Welcome back!', 'success');
-        
-    } catch (error) {
-        console.error('Login failed:', error);
-        showNotification('Login failed. Please check your credentials.', 'error');
-    } finally {
-        loginBtn.innerHTML = originalText;
-        loginBtn.disabled = false;
-    }
-}
+        // API Helper Functions
+        async function apiRequest(endpoint, options = {}) {
+            const url = `${API_BASE_URL}${endpoint}`;
+            
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            };
+            
+            if (authToken) {
+                config.headers.Authorization = `Bearer ${authToken}`;
+            }
+            
+            if (config.body && typeof config.body === 'object') {
+                config.body = JSON.stringify(config.body);
+            }
+            
+            console.log(`API Request: ${options.method || 'GET'} ${url}`, config);
+            
+            try {
+                const response = await fetch(url, config);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('API request failed:', error);
+                showNotification(error.message, 'error');
+                throw error;
+            }
+        }
 
-async function handleRegister(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    
-    const userData = {
-        username: formData.get('username'),
-        password: formData.get('password'),
-        team: formData.get('team'),
-        adminCode: formData.get('adminCode') || undefined
-    };
-    
-    const registerBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = registerBtn.innerHTML;
-    registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
-    registerBtn.disabled = true;
-    
-    try {
-        await apiRequest('/auth/register', {
-            method: 'POST',
-            body: JSON.stringify(userData)
-        });
-        
-        showNotification('User registered successfully! You can now login.', 'success');
-        closeRegisterModal();
-        e.target.reset();
-        
-    } catch (error) {
-        console.error('Registration failed:', error);
-        showNotification('Registration failed: ' + error.message, 'error');
-    } finally {
-        registerBtn.innerHTML = originalText;
-        registerBtn.disabled = false;
-    }
-}
+        // Authentication Functions
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                showNotification('Please enter both username and password', 'error');
+                return;
+            }
+            
+            const loginBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+            loginBtn.disabled = true;
+            
+            try {
+                const data = await apiRequest('/auth/login', {
+                    method: 'POST',
+                    body: { username, password }
+                });
+                
+                authToken = data.token;
+                currentUser = data.user;
+                
+                // Save to localStorage
+                localStorage.setItem('digihive_token', authToken);
+                localStorage.setItem('digihive_user', JSON.stringify(currentUser));
+                
+                showDashboard();
+                loadDashboardData();
+                showNotification('Login successful! Welcome back!', 'success');
+                
+            } catch (error) {
+                console.error('Login failed:', error);
+                // Don't show notification here as apiRequest already shows it
+            } finally {
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        }
 
-async function handleTaskCreate(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    
-    const taskData = {
-        title: formData.get('title'),
-        description: formData.get('description'),
-        team: formData.get('team'),
-        priority: formData.get('priority')
-    };
-    
-    try {
-        await apiRequest('/tasks', {
-            method: 'POST',
-            body: JSON.stringify(taskData)
-        });
-        
-        showNotification('Task created successfully!', 'success');
-        closeTaskModal();
-        e.target.reset();
-        
-        // Reload tasks data
-        loadTasksData();
-        loadDashboardData();
-        
-    } catch (error) {
-        console.error('Failed to create task:', error);
-        showNotification('Failed to create task: ' + error.message, 'error');
-    }
-}
+        async function handleRegister(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            const userData = {
+                username: formData.get('username'),
+                password: formData.get('password'),
+                team: formData.get('team'),
+                adminCode: formData.get('adminCode') || undefined
+            };
+            
+            const registerBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = registerBtn.innerHTML;
+            registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+            registerBtn.disabled = true;
+            
+            try {
+                await apiRequest('/auth/register', {
+                    method: 'POST',
+                    body: userData
+                });
+                
+                showNotification('User registered successfully! You can now login.', 'success');
+                closeRegisterModal();
+                e.target.reset();
+                
+            } catch (error) {
+                console.error('Registration failed:', error);
+                // Don't show notification here as apiRequest already shows it
+            } finally {
+                registerBtn.innerHTML = originalText;
+                registerBtn.disabled = false;
+            }
+        }
 
-// Data Loading Functions
-async function loadDashboardData() {
-    try {
-        // Load stats
-        const stats = await apiRequest('/stats');
-        updateStats(stats);
-        
-        // Load recent tasks
-        const tasks = await apiRequest('/tasks?limit=5');
-        renderTasks(tasks, 'taskDisplay');
-        
-    } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-    }
-}
+        async function handleTaskCreate(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            const taskData = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                team: formData.get('team'),
+                priority: formData.get('priority')
+            };
+            
+            try {
+                await apiRequest('/tasks', {
+                    method: 'POST',
+                    body: taskData
+                });
+                
+                showNotification('Task created successfully!', 'success');
+                closeTaskModal();
+                e.target.reset();
+                
+                // Reload tasks data
+                loadTasksData();
+                loadDashboardData();
+                
+            } catch (error) {
+                console.error('Failed to create task:', error);
+                // Don't show notification here as apiRequest already shows it
+            }
+        }
 
-async function loadTasksData() {
-    try {
-        const tasks = await apiRequest('/tasks');
-        renderTasks(tasks, 'allTasksDisplay');
-    } catch (error) {
-        console.error('Failed to load tasks:', error);
-    }
-}
+        // Data Loading Functions
+        async function loadDashboardData() {
+            try {
+                // Load stats
+                const stats = await apiRequest('/stats');
+                updateStats(stats);
+                
+                // Load recent tasks
+                const tasks = await apiRequest('/tasks?limit=5');
+                renderTasks(tasks, 'taskDisplay');
+                
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        }
 
-async function loadTeamData() {
-    try {
-        const users = await apiRequest('/users');
-        renderTeam(users);
-    } catch (error) {
-        console.error('Failed to load team data:', error);
-    }
-}
+        async function loadTasksData() {
+            try {
+                const tasks = await apiRequest('/tasks');
+                renderTasks(tasks, 'allTasksDisplay');
+            } catch (error) {
+                console.error('Failed to load tasks:', error);
+            }
+        }
 
-// UI Rendering Functions
-function renderTasks(tasks, containerId) {
-    const container = document.getElementById(containerId);
-    
-    if (!tasks || tasks.length === 0) {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 3rem; color: var(--gray);">
-                <i class="fas fa-tasks" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                <h3>No tasks yet</h3>
-                <p>Create your first task to get started!</p>
-            </div>
-        `;
-        return;
-    }
-    
-    container.innerHTML = '';
-    
-    tasks.forEach(task => {
-        const taskElement = createTaskElement(task);
-        container.appendChild(taskElement);
-    });
-}
+        async function loadTeamData() {
+            try {
+                const users = await apiRequest('/users');
+                renderTeam(users);
+            } catch (error) {
+                console.error('Failed to load team data:', error);
+            }
+        }
 
-function createTaskElement(task) {
-    const taskElement = document.createElement('div');
-    taskElement.className = `task-item ${getTeamClass(task.team)}`;
-    
-    const priorityClass = task.priority === 'High' ? 'priority-high' : 'priority-medium';
-    
-    taskElement.innerHTML = `
-        <div class="task-header">
-            <div>
-                <div class="task-title">${task.title}</div>
-                <div style="font-size: 0.9rem; color: var(--gray-dark);">
-                    <i class="fas fa-users"></i> ${task.team} Team
-                    <span style="margin-left: 1rem;">
-                        <i class="fas fa-user"></i> ${task.createdBy}
-                    </span>
-                </div>
-            </div>
-            <div class="task-priority ${priorityClass}">${task.priority}</div>
-        </div>
-        <div class="task-description">${task.description}</div>
-        <div class="task-actions">
-            <button class="btn btn-outline" onclick="viewTaskDetails('${task.id}')">
-                <i class="fas fa-eye"></i> View Details
-            </button>
-            <button class="btn btn-primary" onclick="startTask('${task.id}')">
-                <i class="fas fa-play"></i> Start Task
-            </button>
-        </div>
-    `;
-    
-    return taskElement;
-}
-
-function renderTeam(users) {
-    const container = document.getElementById('teamList');
-    
-    if (!users || users.length === 0) {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 3rem; color: var(--gray);">
-                <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                <h3>No team members</h3>
-                <p>Register team members to get started!</p>
-            </div>
-        `;
-        return;
-    }
-    
-    container.innerHTML = '';
-    
-    users.forEach(user => {
-        const userElement = document.createElement('div');
-        userElement.className = 'task-item';
-        
-        userElement.innerHTML = `
-            <div class="task-header">
-                <div>
-                    <div class="task-title">${user.username}</div>
-                    <div style="font-size: 0.9rem; color: var(--gray-dark);">
-                        <i class="fas fa-shield-alt"></i> ${user.team}
+        // UI Rendering Functions
+        function renderTasks(tasks, containerId) {
+            const container = document.getElementById(containerId);
+            
+            if (!tasks || tasks.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: var(--gray);">
+                        <i class="fas fa-tasks" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <h3>No tasks yet</h3>
+                        <p>Create your first task to get started!</p>
                     </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const taskElement = createTaskElement(task);
+                container.appendChild(taskElement);
+            });
+        }
+
+        function createTaskElement(task) {
+            const taskElement = document.createElement('div');
+            taskElement.className = `task-item ${getTeamClass(task.team)}`;
+            
+            const priorityClass = task.priority === 'High' ? 'priority-high' : 'priority-medium';
+            
+            taskElement.innerHTML = `
+                <div class="task-header">
+                    <div>
+                        <div class="task-title">${task.title}</div>
+                        <div style="font-size: 0.9rem; color: var(--gray-dark);">
+                            <i class="fas fa-users"></i> ${task.team} Team
+                            <span style="margin-left: 1rem;">
+                                <i class="fas fa-user"></i> ${task.createdBy}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="task-priority ${priorityClass}">${task.priority}</div>
                 </div>
-                <div class="member-avatar ${getTeamClass(user.team)}">
-                    ${user.username.substring(0, 2).toUpperCase()}
+                <div class="task-description">${task.description}</div>
+                <div class="task-actions">
+                    <button class="btn btn-outline" onclick="viewTaskDetails('${task.id}')">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
+                    <button class="btn btn-primary" onclick="startTask('${task.id}')">
+                        <i class="fas fa-play"></i> Start Task
+                    </button>
                 </div>
-            </div>
-            <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: var(--gray-dark);">
-                <div><i class="fas fa-calendar"></i> Joined: ${new Date(user.createdAt).toLocaleDateString()}</div>
-                <div>
-                    <i class="fas fa-circle" style="color: ${user.isOnline ? '#4CAF50' : '#9E9E9E'}"></i> 
-                    ${user.isOnline ? 'Online' : 'Offline'}
+            `;
+            
+            return taskElement;
+        }
+
+        function renderTeam(users) {
+            const container = document.getElementById('teamList');
+            
+            if (!users || users.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: var(--gray);">
+                        <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <h3>No team members</h3>
+                        <p>Register team members to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            users.forEach(user => {
+                const userElement = document.createElement('div');
+                userElement.className = 'task-item';
+                
+                userElement.innerHTML = `
+                    <div class="task-header">
+                        <div>
+                            <div class="task-title">${user.username}</div>
+                            <div style="font-size: 0.9rem; color: var(--gray-dark);">
+                                <i class="fas fa-shield-alt"></i> ${user.team}
+                            </div>
+                        </div>
+                        <div class="member-avatar ${getTeamClass(user.team)}">
+                            ${user.username.substring(0, 2).toUpperCase()}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: var(--gray-dark);">
+                        <div><i class="fas fa-calendar"></i> Joined: ${new Date(user.createdAt).toLocaleDateString()}</div>
+                        <div>
+                            <i class="fas fa-circle" style="color: ${user.isOnline ? '#4CAF50' : '#9E9E9E'}"></i> 
+                            ${user.isOnline ? 'Online' : 'Offline'}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(userElement);
+            });
+        }
+
+        function updateStats(stats) {
+            document.getElementById('totalTasks').textContent = stats.totalTasks || 0;
+            document.getElementById('completedTasks').textContent = stats.completedTasks || 0;
+            document.getElementById('teamMembers').textContent = stats.totalUsers || 0;
+            document.getElementById('overallProgress').textContent = stats.overallProgress || '0%';
+        }
+
+        // UI Helper Functions
+        function getTeamClass(team) {
+            const teamMap = {
+                'Development': 'dev',
+                'Design': 'design',
+                'Marketing': 'marketing',
+                'Support': 'support',
+                'Administrator': 'admin',
+                'Content': 'content'
+            };
+            return teamMap[team] || 'dev';
+        }
+
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.notification-toast');
+            existingNotifications.forEach(notification => notification.remove());
+            
+            const toast = document.createElement('div');
+            toast.className = `notification-toast ${type}`;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#F44336' : '#2196F3'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                max-width: 300px;
+                word-wrap: break-word;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            const icon = type === 'success' ? 'fa-check-circle' : 
+                         type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+            
+            toast.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas ${icon}"></i>
+                    <span>${message}</span>
                 </div>
-            </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Add CSS animations for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
         `;
-        
-        container.appendChild(userElement);
-    });
-}
+        document.head.appendChild(style);
 
-function updateStats(stats) {
-    document.getElementById('totalTasks').textContent = stats.totalTasks || 0;
-    document.getElementById('completedTasks').textContent = stats.completedTasks || 0;
-    document.getElementById('teamMembers').textContent = stats.totalUsers || 0;
-    document.getElementById('overallProgress').textContent = stats.overallProgress || '0%';
-}
+        function showLogin() {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboard').style.display = 'none';
+        }
 
-// UI Helper Functions
-function getTeamClass(team) {
-    const teamMap = {
-        'Development': 'dev',
-        'Design': 'design',
-        'Marketing': 'marketing',
-        'Support': 'support',
-        'Administrator': 'admin',
-        'Content': 'content'
-    };
-    return teamMap[team] || 'dev';
-}
+        function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'flex';
+            
+            if (currentUser) {
+                document.getElementById('welcomeTitle').textContent = `Welcome back, ${currentUser.username}!`;
+                document.getElementById('welcomeSubtitle').textContent = `You are logged in as ${currentUser.team}`;
+                document.getElementById('userName').textContent = currentUser.username;
+                document.getElementById('userAvatar').textContent = currentUser.username.substring(0, 2).toUpperCase();
+                document.getElementById('userAvatar').className = `member-avatar ${getTeamClass(currentUser.team)}`;
+            }
+        }
 
-function showNotification(message, type = 'info') {
-    // Remove existing notifications
-    const existingNotifications = document.querySelectorAll('.notification-toast');
-    existingNotifications.forEach(notification => notification.remove());
-    
-    const toast = document.createElement('div');
-    toast.className = `notification-toast ${type}`;
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#F44336' : '#2196F3'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        max-width: 300px;
-        word-wrap: break-word;
-        animation: slideIn 0.3s ease;
-    `;
-    
-    const icon = type === 'success' ? 'fa-check-circle' : 
-                 type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-    
-    toast.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <i class="fas ${icon}"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.dashboard-section').forEach(sec => {
+                sec.style.display = 'none';
+            });
+            
+            // Show selected section
+            document.getElementById(section + 'Section').style.display = 'block';
+            
+            // Update navigation
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Load section-specific data
+            switch(section) {
+                case 'tasks':
+                    loadTasksData();
+                    break;
+                case 'team':
+                    loadTeamData();
+                    break;
+                case 'dashboard':
+                    loadDashboardData();
+                    break;
+            }
+            
+            // Close sidebar on mobile
+            if (window.innerWidth <= 1024) {
+                document.querySelector('.sidebar').classList.remove('active');
+            }
+        }
 
-// Add CSS animations for notifications
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-`;
-document.head.appendChild(style);
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
 
-function showLogin() {
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('dashboard').style.display = 'none';
-}
+        function showRegisterModal() {
+            document.getElementById('registerModal').classList.add('active');
+        }
 
-function showDashboard() {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'flex';
-    
-    if (currentUser) {
-        document.getElementById('welcomeTitle').textContent = `Welcome back, ${currentUser.username}!`;
-        document.getElementById('welcomeSubtitle').textContent = `You are logged in as ${currentUser.team}`;
-        document.getElementById('userName').textContent = currentUser.username;
-        document.getElementById('userAvatar').textContent = currentUser.username.substring(0, 2).toUpperCase();
-        document.getElementById('userAvatar').className = `member-avatar ${getTeamClass(currentUser.team)}`;
-    }
-}
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.remove('active');
+        }
 
-function showSection(section) {
-    // Hide all sections
-    document.querySelectorAll('.dashboard-section').forEach(sec => {
-        sec.style.display = 'none';
-    });
-    
-    // Show selected section
-    document.getElementById(section + 'Section').style.display = 'block';
-    
-    // Update navigation
-    document.querySelectorAll('.nav-links a').forEach(link => {
-        link.classList.remove('active');
-    });
-    event.target.classList.add('active');
-    
-    // Load section-specific data
-    switch(section) {
-        case 'tasks':
-            loadTasksData();
-            break;
-        case 'team':
-            loadTeamData();
-            break;
-        case 'dashboard':
-            loadDashboardData();
-            break;
-    }
-    
-    // Close sidebar on mobile
-    if (window.innerWidth <= 1024) {
-        document.querySelector('.sidebar').classList.remove('active');
-    }
-}
+        function showTaskModal() {
+            document.getElementById('taskModal').classList.add('active');
+        }
 
-function toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('active');
-}
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('active');
+        }
 
-function showRegisterModal() {
-    document.getElementById('registerModal').classList.add('active');
-}
+        function viewTaskDetails(taskId) {
+            showNotification('Task details feature coming soon!', 'info');
+        }
 
-function closeRegisterModal() {
-    document.getElementById('registerModal').classList.remove('active');
-}
+        function startTask(taskId) {
+            showNotification('Starting task timer...', 'info');
+        }
 
-function showTaskModal() {
-    document.getElementById('taskModal').classList.add('active');
-}
-
-function closeTaskModal() {
-    document.getElementById('taskModal').classList.remove('active');
-}
-
-function viewTaskDetails(taskId) {
-    showNotification('Task details feature coming soon!', 'info');
-}
-
-function startTask(taskId) {
-    showNotification('Starting task timer...', 'info');
-}
-
-function logout() {
-    // Clear local storage
-    localStorage.removeItem('digihive_token');
-    localStorage.removeItem('digihive_user');
-    
-    // Reset state
-    authToken = null;
-    currentUser = null;
-    
-    // Show login screen
-    showLogin();
-    
-    // Clear login form
-    document.getElementById('loginForm').reset();
-    
-    showNotification('Logged out successfully', 'info');
-}
+        function logout() {
+            // Clear local storage
+            localStorage.removeItem('digihive_token');
+            localStorage.removeItem('digihive_user');
+            
+            // Reset state
+            authToken = null;
+            currentUser = null;
+            
+            // Show login screen
+            showLogin();
+            
+            // Clear login form
+            document.getElementById('loginForm').reset();
+            
+            showNotification('Logged out successfully', 'info');
+        }
     </script>
 </body>
 </html>
-
